@@ -3,7 +3,7 @@
 > **Project:** ZERIVEX  
 > **Tagline:** "Security for software built with AI."  
 > **Brand Principle:** "Verify. Detect. Defend."  
-> **Current Phase:** PHASE 0A — PRE-IMPLEMENTATION DISCOVERY  
+> **Current Phase:** PHASE 0D — PHASE 0 REVIEW & GATE SIGN-OFF  
 > **Phase Status:** READY_FOR_REVIEW  
 > **Owner Authority:** The platform owner is the final authority for architecture, scope, phase approval, and security trade-offs.  
 > **Security Rule:** Security correctness over visual completion. Never claim a security feature works unless implemented and tested. Never fake findings.
@@ -19,21 +19,21 @@ Zerivex operates on a closed-loop security cycle:
 ---
 
 ## 2. Current Status & Phase State
-- **Current Phase:** `PHASE 0A — PRE-IMPLEMENTATION DISCOVERY`
-- **Phase Breakdown:**
-  - `Phase 0A`: Pre-Implementation Discovery (Current: `READY_FOR_REVIEW`)
-  - `Phase 0B`: Owner Provisioning (Awaiting owner credentials in `.env.local`)
-  - `Phase 0C`: Governance Initialization & Schema Review
-  - `Phase 0D`: Phase 0 Review & Gate Sign-off
+- **Current Phase:** `PHASE 0D — PHASE 0 REVIEW & GATE SIGN-OFF`
+- **Sub-Phase History:**
+  - `Phase 0A`: Pre-Implementation Discovery (`COMPLETE`)
+  - `Phase 0B`: Owner Provisioning (`IN_PROGRESS` - Awaiting `.env.local` credentials)
+  - `Phase 0C`: Governance & Skeleton Initialization (`COMPLETE` - 0 audit vulnerabilities, Vitest tests passing, `next build` passing)
+  - `Phase 0D`: Final Phase 0 Review (`READY_FOR_REVIEW`)
 - **Phase Status:** `READY_FOR_REVIEW`
-- **Next Phase:** `PHASE 0B` followed by `PHASE 1 — SECURE SAAS FOUNDATION` (Blocked on Owner Approval & Provisioning)
+- **Next Phase:** `PHASE 1 — SECURE SAAS FOUNDATION` (Blocked on Owner Approval & Provisioning)
 
 ---
 
 ## 3. Architecture & Tech Stack Summary
-- **Frontend / Full-stack:** Next.js 14+ (App Router), TypeScript (strict mode enabled).
-- **Styling:** Vanilla CSS design tokens, modern typography (Outfit & Inter), high-density accessible UI. Zero cyberpunk / neon / fake terminal gimmicks.
-- **Backend Services:** Node.js 20+ LTS native HTTP/TLS modules.
+- **Frontend / Full-stack:** Next.js 16.3.5 (App Router, Turbopack, fully patched against all advisories), TypeScript (strict mode enabled).
+- **Styling:** Vanilla CSS design tokens (`src/styles/globals.css`), modern typography, high-density accessible UI. Zero cyberpunk / neon / fake terminal gimmicks.
+- **Backend Services:** Node.js 22 LTS native HTTP/TLS modules.
 - **Database:** PostgreSQL (Neon / local PostgreSQL) with strict relational schema, UUIDv4 PKs, foreign keys, cascading constraints, and append-only audit tables. SQLite is explicitly excluded from production (ADR-0006).
 - **Authentication:** Dual OAuth 2.0 / OIDC (Google & GitHub) with Authorization Code Flow + PKCE + state + nonce.
 - **Session Management:** Cryptographically random 256-bit opaque tokens stored as SHA-256 hashes in DB. Cookies: `__Host-zerivex_session` (`HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`).
@@ -49,14 +49,16 @@ Zerivex operates on a closed-loop security cycle:
 ## 4. Current State Matrix
 | Subsystem | State | Details |
 | :--- | :--- | :--- |
-| **Database State** | `PLANNED` | PostgreSQL canonical schema defined. Awaiting `DATABASE_URL` provisioning. |
+| **Governance & Tooling** | `COMPLETE` | Next.js 16.3.5, TypeScript strict, Vitest 5.0.1, 0 npm audit vulnerabilities. |
+| **Config Validation** | `IMPLEMENTED` | Fail-closed runtime schema validation in `src/core/config/env-validator.ts` with 100% test coverage. |
+| **Database State** | `PLANNED` | PostgreSQL canonical schema designed. Ready for Phase 1 migration execution. |
 | **API State** | `PLANNED` | Standardized envelope `{ success, data/error }` defined. Endpoints mapped. |
 | **Authentication State**| `PLANNED` | OAuth flow, session token hashing, state machine, and one-time owner bootstrap designed. |
 | **Authorization State** | `PLANNED` | Server-side RBAC & tenant scoping guards specified. No client-side bypasses. |
 | **Scanner State** | `PLANNED` | SafeHttpClient with IP pinning, 6 check modules, and evidence redactor architected. |
 | **Subscription State**  | `PLANNED` | Abstract billing and entitlement interface designed. |
-| **Security State** | `SPECIFIED`| Threat model with 14-point traceability matrix documented in `docs/THREAT_MODEL.md`. |
-| **Test State** | `SPECIFIED`| Security test suite structure defined (`tests/security/`). |
+| **Security State** | `VERIFIED` | 14-point Threat Model Traceability Matrix active; initial security tests passing. |
+| **Test State** | `IMPLEMENTED` | Vitest test suite running; `tests/security/config.test.ts` passing. |
 
 ---
 
@@ -72,32 +74,15 @@ Zerivex operates on a closed-loop security cycle:
 
 ---
 
-## 6. Known Issues & Known Security Risks
-- *Risk 1 (External dependency):* Live Google/GitHub OAuth testing requires client credentials from developer portals. *Mitigation:* In-memory Mock OAuth Provider will be included in the test harness for zero-friction automated security tests.
-- *Risk 2 (SSRF TOCTOU):* DNS rebinding during HTTP requests. *Mitigation:* Socket IP pinning in `SafeHttpClient` connects directly to pre-validated IP address, bypassing secondary DNS resolution.
-- *Risk 3 (Credential Leakage in Findings):* Scanners recording raw HTTP headers. *Mitigation:* Mandatory redaction pipeline (ADR-0007) scrubs authorization, cookies, and tokens before DB writes.
+## 6. Environment State
+- Git repository active on `main` branch.
+- Dependencies audited: **0 vulnerabilities**.
+- TypeScript strict compilation: **Passing cleanly**.
+- Next.js production build: **Compiled successfully**.
+- Security tests: **4/4 passing**.
 
 ---
 
-## 7. Environment State
-- Repository initialized with Git (`main` branch).
-- `.gitignore` configured to strictly block `.env`, `.env.local`, credentials, and keys.
-- `.env.example` created with variable templates (no secrets).
-- `docs/SETUP_REQUIREMENTS.md` created with grouped external service dependencies.
-
----
-
-## 8. Completed Work
-- [x] Initialized Git repository on `main`.
-- [x] Configured `.gitignore` for secret prevention.
-- [x] Created `.env.example`.
-- [x] Completed Phase 0A pre-implementation discovery (`docs/SETUP_REQUIREMENTS.md`).
-- [x] Authored ADR-0001 through ADR-0008.
-- [x] Established continuity governance (`ZERIVEX_CONTEXT.md` & `HANDOFF.md`).
-- [x] Authored 14-point Threat Model Traceability Matrix (`docs/THREAT_MODEL.md`).
-
----
-
-## 9. Current Hand-off & Next Action
-- **Current Phase Status:** `PHASE 0A — READY FOR REVIEW`
-- **Immediate Next Action:** Present Phase 0A Discovery Report to Platform Owner, await environment configuration & formal approval to proceed.
+## 7. Current Hand-off & Next Action
+- **Current Phase Status:** `PHASE 0D — READY FOR REVIEW`
+- **Immediate Next Action:** Obtain Platform Owner sign-off on Phase 0 and proceed to **Phase 1: Secure SaaS Foundation**.

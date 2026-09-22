@@ -18,6 +18,7 @@ node_modules/
 out/
 build/
 dist/
+*.tsbuildinfo
 
 # Testing & Coverage
 coverage/
@@ -32,7 +33,6 @@ yarn-error.log*
 
 # OS metadata
 .DS_Store
-*.pem
 Thumbs.db
 
 # IDE / Editor
