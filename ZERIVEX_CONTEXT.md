@@ -20,9 +20,13 @@ Zerivex operates on a closed-loop security cycle:
 
 ## 2. Current Status & Phase State
 - **Current Phase:** `PHASE 0A — PRE-IMPLEMENTATION DISCOVERY`
+- **Phase Breakdown:**
+  - `Phase 0A`: Pre-Implementation Discovery (Current: `READY_FOR_REVIEW`)
+  - `Phase 0B`: Owner Provisioning (Awaiting owner credentials in `.env.local`)
+  - `Phase 0C`: Governance Initialization & Schema Review
+  - `Phase 0D`: Phase 0 Review & Gate Sign-off
 - **Phase Status:** `READY_FOR_REVIEW`
-- **Previous Phase:** N/A (Project initiation)
-- **Next Phase:** `PHASE 0B / PHASE 1 — SECURE SAAS FOUNDATION` (Blocked on Owner Approval & Provisioning)
+- **Next Phase:** `PHASE 0B` followed by `PHASE 1 — SECURE SAAS FOUNDATION` (Blocked on Owner Approval & Provisioning)
 
 ---
 
@@ -30,7 +34,7 @@ Zerivex operates on a closed-loop security cycle:
 - **Frontend / Full-stack:** Next.js 14+ (App Router), TypeScript (strict mode enabled).
 - **Styling:** Vanilla CSS design tokens, modern typography (Outfit & Inter), high-density accessible UI. Zero cyberpunk / neon / fake terminal gimmicks.
 - **Backend Services:** Node.js 20+ LTS native HTTP/TLS modules.
-- **Database:** PostgreSQL (Neon / local PostgreSQL) with strict relational schema, UUIDv4 PKs, foreign keys, cascading constraints, and append-only audit tables.
+- **Database:** PostgreSQL (Neon / local PostgreSQL) with strict relational schema, UUIDv4 PKs, foreign keys, cascading constraints, and append-only audit tables. SQLite is explicitly excluded from production (ADR-0006).
 - **Authentication:** Dual OAuth 2.0 / OIDC (Google & GitHub) with Authorization Code Flow + PKCE + state + nonce.
 - **Session Management:** Cryptographically random 256-bit opaque tokens stored as SHA-256 hashes in DB. Cookies: `__Host-zerivex_session` (`HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`).
 - **Authorization:** Four-tier decoupling:
@@ -38,20 +42,20 @@ Zerivex operates on a closed-loop security cycle:
   2. *Platform Role:* What can you do? (OWNER > SUPER_ADMIN > ADMIN > SUPPORT > USER)
   3. *Tenant Ownership:* Which resources belong to you? (Organization + Membership + Project + Target)
   4. *Entitlements:* What tier features can you use? (Plan + Entitlements; OWNER receives implicit bypass via server policy).
-- **Scanner Engine:** Isolated deterministic scanner engine with strict SSRF defense (pre-flight DNS, socket-level IP pinning, CIDR blacklisting, redirect re-validation).
+- **Scanner Engine:** Isolated deterministic scanner engine with strict SSRF defense (pre-flight DNS, socket-level IP pinning, CIDR blacklisting, redirect re-validation), explicit target verification scopes (ADR-0008), and synchronous evidence redaction (ADR-0007).
 
 ---
 
 ## 4. Current State Matrix
 | Subsystem | State | Details |
 | :--- | :--- | :--- |
-| **Database State** | `PLANNED` | Relational schema designed in `docs/ARCHITECTURE.md`. Awaiting connection string in `docs/SETUP_REQUIREMENTS.md`. |
+| **Database State** | `PLANNED` | PostgreSQL canonical schema defined. Awaiting `DATABASE_URL` provisioning. |
 | **API State** | `PLANNED` | Standardized envelope `{ success, data/error }` defined. Endpoints mapped. |
 | **Authentication State**| `PLANNED` | OAuth flow, session token hashing, state machine, and one-time owner bootstrap designed. |
 | **Authorization State** | `PLANNED` | Server-side RBAC & tenant scoping guards specified. No client-side bypasses. |
-| **Scanner State** | `PLANNED` | SafeHttpClient with IP pinning and 6 core check modules architected. |
+| **Scanner State** | `PLANNED` | SafeHttpClient with IP pinning, 6 check modules, and evidence redactor architected. |
 | **Subscription State**  | `PLANNED` | Abstract billing and entitlement interface designed. |
-| **Security State** | `SPECIFIED`| Threat model documented. SSRF defense, tenant isolation, and audit logging detailed. |
+| **Security State** | `SPECIFIED`| Threat model with 14-point traceability matrix documented in `docs/THREAT_MODEL.md`. |
 | **Test State** | `SPECIFIED`| Security test suite structure defined (`tests/security/`). |
 
 ---
@@ -62,12 +66,16 @@ Zerivex operates on a closed-loop security cycle:
 - `ADR-0003`: Scanner SSRF Defense via Pre-flight DNS, Socket IP Pinning, and Redirect Re-validation.
 - `ADR-0004`: PostgreSQL with Relational Multi-Tenant Scoping and Append-Only Audit Trail.
 - `ADR-0005`: Phase-Gated Engineering Governance & AI Agent Continuity Protocol.
+- `ADR-0006`: Canonical PostgreSQL Persistence Engine (Exclusion of SQLite for Production).
+- `ADR-0007`: Mandatory Multi-Stage Evidence Redaction Pipeline.
+- `ADR-0008`: Explicit Target Verification Scopes for Scanning Authorization.
 
 ---
 
 ## 6. Known Issues & Known Security Risks
 - *Risk 1 (External dependency):* Live Google/GitHub OAuth testing requires client credentials from developer portals. *Mitigation:* In-memory Mock OAuth Provider will be included in the test harness for zero-friction automated security tests.
 - *Risk 2 (SSRF TOCTOU):* DNS rebinding during HTTP requests. *Mitigation:* Socket IP pinning in `SafeHttpClient` connects directly to pre-validated IP address, bypassing secondary DNS resolution.
+- *Risk 3 (Credential Leakage in Findings):* Scanners recording raw HTTP headers. *Mitigation:* Mandatory redaction pipeline (ADR-0007) scrubs authorization, cookies, and tokens before DB writes.
 
 ---
 
@@ -84,11 +92,12 @@ Zerivex operates on a closed-loop security cycle:
 - [x] Configured `.gitignore` for secret prevention.
 - [x] Created `.env.example`.
 - [x] Completed Phase 0A pre-implementation discovery (`docs/SETUP_REQUIREMENTS.md`).
-- [x] Created ADR-0001 through ADR-0005.
+- [x] Authored ADR-0001 through ADR-0008.
 - [x] Established continuity governance (`ZERIVEX_CONTEXT.md` & `HANDOFF.md`).
+- [x] Authored 14-point Threat Model Traceability Matrix (`docs/THREAT_MODEL.md`).
 
 ---
 
 ## 9. Current Hand-off & Next Action
 - **Current Phase Status:** `PHASE 0A — READY FOR REVIEW`
-- **Immediate Next Action:** Present Pre-Implementation Discovery to Owner, await environment configuration & formal approval to proceed to Phase 1.
+- **Immediate Next Action:** Present Phase 0A Discovery Report to Platform Owner, await environment configuration & formal approval to proceed.

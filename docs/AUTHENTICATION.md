@@ -39,7 +39,7 @@ Database Transaction:
         │
         ▼
 Set HttpOnly, Secure, SameSite=Lax cookie: __Host-zerivex_session
-Redirect to safe destination (/dashboard or validated returnTo)
+Redirect to safe destination (/dashboard or validated internal returnTo)
 ```
 
 ---
@@ -56,4 +56,11 @@ Redirect to safe destination (/dashboard or validated returnTo)
 - `INITIAL_OWNER_EMAIL` is configured in environment variables.
 - Bootstrapping is transactional and executed once.
 - Once `platform_bootstraps` contains a record, `INITIAL_OWNER_EMAIL` is ignored for all future sign-ins.
-- Emergency CLI recovery (`scripts/admin-bootstrap.ts`) is provided for local terminal administrator promotion, but is disabled if an owner already exists.
+- Emergency CLI recovery (`npm run admin:bootstrap`) is provided for local terminal administrator promotion, but is disabled if an owner already exists.
+- Platform owner deletion or demotion is prohibited if they are the sole owner.
+
+---
+
+## 4. CSRF & Rate Limiting Controls
+- **CSRF Defense:** State-changing API routes require custom headers (`X-Requested-With: XMLHttpRequest`) alongside `SameSite=Lax` cookies.
+- **Brute-Force & Callback Protection:** OAuth callback exchanges and session revalidation endpoints are rate-limited per IP and client fingerprint.

@@ -1,173 +1,144 @@
-# Zerivex: Pre-Implementation Setup & External Dependencies
+# Zerivex: Setup Requirements & External Dependency Discovery
 
 > **Project:** ZERIVEX  
 > **Tagline:** "Security for software built with AI."  
 > **Brand Principle:** "Verify. Detect. Defend."  
-> **Phase:** 0A — Pre-Implementation Discovery  
-> **Status:** PENDING OWNER PROVISIONING
+> **Current Phase:** PHASE 0A — PRE-IMPLEMENTATION DISCOVERY  
+> **Status:** READY_FOR_REVIEW  
 
 ---
 
-## 1. Master Service Dependency Matrix
+## 1. Master External Dependency Matrix
 
-| Requirement | Recommended Provider | Why | Required Phase | Complexity | Status |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Database** | **Neon** (Serverless PostgreSQL) or **Local/Self-hosted PostgreSQL** | Fully compliant PostgreSQL with connection pooling, branching, strict relational integrity, UUIDv4, and SSL enforcement. | **Phase 1** (Required Now) | Low | **PENDING** |
-| **Google OAuth** | **Google Cloud Console (OAuth 2.0 / OIDC)** | Enterprise-grade OIDC authentication, supports Authorization Code Flow with PKCE, email verification metadata. | **Phase 2** (Required for Live Auth) | Low | **PENDING** |
-| **GitHub OAuth** | **GitHub Developer Settings (OAuth Apps)** | Standard developer identity provider, verified primary email API, essential for developer-focused security SaaS. | **Phase 2** (Required for Live Auth) | Low | **PENDING** |
-| **Domain & DNS** | **Cloudflare DNS** or Owner's Registrar | DNS TXT and CNAME management for target ownership verification testing and apex domain hosting. | **Phase 3** (Target Verif) / Prod | Low | **PENDING** |
-| **Queue / Worker** | **In-Process Worker Queue** (MVP) $\rightarrow$ **BullMQ / Redis** | Simplest architecture for Phase 4 MVP without external cloud infrastructure; upgrades to Redis worker isolation. | **Phase 4** (MVP In-Process) | Medium | **PLANNED** |
-| **Email (Transactional)** | **Resend** or **Postmark** | High deliverability, clean developer API, no secret leak vectors in URL callbacks. | **Phase 5** (Alerts/Reports) | Low | **OPTIONAL** |
-| **Object Storage** | **Cloudflare R2** or **AWS S3** | S3-compatible, zero egress fees (R2), ideal for encrypted PDF reports and large scan evidence snapshots. | **Phase 5** (Reports) | Medium | **OPTIONAL** |
-| **Monitoring & Sentry** | **Sentry** | Full-stack exception tracking, sensitive data scrubbing (sanitizing tokens/passwords), performance tracing. | **Phase 14** (Hardening) | Low | **OPTIONAL** |
-| **Payments / Billing** | **Stripe** | Global compliance, customer portal, webhook signature verification, provider-agnostic billing abstraction. | **Phase 11** (Billing) | Medium | **PLANNED** |
+| Requirement | Recommended Provider | Alternatives | Required Phase | Dev Required | Production Required | Owner Action | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Database** | **Neon** (Serverless PostgreSQL) | Local PostgreSQL (Docker), Supabase PostgreSQL, AWS RDS Aurora | **Phase 1** | YES | YES | Provision PostgreSQL database & set `DATABASE_URL` in `.env.local` | **PENDING** |
+| **OAuth (Google)** | **Google Cloud Console** (OAuth 2.0 / OIDC) | Auth0, Clerk (rejected: vendor lock-in) | **Phase 2** | YES (Mock available) | YES | Create OAuth 2.0 Web Client, add redirect URIs, set credentials | **PENDING** |
+| **OAuth (GitHub)** | **GitHub Developer Settings** (OAuth Apps) | Auth0 (rejected) | **Phase 2** | YES (Mock available) | YES | Register GitHub OAuth App, add callback URL, set credentials | **PENDING** |
+| **Domain & DNS** | **Cloudflare DNS** | Route53, Namecheap, Vercel DNS | **Phase 3** (Target Verif) | NO (Mocked) | YES | Delegate domain nameservers & configure DNS verification TXT records | **PENDING** |
+| **Queue / Worker** | **In-Process Worker Queue** (MVP) | Redis / BullMQ, AWS SQS | **Phase 4** (Scanner MVP) | YES (In-Process) | NO (Redis for scale) | None for Phase 4; Redis instance provisioned in Phase 14 | **PLANNED** |
+| **Email (Transactional)** | **Resend** or **Postmark** | SendGrid, AWS SES | **Phase 5** (Alerts) | NO (Console logs) | YES | Create account, verify sending domain, set API key | **OPTIONAL** |
+| **Object Storage** | **Cloudflare R2** | AWS S3, MinIO (local dev) | **Phase 5** (Reports/Evidence) | NO (Database JSON) | YES | Create bucket, configure credentials, set bucket policies | **OPTIONAL** |
+| **Payments / Billing** | **Stripe** | LemonSqueezy, Paddle | **Phase 11** (Billing) | NO | YES | Create Stripe account, create webhook endpoint, set price IDs | **PLANNED** |
+| **Monitoring / APM** | **Sentry** | Baselime, Datadog, OpenTelemetry | **Phase 14** (Hardening) | NO | YES | Create Sentry project, configure DSN & sensitive data scrubbing | **PLANNED** |
+| **Logging & Egress** | **Node.js Structured Logger + Cloudflare WAF** | Datadog, Axiom | **Phase 14** (Hardening) | YES (Console JSON) | YES | Configure WAF rules, rate limits, and egress worker firewall | **PLANNED** |
 
 ---
 
-## 2. Grouped Requirements & Provisioning Instructions
+## 2. Granular Dependency Analysis
 
-### GROUP A — Database (PostgreSQL)
+### GROUP A — Database (Canonical PostgreSQL)
 
-- **SERVICE:** Relational Database
-- **PURPOSE:** Multi-tenant user accounts, sessions, organizations, projects, scan jobs, deterministic findings, evidence, immutable audit logs.
-- **RECOMMENDED:** **Neon Serverless PostgreSQL** (or local PostgreSQL `postgresql://postgres:postgres@localhost:5432/zerivex` for offline local development).
+- **PURPOSE:** Multi-tenant relational storage for organizations, users, identities, sessions, projects, targets, verifications, scans, findings, evidence, and tamper-evident append-only audit logs.
+- **RECOMMENDED:** **Neon Serverless PostgreSQL** (or local PostgreSQL via Docker for 100% offline local development).
 - **WHY:** 
   - Standard PostgreSQL 16+ engine with strict relational constraints (foreign keys, cascading rules, JSONB for evidence).
-  - Built-in connection pooling for serverless/edge environments.
+  - Native connection pooling for serverless/edge connection safety.
   - Native SSL encryption in transit (`sslmode=require`).
+  - No behavioral deviations between local and production.
 - **ALTERNATIVES:**
-  1. Supabase PostgreSQL (Managed Postgres, pgbouncer built-in)
-  2. AWS Aurora PostgreSQL (Enterprise-grade, higher cost/complexity)
-  3. Local Docker PostgreSQL (`docker run --name zerivex-postgres -e POSTGRES_PASSWORD=... -p 5432:5432 -d postgres:16-alpine`)
-- **REQUIRED NOW:** **YES** (Phase 1 cannot initialize tables without a connection string).
+  1. *Local Docker PostgreSQL:* `docker run --name zerivex-postgres -e POSTGRES_PASSWORD=zerivex -p 5432:5432 -d postgres:16-alpine` (Zero cost, offline).
+  2. *Supabase PostgreSQL:* Managed Postgres with built-in connection pooler.
+  3. *AWS RDS / Aurora PostgreSQL:* Enterprise standard, higher operational overhead.
+- **REQUIRED NOW (Phase 1):** **YES**.
 - **ESTIMATED COMPLEXITY:** LOW.
 - **WHAT THE OWNER MUST CREATE:**
-  1. Create a project at [Neon](https://neon.tech) or start a local/managed PostgreSQL database instance.
-  2. Create a database named `zerivex`.
-- **WHAT THE OWNER MUST PROVIDE / CONFIGURE:**
-  - `DATABASE_URL`: The pooled connection string (e.g. `postgresql://user:password@ep-xyz.neon.tech/zerivex?sslmode=require`).
-  - *Never paste production passwords in AI chat! Store directly in `.env.local`.*
-- **WHERE IT WILL BE USED:** Core database client (`src/core/db/`).
-- **SECURITY CONSIDERATIONS:** 
-  - Connections must enforce TLS/SSL.
-  - Direct database access restricted to backend servers only (never exposed publicly).
-  - Database user credentials must follow least privilege once production migrations stabilize.
+  1. Create a project at [Neon](https://neon.tech) or spin up a local PostgreSQL container.
+  2. Ensure a database named `zerivex` exists.
+- **WHAT THE OWNER MUST CONFIGURE (in `.env.local` only):**
+  - `DATABASE_URL`: `postgresql://user:password@ep-xyz.neon.tech/zerivex?sslmode=require`
+- **SECURITY IMPLICATIONS:**
+  - TLS enforced on all connections.
+  - Direct database access restricted to backend servers only.
+  - No database passwords ever pasted into chat or committed to Git.
+- **COST:** Free tier on Neon / $0 for local Docker.
 
 ---
 
-### GROUP B — Authentication (OAuth Providers)
+### GROUP B — Authentication (OAuth 2.0 / OIDC Providers)
 
 #### 1. Google OAuth 2.0 / OpenID Connect
-- **SERVICE:** Social & Enterprise Identity Provider
-- **PURPOSE:** Safe user onboarding, email verification, and one-time owner bootstrap.
+- **PURPOSE:** Secure enterprise & developer sign-in, email verification, and one-time owner bootstrap.
 - **RECOMMENDED:** **Google Cloud Console** (APIs & Services $\rightarrow$ Credentials $\rightarrow$ OAuth 2.0 Client IDs).
-- **WHY:** High trust, built-in MFA/passkeys on Google side, verified email claim in OpenID tokens.
-- **ALTERNATIVES:** Auth0, Clerk, AWS Cognito (Avoided to maintain direct server-side session ownership and avoid vendor lock-in).
-- **REQUIRED NOW:** Required for Phase 2 (Live OAuth verification). For automated Phase 1 tests, a built-in mock OAuth adapter will be used.
-- **ESTIMATED COMPLEXITY:** LOW.
+- **WHY:** High trust, built-in MFA/passkeys on Google accounts, cryptographic OpenID tokens with verified email claims.
+- **REQUIRED IN PHASE:** Phase 2 (Live Auth). *Note: Phase 1 & 2 automated tests use an internal Mock OAuth Provider to run hermetically offline.*
 - **WHAT THE OWNER MUST CREATE:**
-  1. Go to Google Cloud Console $\rightarrow$ APIs & Services $\rightarrow$ Credentials.
+  1. Google Cloud Console $\rightarrow$ APIs & Services $\rightarrow$ Credentials.
   2. Create an **OAuth 2.0 Client ID** (Application type: *Web application*).
-  3. Authorized JavaScript origins: `http://localhost:3000` (and production domain when deployed).
-  4. Authorized redirect URIs: `http://localhost:3000/api/auth/callback/google` (and `https://<domain>/api/auth/callback/google`).
-- **WHAT THE OWNER MUST PROVIDE / CONFIGURE:**
+  3. Authorized redirect URI: `http://localhost:3000/api/auth/callback/google`.
+- **WHAT THE OWNER MUST CONFIGURE (in `.env.local` only):**
   - `GOOGLE_CLIENT_ID`
-  - `GOOGLE_CLIENT_SECRET` (Store in `.env.local`)
-- **SECURITY CONSIDERATIONS:**
-  - Enforce Authorization Code Flow with PKCE and state/nonce validation.
-  - Client secret must never be exposed to the browser.
+  - `GOOGLE_CLIENT_SECRET`
 
 #### 2. GitHub OAuth
-- **SERVICE:** Developer Identity Provider
-- **PURPOSE:** Primary login for developers, repository integration readiness.
+- **PURPOSE:** Developer identity provider, repository integration readiness.
 - **RECOMMENDED:** **GitHub Developer Settings** (Settings $\rightarrow$ Developer settings $\rightarrow$ OAuth Apps).
-- **WHY:** Ubiquitous among software engineers and security researchers; supports verified primary email retrieval.
-- **REQUIRED NOW:** Required for Phase 2 (Live OAuth).
-- **ESTIMATED COMPLEXITY:** LOW.
+- **WHY:** Standard for software engineers and security researchers; supports verified primary email retrieval via `/user/emails`.
+- **REQUIRED IN PHASE:** Phase 2 (Live Auth).
 - **WHAT THE OWNER MUST CREATE:**
-  1. Go to GitHub $\rightarrow$ Settings $\rightarrow$ Developer settings $\rightarrow$ OAuth Apps $\rightarrow$ *New OAuth App*.
-  2. Application name: `Zerivex Security`
-  3. Homepage URL: `http://localhost:3000`
-  4. Authorization callback URL: `http://localhost:3000/api/auth/callback/github`
-- **WHAT THE OWNER MUST PROVIDE / CONFIGURE:**
+  1. GitHub $\rightarrow$ Settings $\rightarrow$ Developer settings $\rightarrow$ OAuth Apps $\rightarrow$ *New OAuth App*.
+  2. Authorization callback URL: `http://localhost:3000/api/auth/callback/github`.
+- **WHAT THE OWNER MUST CONFIGURE (in `.env.local` only):**
   - `GITHUB_CLIENT_ID`
-  - `GITHUB_CLIENT_SECRET` (Store in `.env.local`)
-- **SECURITY CONSIDERATIONS:**
-  - Must explicitly query the `/user/emails` endpoint and only trust emails marked `verified: true` and `primary: true`.
+  - `GITHUB_CLIENT_SECRET`
 
 #### 3. Owner Bootstrap Email
-- **PURPOSE:** Configures the initial platform OWNER for one-time transactional promotion.
-- **RECOMMENDED:** Owner's personal or company email (matching their Google or GitHub verified email).
-- **CONFIGURED AS:** `INITIAL_OWNER_EMAIL` in `.env.local`.
+- **PURPOSE:** Transactional one-time promotion of the platform owner account.
+- **WHAT THE OWNER MUST CONFIGURE (in `.env.local` only):**
+  - `INITIAL_OWNER_EMAIL`: The verified email matching the owner's Google or GitHub account.
 
 ---
 
-### GROUP C — Deployment & Runtime Environment
+### GROUP C — Domain, DNS & Target Verification (Phase 3)
 
-- **SERVICE:** Production Application & API Hosting
-- **PURPOSE:** Running Next.js server, API endpoints, background jobs, and serving web assets.
-- **RECOMMENDED:** **Vercel** (for web app / dashboard) + **Dedicated Node.js Worker** (Docker / Railway / Fly.io for isolated scanning tasks).
-- **WHY:** Next.js native optimization, fast edge delivery, automatic SSL, serverless scalability.
-- **ALTERNATIVES:**
-  1. Single Docker container on Railway / Render / AWS ECS (simpler unified deployment).
-  2. Self-hosted VPS with Docker Compose and Nginx reverse proxy.
-- **REQUIRED NOW:** NO (Local development runs on Node.js 20+).
-- **ESTIMATED COMPLEXITY:** MEDIUM.
-- **WHAT THE OWNER MUST CREATE:**
-  - Create project on chosen hosting platform when reaching Phase 14 (Production Hardening).
+- **PURPOSE:** Hosting apex domain (`zerivex.com`), SSL termination, and testing DNS TXT target ownership verification.
+- **RECOMMENDED:** **Cloudflare DNS**.
+- **WHY:** Sub-minute propagation speed, enterprise DDoS protection, and DNS API for verification checks.
+- **REQUIRED IN PHASE:** Phase 3 (Domain Verification). Local tests will mock DNS queries using `node:dns` test fixtures.
+- **OWNER ACTION:** None for Phase 0-2.
 
 ---
 
-### GROUP D — Domain & DNS
+### GROUP D — Scanner Queue & Worker Infrastructure (Phase 4)
 
-- **SERVICE:** Domain Name & DNS Management
-- **PURPOSE:** Application URL (`zerivex.com`), SSL certificates, and DNS TXT target verification testing.
-- **RECOMMENDED:** **Cloudflare** (free tier).
-- **WHY:** Fast DNS propagation (under 60 seconds), automated TLS, DDoS protection, edge security headers.
-- **REQUIRED NOW:** NO for Phase 1; needed for Phase 3 target verification testing.
-- **ESTIMATED COMPLEXITY:** LOW.
+- **PURPOSE:** Decoupling long-running HTTP scans from the web request/response lifecycle.
+- **RECOMMENDED:** 
+  - **Phase 4 (MVP):** In-Process Async Job Queue with concurrency limits and timeout cancellation.
+  - **Phase 14 (Production):** Distributed Redis / BullMQ with dedicated isolated worker containers.
+- **WHY:** In-process queue eliminates external infrastructure overhead during MVP while preserving clean worker interface abstractions.
+- **REQUIRED IN PHASE:** Phase 4.
 
 ---
 
-### GROUP E — Error Tracking & Observability (Phase 14)
+### GROUP E — Error Tracking, Observability & Hardening (Phase 14)
 
-- **SERVICE:** Application Monitoring & Error Tracking
-- **RECOMMENDED:** **Sentry** (Developer tier).
-- **WHY:** Automatic error capture, stack trace decoding, and built-in data scrubbing rules (redacting authorization headers, cookies, and tokens).
-- **REQUIRED NOW:** NO (Console structured logging used in Phase 0-4).
+- **PURPOSE:** Exception monitoring with strict sensitive data scrubbing (redacting authorization headers, cookies, tokens).
+- **RECOMMENDED:** **Sentry**.
+- **REQUIRED IN PHASE:** Phase 14 (Production Hardening). Phase 0-5 uses structured JSON console logging.
 
 ---
 
 ### GROUP F — Payments & Billing (Phase 11)
 
-- **SERVICE:** Subscription Management & Credit Ledger
+- **PURPOSE:** Subscription plans, credit ledgers, automated webhook signature verification.
 - **RECOMMENDED:** **Stripe**.
-- **WHY:** Industry gold standard, clean webhook signature verification (`stripe-signature`), hosted Customer Portal, sandbox test environment.
-- **REQUIRED NOW:** NO (Abstract billing interface built in Phase 1; live provider wired in Phase 11).
+- **REQUIRED IN PHASE:** Phase 11. Core authorization and owner entitlement logic in Phase 1-5 operates independently of external billing providers via the entitlement engine abstraction.
 
 ---
 
-## 3. Owner Provisioning Action Checklist
+## 3. Owner Action Checklist: Phase 0B Provisioning
 
-### Phase 1 Immediate Prerequisites
-- [ ] **1. Node.js Environment**: Verify Node.js v20+ LTS is installed on developer workstation (`node -v`).
-- [ ] **2. Database Connection**: 
-  - Option A: Create a free PostgreSQL instance on [Neon](https://neon.tech) and copy connection URL.
-  - Option B: Run local PostgreSQL via Docker: `docker run --name zerivex-db -e POSTGRES_PASSWORD=zerivex -p 5432:5432 -d postgres:16-alpine`.
-- [ ] **3. Environment File Configuration**:
-  - Copy `.env.example` to `.env.local`.
-  - Set `DATABASE_URL` in `.env.local`.
-  - Generate a secure 32-byte secret: `openssl rand -base64 32` and set `SESSION_SECRET` in `.env.local`.
-  - Set `INITIAL_OWNER_EMAIL` to your intended owner email address.
-- [ ] **4. OAuth Credentials (for Phase 2)**:
-  - Register Google OAuth credentials.
-  - Register GitHub OAuth credentials.
-  - Add client IDs and secrets to `.env.local`.
+Before Phase 1 execution can begin, complete this checklist:
 
----
-
-## 4. Security Boundaries for Credentials
-
-1. **NO SECRETS IN CHAT:** Under no circumstances should database passwords, OAuth secrets, or session keys be pasted into this conversation.
-2. **LOCAL STORAGE ONLY:** All secrets must reside exclusively in `/Users/omvednagre/Desktop/Zerivex/.env.local` (which is git-ignored).
-3. **MOCK FALLBACK FOR CI/TESTS:** For automated test suites, the platform provides in-memory mock adapters so tests can execute 100% deterministically and offline without live external API keys.
+- [ ] **1. Node.js Verification:** Ensure Node.js 20+ LTS is active (`node -v`).
+- [ ] **2. PostgreSQL Provisioning:**
+  - Create Neon project or start local Docker PostgreSQL.
+  - Verify database connection string.
+- [ ] **3. Local Environment Configuration (`.env.local`):**
+  - Copy `.env.example` to `.env.local` in project root.
+  - Fill in `DATABASE_URL` (local or Neon).
+  - Generate a secure 32-byte secret: `openssl rand -base64 32` and set `SESSION_SECRET`.
+  - Set `INITIAL_OWNER_EMAIL` to your intended platform owner email address.
+- [ ] **4. Verification without Secret Leakage:**
+  - Confirm `.env.local` exists and contains no empty required fields for Phase 1.
+  - Do NOT share the contents of `.env.local` in the chat.
