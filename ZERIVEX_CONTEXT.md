@@ -3,7 +3,7 @@
 > **Project:** ZERIVEX  
 > **Tagline:** "Security for software built with AI."  
 > **Brand Principle:** "Verify. Detect. Defend."  
-> **Current Phase:** PHASE 0D — PHASE 0 REVIEW & GATE SIGN-OFF  
+> **Current Phase:** PHASE 1 — SECURE SAAS FOUNDATION  
 > **Phase Status:** READY_FOR_REVIEW  
 > **Owner Authority:** The platform owner is the final authority for architecture, scope, phase approval, and security trade-offs.  
 > **Security Rule:** Security correctness over visual completion. Never claim a security feature works unless implemented and tested. Never fake findings.
@@ -19,14 +19,14 @@ Zerivex operates on a closed-loop security cycle:
 ---
 
 ## 2. Current Status & Phase State
-- **Current Phase:** `PHASE 0D — PHASE 0 REVIEW & GATE SIGN-OFF`
-- **Sub-Phase History:**
-  - `Phase 0A`: Pre-Implementation Discovery (`COMPLETE`)
-  - `Phase 0B`: Owner Provisioning (`IN_PROGRESS` - Awaiting `.env.local` credentials)
-  - `Phase 0C`: Governance & Skeleton Initialization (`COMPLETE` - 0 audit vulnerabilities, Vitest tests passing, `next build` passing)
-  - `Phase 0D`: Final Phase 0 Review (`READY_FOR_REVIEW`)
+- **Current Phase:** `PHASE 1 — SECURE SAAS FOUNDATION`
 - **Phase Status:** `READY_FOR_REVIEW`
-- **Next Phase:** `PHASE 1 — SECURE SAAS FOUNDATION` (Blocked on Owner Approval & Provisioning)
+- **Previous Phases:**
+  - `Phase 0A`: Pre-Implementation Discovery (`COMPLETE`)
+  - `Phase 0B`: Owner Provisioning (`COMPLETE` - Neon PostgreSQL connected, secrets configured in `.env.local`)
+  - `Phase 0C`: Governance & Tooling (`COMPLETE` - Next.js 16.3.5, strict TS, 0 audit vulnerabilities)
+  - `Phase 0D`: Phase 0 Review & Gate Sign-off (`COMPLETE`)
+- **Next Phase:** `PHASE 2 — AUTHENTICATION + OWNER + RBAC` (Blocked on Owner Review & Sign-off)
 
 ---
 
@@ -34,7 +34,7 @@ Zerivex operates on a closed-loop security cycle:
 - **Frontend / Full-stack:** Next.js 16.3.5 (App Router, Turbopack, fully patched against all advisories), TypeScript (strict mode enabled).
 - **Styling:** Vanilla CSS design tokens (`src/styles/globals.css`), modern typography, high-density accessible UI. Zero cyberpunk / neon / fake terminal gimmicks.
 - **Backend Services:** Node.js 22 LTS native HTTP/TLS modules.
-- **Database:** PostgreSQL (Neon / local PostgreSQL) with strict relational schema, UUIDv4 PKs, foreign keys, cascading constraints, and append-only audit tables. SQLite is explicitly excluded from production (ADR-0006).
+- **Database:** Neon Serverless PostgreSQL 16+ with connection pooling, SSL enforcement, UUIDv4 PKs, foreign keys, cascading constraints, and append-only audit tables. SQLite is explicitly excluded from production (ADR-0006).
 - **Authentication:** Dual OAuth 2.0 / OIDC (Google & GitHub) with Authorization Code Flow + PKCE + state + nonce.
 - **Session Management:** Cryptographically random 256-bit opaque tokens stored as SHA-256 hashes in DB. Cookies: `__Host-zerivex_session` (`HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`).
 - **Authorization:** Four-tier decoupling:
@@ -51,14 +51,16 @@ Zerivex operates on a closed-loop security cycle:
 | :--- | :--- | :--- |
 | **Governance & Tooling** | `COMPLETE` | Next.js 16.3.5, TypeScript strict, Vitest 5.0.1, 0 npm audit vulnerabilities. |
 | **Config Validation** | `IMPLEMENTED` | Fail-closed runtime schema validation in `src/core/config/env-validator.ts` with 100% test coverage. |
-| **Database State** | `PLANNED` | PostgreSQL canonical schema designed. Ready for Phase 1 migration execution. |
+| **Database State** | `IMPLEMENTED` | Neon PostgreSQL live; 13 canonical tables migrated (`001_initial_schema.sql`). |
+| **Audit Engine** | `IMPLEMENTED` | Append-only `src/core/audit/audit-service.ts` with sensitive data scrubbing. |
+| **Multi-Tenancy / IDOR**| `IMPLEMENTED` | Tenant-scoped repository layer (`src/core/db/repositories/tenant-repository.ts`). |
 | **API State** | `PLANNED` | Standardized envelope `{ success, data/error }` defined. Endpoints mapped. |
-| **Authentication State**| `PLANNED` | OAuth flow, session token hashing, state machine, and one-time owner bootstrap designed. |
+| **Authentication State**| `PLANNED` | OAuth flow, session token hashing, state machine, and one-time owner bootstrap designed for Phase 2. |
 | **Authorization State** | `PLANNED` | Server-side RBAC & tenant scoping guards specified. No client-side bypasses. |
 | **Scanner State** | `PLANNED` | SafeHttpClient with IP pinning, 6 check modules, and evidence redactor architected. |
 | **Subscription State**  | `PLANNED` | Abstract billing and entitlement interface designed. |
-| **Security State** | `VERIFIED` | 14-point Threat Model Traceability Matrix active; initial security tests passing. |
-| **Test State** | `IMPLEMENTED` | Vitest test suite running; `tests/security/config.test.ts` passing. |
+| **Security State** | `VERIFIED` | 14-point Threat Model Traceability Matrix active; 10/10 security tests passing against live database. |
+| **Test State** | `IMPLEMENTED` | Vitest test suite running; `tests/security/config.test.ts` & `tests/security/database-isolation.test.ts` passing. |
 
 ---
 
@@ -75,14 +77,15 @@ Zerivex operates on a closed-loop security cycle:
 ---
 
 ## 6. Environment State
-- Git repository active on `main` branch.
+- Git repository active on `main` branch, tracking `origin/main` at `https://github.com/OmvedNagre/Zerivex.git`.
+- `.env.local` configured with verified Neon database and CSPRNG secrets.
 - Dependencies audited: **0 vulnerabilities**.
 - TypeScript strict compilation: **Passing cleanly**.
 - Next.js production build: **Compiled successfully**.
-- Security tests: **4/4 passing**.
+- Security tests: **10/10 passing against live PostgreSQL**.
 
 ---
 
 ## 7. Current Hand-off & Next Action
-- **Current Phase Status:** `PHASE 0D — READY FOR REVIEW`
-- **Immediate Next Action:** Obtain Platform Owner sign-off on Phase 0 and proceed to **Phase 1: Secure SaaS Foundation**.
+- **Current Phase Status:** `PHASE 1 — READY FOR REVIEW`
+- **Immediate Next Action:** Obtain Platform Owner sign-off on Phase 1 and proceed to **Phase 2: Authentication + Owner + RBAC**.
