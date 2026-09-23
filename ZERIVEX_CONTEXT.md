@@ -3,7 +3,7 @@
 > **Project:** ZERIVEX  
 > **Tagline:** "Security for software built with AI."  
 > **Brand Principle:** "Verify. Detect. Defend."  
-> **Current Phase:** PHASE 4 — DETERMINISTIC SCANNER ENGINE  
+> **Current Phase:** PHASE 5 — REMEDIATION & REPORTING ENGINE  
 > **Phase Status:** READY_FOR_REVIEW  
 > **Owner Authority:** The platform owner is the final authority for architecture, scope, phase approval, and security trade-offs.  
 > **Security Rule:** Security correctness over visual completion. Never claim a security feature works unless implemented and tested. Never fake findings.
@@ -19,7 +19,7 @@ Zerivex operates on a closed-loop security cycle:
 ---
 
 ## 2. Current Status & Phase State
-- **Current Phase:** `PHASE 4 — DETERMINISTIC SCANNER ENGINE`
+- **Current Phase:** `PHASE 5 — REMEDIATION & REPORTING ENGINE`
 - **Phase Status:** `READY_FOR_REVIEW`
 - **Completed Phases:**
   - `Phase 0A`: Pre-Implementation Discovery (`COMPLETE`)
@@ -30,7 +30,8 @@ Zerivex operates on a closed-loop security cycle:
   - `Phase 2`: Authentication + Owner + RBAC (`COMPLETE` - session token hashing, OAuth PKCE, owner bootstrap, sole owner guard, session revocation, 4-tier RBAC)
   - `Phase 3`: Target Management & Verification (`COMPLETE` - SSRF defense, socket IP pinning, DNS TXT / HTML Meta / HTTP Header verification, active scan authorization lock)
   - `Phase 4`: Deterministic Scanner Engine (`COMPLETE` - 6 check modules, synchronous evidence redaction, deterministic 0-100 scoring, scan execution pipeline, findings triage & lifecycle management)
-- **Next Phase:** `PHASE 5 — REMEDIATION & REPORTING ENGINE` (Blocked on Owner Review & Sign-off)
+  - `Phase 5`: Remediation & Reporting Engine (`COMPLETE` - 23-rule remediation catalog, framework code diffs, closed-loop fix verification, print-ready executive PDF/HTML reports, technical JSON exports)
+- **Next Phase:** `PHASE 6 — DEEP WEB APPLICATION SCANNING` (Blocked on Owner Review & Sign-off)
 
 ---
 
@@ -50,17 +51,16 @@ Zerivex operates on a closed-loop security cycle:
   - `SafeHttpClient` with pre-flight DNS, socket-level IP pinning, CIDR blacklists (loopback, RFC1918, RFC6598, cloud metadata), and chained redirect re-validation.
   - Three independent domain verification protocols: DNS TXT (`_zerivex-challenge.<host>`), HTML `<meta name="zerivex-verification" ...>`, and HTTP header (`X-Zerivex-Verification`).
   - Active scanning authorization lock (ADR-0008): strictly blocks intrusive scans on unverified targets.
-- **Deterministic Scanner Engine & Findings Architecture (Phase 4):**
-  - **Synchronous Evidence Redaction (ADR-0007):** Pre-persistence sanitizer scrubbing OpenAI keys, Anthropic keys, AWS credentials, GitHub tokens, Google API keys, JWTs, DB connection URLs, Private Keys, sensitive HTTP headers, and capping payloads at 64KB. Plaintext secrets NEVER enter PostgreSQL.
-  - **Deterministic Scoring Engine:** Mathematical formula starting at 100 with fixed deductions (-25 Critical, -15 High, -5 Medium, -2 Low, 0 Informational), clamped between [0, 100]. Zero heuristic or subjective scoring.
-  - **6 Deterministic Check Modules:**
-    1. `tlsCheck`: Audits unencrypted HTTP transport, certificate validity, expiration, and HSTS headers.
-    2. `headersCheck`: Evaluates CSP (flags unsafe-inline/eval), X-Content-Type-Options nosniff, clickjacking (X-Frame-Options/frame-ancestors), Referrer-Policy, and server version disclosures.
-    3. `corsCheck`: Detects wildcard origins with credentials, arbitrary origin reflection, and null origin reflections.
-    4. `exposedSecretsCheck`: Scans for exposed `.env`, `.git/HEAD`, `.git/config`, `openapi.json`, and `swagger.json` with strict non-200 / error page verification.
-    5. `cookiesCheck`: Audits missing `Secure`, missing `HttpOnly`, and missing `SameSite` cookie flags.
-    6. `aiCodeSmellsCheck`: Scans for stack trace / path disclosures, exposed GraphQL introspection, and exposed debug/test/seed routes.
-  - **Findings Management:** Lifecycle states (`OPEN`, `CONFIRMED`, `FIXED`, `ACCEPTED_RISK`, `FALSE_POSITIVE`). Enforces mandatory justification for `ACCEPTED_RISK` and records audit events.
+- **Deterministic Scanner Engine (Phase 4):**
+  - **Synchronous Evidence Redaction (ADR-0007):** Pre-persistence sanitizer scrubbing all API keys, credentials, JWTs, DB URLs, Private Keys, sensitive headers, and capping payloads at 64KB. Plaintext secrets NEVER enter PostgreSQL.
+  - **Deterministic Scoring Engine:** Mathematical formula starting at 100 with fixed deductions (-25 Critical, -15 High, -5 Medium, -2 Low, 0 Informational), clamped between [0, 100].
+  - **6 Deterministic Check Modules:** `tlsCheck`, `headersCheck`, `corsCheck`, `exposedSecretsCheck`, `cookiesCheck`, `aiCodeSmellsCheck`.
+- **Remediation & Reporting Architecture (Phase 5):**
+  - **Remediation Knowledge Catalog (`remediation-catalog.ts`):** Indexes all 23 scan rules with plain-English summaries, security impact analyses, copy-pasteable unified code diffs (Next.js, Express, Nginx), and local CLI test commands.
+  - **Closed-Loop Fix Verification (`fix-verifier.ts`):** Single-rule targeted re-test against target endpoints to mathematically verify remediations, automatically transitioning findings to `FIXED` (with `FINDING_VERIFIED_FIXED` audit log) or `REOPENED` (with `FINDING_FIX_FAILED` audit log).
+  - **Executive & Technical Reporting (`report-generator.ts`):**
+    - Executive HTML / PDF Report with printable styling (`@media print`), security scorecards, OWASP Top 10 breakdown, and findings remediation diffs.
+    - Machine-readable technical JSON report format for CI/CD and developer tools.
 
 ---
 
@@ -79,9 +79,10 @@ Zerivex operates on a closed-loop security cycle:
 | **SSRF Defense**        | `IMPLEMENTED` | `ip-validator.ts`, `safe-http-client.ts` with socket-level IP pinning and redirect re-validation. |
 | **Scanner Engine**      | `IMPLEMENTED` | 6 check modules, synchronous evidence redactor, deterministic 0-100 scorer, active scan authorization gate. |
 | **Findings Management** | `IMPLEMENTED` | Unified findings inventory, status lifecycle triage, justification-backed risk acceptance, audit trail. |
-| **Dashboard UI**        | `IMPLEMENTED` | `/dashboard`, `/dashboard/targets`, `/dashboard/scans`, `/dashboard/scans/[id]`, `/dashboard/findings`, `/dashboard/settings/security`, `/admin`. |
-| **Subscription State**  | `PLANNED` | Abstract billing and entitlement interface designed. |
-| **Security State** | `VERIFIED` | 65/65 security tests passing against live database across config, isolation, session, RBAC, targets, and scanner engine. |
+| **Remediation Engine**  | `IMPLEMENTED` | 23-rule catalog with framework diffs, CLI checks, and targeted fix verification service. |
+| **Reporting Engine**    | `IMPLEMENTED` | Executive HTML / PDF reports with print styling, technical JSON exports, download API routes. |
+| **Dashboard UI**        | `IMPLEMENTED` | Complete UI with scans, scan reports, findings inventory, fix guides, export modals, and sessions. |
+| **Security State** | `VERIFIED` | 76/76 security tests passing against live database across all 7 test suites. |
 | **Test State** | `VERIFIED` | Vitest test suite running; `tests/security/` passing 100%. |
 
 ---
@@ -103,11 +104,11 @@ Zerivex operates on a closed-loop security cycle:
 - `.env.local` configured with verified Neon database and CSPRNG secrets.
 - Dependencies audited: **0 vulnerabilities**.
 - TypeScript strict compilation: **Passing cleanly (`tsc --noEmit`)**.
-- Next.js production build: **Compiled successfully (`next build`, all 22 routes)**.
-- Security tests: **65/65 passing against live PostgreSQL**.
+- Next.js production build: **Compiled successfully (`next build`, all 24 routes)**.
+- Security tests: **76/76 passing against live PostgreSQL**.
 
 ---
 
 ## 7. Current Hand-off & Next Action
-- **Current Phase Status:** `PHASE 4 — READY FOR REVIEW`
-- **Immediate Next Action:** Obtain Platform Owner sign-off on Phase 4 and proceed to **Phase 5: Remediation & Reporting Engine**.
+- **Current Phase Status:** `PHASE 5 — READY FOR REVIEW`
+- **Immediate Next Action:** Obtain Platform Owner sign-off on Phase 5 and proceed to **Phase 6: Deep Web Application Scanning**.
