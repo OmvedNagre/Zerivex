@@ -73,20 +73,24 @@ function sanitizeMetadata(data?: Record<string, unknown>): Record<string, unknow
  * Append an immutable audit record to the database.
  * Strictly append-only: this service never modifies or deletes audit logs.
  */
-export async function recordAuditEvent(params: {
-  organizationId?: string | null;
-  actorUserId?: string | null;
-  action: AuditAction;
-  resourceType: string;
-  resourceId?: string | null;
-  reason?: string | null;
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  metadata?: Record<string, unknown>;
-}): Promise<AuditLogEntry> {
+export async function recordAuditEvent(
+  params: {
+    organizationId?: string | null;
+    actorUserId?: string | null;
+    action: AuditAction;
+    resourceType: string;
+    resourceId?: string | null;
+    reason?: string | null;
+    ipAddress?: string | null;
+    userAgent?: string | null;
+    metadata?: Record<string, unknown>;
+  },
+  client?: { query: <R extends import('pg').QueryResultRow = import('pg').QueryResultRow>(text: string, params?: unknown[]) => Promise<import('pg').QueryResult<R>> }
+): Promise<AuditLogEntry> {
   const sanitizedMeta = sanitizeMetadata(params.metadata);
+  const dbExecutor = client || { query };
 
-  const res = await query<AuditLogEntry>(
+  const res = await dbExecutor.query<AuditLogEntry>(
     `
     INSERT INTO audit_logs (
       organization_id,

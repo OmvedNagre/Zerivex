@@ -3,7 +3,7 @@
 > **Project:** ZERIVEX  
 > **Tagline:** "Security for software built with AI."  
 > **Brand Principle:** "Verify. Detect. Defend."  
-> **Current Phase:** PHASE 1 — SECURE SAAS FOUNDATION  
+> **Current Phase:** PHASE 2 — AUTHENTICATION + OWNER + RBAC  
 > **Phase Status:** READY_FOR_REVIEW  
 > **Owner Authority:** The platform owner is the final authority for architecture, scope, phase approval, and security trade-offs.  
 > **Security Rule:** Security correctness over visual completion. Never claim a security feature works unless implemented and tested. Never fake findings.
@@ -19,14 +19,16 @@ Zerivex operates on a closed-loop security cycle:
 ---
 
 ## 2. Current Status & Phase State
-- **Current Phase:** `PHASE 1 — SECURE SAAS FOUNDATION`
+- **Current Phase:** `PHASE 2 — AUTHENTICATION + OWNER + RBAC`
 - **Phase Status:** `READY_FOR_REVIEW`
-- **Previous Phases:**
+- **Completed Phases:**
   - `Phase 0A`: Pre-Implementation Discovery (`COMPLETE`)
   - `Phase 0B`: Owner Provisioning (`COMPLETE` - Neon PostgreSQL connected, secrets configured in `.env.local`)
   - `Phase 0C`: Governance & Tooling (`COMPLETE` - Next.js 16.3.5, strict TS, 0 audit vulnerabilities)
   - `Phase 0D`: Phase 0 Review & Gate Sign-off (`COMPLETE`)
-- **Next Phase:** `PHASE 2 — AUTHENTICATION + OWNER + RBAC` (Blocked on Owner Review & Sign-off)
+  - `Phase 1`: Secure SaaS Foundation (`COMPLETE` - live Neon DB schema, multi-tenant repository, append-only audit trail)
+  - `Phase 2`: Authentication + Owner + RBAC (`COMPLETE` - session token hashing, OAuth PKCE, owner bootstrap, sole owner guard, session revocation, 4-tier RBAC)
+- **Next Phase:** `PHASE 3 — TARGET MANAGEMENT & VERIFICATION` (Blocked on Owner Review & Sign-off)
 
 ---
 
@@ -35,8 +37,8 @@ Zerivex operates on a closed-loop security cycle:
 - **Styling:** Vanilla CSS design tokens (`src/styles/globals.css`), modern typography, high-density accessible UI. Zero cyberpunk / neon / fake terminal gimmicks.
 - **Backend Services:** Node.js 22 LTS native HTTP/TLS modules.
 - **Database:** Neon Serverless PostgreSQL 16+ with connection pooling, SSL enforcement, UUIDv4 PKs, foreign keys, cascading constraints, and append-only audit tables. SQLite is explicitly excluded from production (ADR-0006).
-- **Authentication:** Dual OAuth 2.0 / OIDC (Google & GitHub) with Authorization Code Flow + PKCE + state + nonce.
-- **Session Management:** Cryptographically random 256-bit opaque tokens stored as SHA-256 hashes in DB. Cookies: `__Host-zerivex_session` (`HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`).
+- **Authentication:** Dual OAuth 2.0 / OIDC (Google & GitHub) with Authorization Code Flow + PKCE + state + nonce, plus hermetic mock provider for automated testing.
+- **Session Management:** Cryptographically random 256-bit opaque tokens stored strictly as SHA-256 hashes in DB. Cookies: `__Host-zerivex_session` (`HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`). Single and multi-device revocation.
 - **Authorization:** Four-tier decoupling:
   1. *Authentication:* Who are you? (User + Identity + Session)
   2. *Platform Role:* What can you do? (OWNER > SUPER_ADMIN > ADMIN > SUPPORT > USER)
@@ -52,15 +54,16 @@ Zerivex operates on a closed-loop security cycle:
 | **Governance & Tooling** | `COMPLETE` | Next.js 16.3.5, TypeScript strict, Vitest 5.0.1, 0 npm audit vulnerabilities. |
 | **Config Validation** | `IMPLEMENTED` | Fail-closed runtime schema validation in `src/core/config/env-validator.ts` with 100% test coverage. |
 | **Database State** | `IMPLEMENTED` | Neon PostgreSQL live; 13 canonical tables migrated (`001_initial_schema.sql`). |
-| **Audit Engine** | `IMPLEMENTED` | Append-only `src/core/audit/audit-service.ts` with sensitive data scrubbing. |
+| **Audit Engine** | `IMPLEMENTED` | Append-only `src/core/audit/audit-service.ts` with sensitive data scrubbing & transaction client support. |
 | **Multi-Tenancy / IDOR**| `IMPLEMENTED` | Tenant-scoped repository layer (`src/core/db/repositories/tenant-repository.ts`). |
-| **API State** | `PLANNED` | Standardized envelope `{ success, data/error }` defined. Endpoints mapped. |
-| **Authentication State**| `PLANNED` | OAuth flow, session token hashing, state machine, and one-time owner bootstrap designed for Phase 2. |
-| **Authorization State** | `PLANNED` | Server-side RBAC & tenant scoping guards specified. No client-side bypasses. |
-| **Scanner State** | `PLANNED` | SafeHttpClient with IP pinning, 6 check modules, and evidence redactor architected. |
+| **Authentication State**| `IMPLEMENTED` | SHA-256 session token hashing, Google PKCE + GitHub OAuth, `__Host-zerivex_session` cookie, logout/logout-all. |
+| **Platform Bootstrap**  | `IMPLEMENTED` | Atomic one-time owner bootstrap via `INITIAL_OWNER_EMAIL`, `platform_bootstraps` row lock, sole owner demotion protection. |
+| **Authorization / RBAC**| `IMPLEMENTED` | `src/core/rbac/permissions.ts`, `authorization-guard.ts` with server-side role/permission guards & CSRF defense. |
+| **Admin & Security UI** | `IMPLEMENTED` | `/login`, `/dashboard`, `/dashboard/settings/security` (session revocation), `/admin` control center. |
+| **Scanner State** | `PLANNED` | SafeHttpClient with IP pinning, 6 check modules, and evidence redactor architected for Phase 4. |
 | **Subscription State**  | `PLANNED` | Abstract billing and entitlement interface designed. |
-| **Security State** | `VERIFIED` | 14-point Threat Model Traceability Matrix active; 10/10 security tests passing against live database. |
-| **Test State** | `IMPLEMENTED` | Vitest test suite running; `tests/security/config.test.ts` & `tests/security/database-isolation.test.ts` passing. |
+| **Security State** | `VERIFIED` | 23/23 security tests passing against live database across config, isolation, session, and RBAC. |
+| **Test State** | `VERIFIED` | Vitest test suite running; `tests/security/` passing 100%. |
 
 ---
 
@@ -80,12 +83,12 @@ Zerivex operates on a closed-loop security cycle:
 - Git repository active on `main` branch, tracking `origin/main` at `https://github.com/OmvedNagre/Zerivex.git`.
 - `.env.local` configured with verified Neon database and CSPRNG secrets.
 - Dependencies audited: **0 vulnerabilities**.
-- TypeScript strict compilation: **Passing cleanly**.
-- Next.js production build: **Compiled successfully**.
-- Security tests: **10/10 passing against live PostgreSQL**.
+- TypeScript strict compilation: **Passing cleanly (`tsc --noEmit`)**.
+- Next.js production build: **Compiled successfully (`next build`)**.
+- Security tests: **23/23 passing against live PostgreSQL**.
 
 ---
 
 ## 7. Current Hand-off & Next Action
-- **Current Phase Status:** `PHASE 1 — READY FOR REVIEW`
-- **Immediate Next Action:** Obtain Platform Owner sign-off on Phase 1 and proceed to **Phase 2: Authentication + Owner + RBAC**.
+- **Current Phase Status:** `PHASE 2 — READY FOR REVIEW`
+- **Immediate Next Action:** Obtain Platform Owner sign-off on Phase 2 and proceed to **Phase 3: Target Management & Verification**.
