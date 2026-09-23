@@ -86,7 +86,7 @@
 ---
 
 ## 4. Test & Verification State
-- **Full Test Suite:** 130/130 tests passing across all 10 test suites (`config.test.ts`, `database-isolation.test.ts`, `session.test.ts`, `auth-rbac.test.ts`, `target-verification.test.ts`, `scanner-engine.test.ts`, `remediation-reporting.test.ts`, `active-scanner.test.ts`, `attack-surface.test.ts`, `scheduling-monitoring.test.ts`).
+- **Full Test Suite:** 132/132 tests passing across all 10 test suites (`config.test.ts`, `database-isolation.test.ts`, `session.test.ts`, `auth-rbac.test.ts`, `target-verification.test.ts`, `scanner-engine.test.ts`, `remediation-reporting.test.ts`, `active-scanner.test.ts`, `attack-surface.test.ts`, `scheduling-monitoring.test.ts`).
 - **Typecheck:** `tsc --noEmit` passed with 0 errors.
 - **Build:** `next build` passed with 0 errors (all 29 routes compiled in 701ms).
 - **Dependency Audit:** `npm audit` returned 0 vulnerabilities.

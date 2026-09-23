@@ -225,6 +225,40 @@ describe('Phase 8: Scheduling, Monitoring & Automation Engine', () => {
       });
       expect(resumed.isActive).toBe(true);
     });
+
+    it('lists scan schedules filtered by target and organization', async () => {
+      const targetSchedules = await getScanSchedulesByTarget(targetAId, orgAId);
+      expect(targetSchedules.length).toBeGreaterThanOrEqual(1);
+
+      const orgSchedules = await getScanSchedulesByOrg(orgAId);
+      expect(orgSchedules.length).toBeGreaterThanOrEqual(1);
+
+      // Org B cannot view Org A target schedules
+      const orgBSchedules = await getScanSchedulesByTarget(targetAId, orgBId);
+      expect(orgBSchedules.length).toBe(0);
+    });
+
+    it('updates, records execution, and deletes scan schedule via validated service functions', async () => {
+      const updated = await updateScanScheduleWithValidation(createdScheduleId, orgAId, userAId, {
+        name: 'Service Validated Update',
+      });
+      expect(updated.name).toBe('Service Validated Update');
+
+      const scanRes = await query<{ id: string }>(`
+        INSERT INTO scan_jobs (organization_id, target_id, requester_user_id, scan_mode, status)
+        VALUES ($1, $2, $3, 'PUBLIC_PASSIVE', 'COMPLETED')
+        RETURNING id
+      `, [orgAId, targetAId, userAId]);
+      const validJobId = scanRes.rows[0]!.id;
+
+      const futureDate = new Date(Date.now() + 3600000);
+      await recordScheduleExecution(createdScheduleId, validJobId, futureDate);
+      const afterRecord = (await getScanScheduleById(createdScheduleId, orgAId))!;
+      expect(afterRecord.lastScanJobId).toBe(validJobId);
+
+      const deleted = await deleteScanScheduleWithValidation(createdScheduleId, orgAId, userAId);
+      expect(deleted).toBe(true);
+    });
   });
 
   describe('3. Target Verification Gate on Scheduled Scans (ADR-0008)', () => {
