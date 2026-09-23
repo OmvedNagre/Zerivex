@@ -51,6 +51,9 @@ function DashboardHeader() {
             <a href="/dashboard/scans" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
               Scans
             </a>
+            <a href="/dashboard/findings" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+              Findings
+            </a>
             <a href="/dashboard/settings/security" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
               Sessions
             </a>
