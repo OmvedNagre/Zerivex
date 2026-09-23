@@ -42,6 +42,18 @@ function findCheckModuleForRule(ruleId: string): ScanCheck | null {
   if (ruleId.startsWith('ZX-AI')) {
     return ALL_SCAN_CHECKS.find((c) => c.id === 'check-ai-code-smells') || null;
   }
+  if (ruleId.startsWith('ZX-ACT-SQLI')) {
+    return ALL_SCAN_CHECKS.find((c) => c.id === 'check-sqli') || null;
+  }
+  if (ruleId.startsWith('ZX-ACT-XSS')) {
+    return ALL_SCAN_CHECKS.find((c) => c.id === 'check-xss') || null;
+  }
+  if (ruleId.startsWith('ZX-ACT-REDIR')) {
+    return ALL_SCAN_CHECKS.find((c) => c.id === 'check-open-redirect') || null;
+  }
+  if (ruleId.startsWith('ZX-ACT-TRAV')) {
+    return ALL_SCAN_CHECKS.find((c) => c.id === 'check-path-traversal') || null;
+  }
   return null;
 }
 
@@ -66,6 +78,7 @@ export async function verifyFindingFix(params: {
     targetId: string;
     targetUrl: string;
     hostname: string;
+    verificationStatus: string;
   }>(
     `
     SELECT
@@ -76,7 +89,8 @@ export async function verifyFindingFix(params: {
       f.resource_endpoint as "resourceEndpoint",
       f.target_id as "targetId",
       t.target_url as "targetUrl",
-      t.hostname
+      t.hostname,
+      t.verification_status as "verificationStatus"
     FROM findings f
     JOIN targets t ON t.id = f.target_id
     WHERE f.id = $1 AND f.organization_id = $2
@@ -95,11 +109,15 @@ export async function verifyFindingFix(params: {
     throw new Error(`No verification module available for rule "${finding.ruleId}"`);
   }
 
+  if (check.requiresActiveScan && finding.verificationStatus !== 'VERIFIED') {
+    throw new Error(`Target must be verified to re-test active vulnerability finding "${finding.ruleId}"`);
+  }
+
   // 3. Execute targeted re-test
   const scanContext: ScanContext = {
     targetUrl: finding.targetUrl,
     hostname: finding.hostname,
-    scanMode: 'PUBLIC_PASSIVE',
+    scanMode: finding.verificationStatus === 'VERIFIED' ? 'VERIFIED_ACTIVE' : 'PUBLIC_PASSIVE',
     organizationId,
     targetId: finding.targetId,
   };

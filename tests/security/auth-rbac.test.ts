@@ -126,10 +126,18 @@ describe('Authentication & RBAC Security Controls', () => {
     );
     const ownerId = ownerRes.rows[0]!.id;
 
-    // Attempting to demote the sole owner MUST throw an error
-    await expect(verifySoleOwnerProtection(ownerId)).rejects.toThrow(
-      /Cannot demote or delete the sole Platform Owner/
-    );
+    // Temporarily suspend any other existing owners so ownerId is guaranteed to be the sole active owner
+    await query("UPDATE users SET status = 'SUSPENDED' WHERE role = 'OWNER' AND id != $1", [ownerId]);
+
+    try {
+      // Attempting to demote the sole owner MUST throw an error
+      await expect(verifySoleOwnerProtection(ownerId)).rejects.toThrow(
+        /Cannot demote or delete the sole Platform Owner/
+      );
+    } finally {
+      // Restore other owners back to ACTIVE
+      await query("UPDATE users SET status = 'ACTIVE' WHERE role = 'OWNER' AND id != $1", [ownerId]);
+    }
   });
 
   it('evaluates RBAC permissions strictly per role', () => {

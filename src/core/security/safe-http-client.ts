@@ -24,6 +24,7 @@ export interface SafeFetchOptions {
   headers?: Record<string, string>;
   timeoutMs?: number;
   maxRedirects?: number;
+  followRedirects?: boolean;
   maxBodyBytes?: number;
 }
 
@@ -207,6 +208,11 @@ export async function safeFetch(
 
       request.end();
     });
+
+    // If followRedirects is explicitly disabled, return immediately
+    if (options.followRedirects === false) {
+      return response;
+    }
 
     // Check for redirects (301, 302, 303, 307, 308)
     const status = response.statusCode;

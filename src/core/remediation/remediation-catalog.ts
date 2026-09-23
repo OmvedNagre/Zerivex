@@ -723,6 +723,151 @@ export default function ErrorBoundary({ error, reset }: { error: Error; reset: (
     },
     cliVerification: 'curl -s -o /dev/null -w "%{http_code}" https://YOUR_TARGET_URL/api/debug',
   },
+
+  // ==========================================
+  // ACTIVE SECURITY TESTING (ZX-ACT-*)
+  // ==========================================
+  'ZX-ACT-SQLI-001': {
+    ruleId: 'ZX-ACT-SQLI-001',
+    title: 'SQL Injection (SQLi) Vulnerability Detected',
+    summary: 'Untrusted user input is directly concatenated or interpolated into a dynamic database query string, allowing remote attackers to alter query logic.',
+    impact: 'Full database compromise, authentication bypass, data exfiltration, unauthorized modification or deletion of all database records.',
+    cwe: 'CWE-89: Improper Neutralization of Special Elements used in an SQL Command',
+    owasp: 'A03:2021-Injection',
+    frameworks: {
+      nextjs: {
+        filename: 'src/app/api/users/route.ts',
+        explanation: 'Replace dynamic string template concatenation with parameterized SQL bindings.',
+        diff: ` export async function GET(request: Request) {
+   const { searchParams } = new URL(request.url);
+   const id = searchParams.get('id');
+-  const result = await db.query(\`SELECT * FROM users WHERE id = '\${id}'\`);
++  const result = await db.query('SELECT * FROM users WHERE id = $1', [id]);
+   return Response.json(result.rows);
+ }`,
+      },
+      express: {
+        filename: 'src/routes/users.ts',
+        explanation: 'Use parameterized queries with the node-postgres (pg) library or ORM.',
+        diff: ` router.get('/users', async (req, res) => {
+-  const { rows } = await pool.query(\`SELECT * FROM users WHERE email = '\${req.query.email}'\`);
++  const { rows } = await pool.query('SELECT * FROM users WHERE email = $1', [req.query.email]);
+   res.json(rows);
+ });`,
+      },
+    },
+    cliVerification: 'curl -s "https://YOUR_TARGET_URL/api/users?id=1%27"',
+  },
+
+  'ZX-ACT-XSS-001': {
+    ruleId: 'ZX-ACT-XSS-001',
+    title: 'Reflected Cross-Site Scripting (XSS) Vulnerability',
+    summary: 'User-supplied query parameters are reflected back into the HTML response without contextual entity encoding or sanitization.',
+    impact: 'Execution of arbitrary malicious JavaScript in victim browsers, session hijacking via stolen authentication tokens, and account takeover.',
+    cwe: 'CWE-79: Improper Neutralization of Input During Web Page Generation',
+    owasp: 'A03:2021-Injection',
+    frameworks: {
+      nextjs: {
+        filename: 'src/app/search/page.tsx',
+        explanation: 'Avoid dangerouslySetInnerHTML and use default JSX escaping for untrusted user inputs.',
+        diff: ` export default function SearchPage({ searchParams }: { searchParams: { q: string } }) {
+   return (
+     <div>
+-      <div dangerouslySetInnerHTML={{ __html: searchParams.q }} />
++      <div>{searchParams.q}</div>
+     </div>
+   );
+ }`,
+      },
+      express: {
+        filename: 'src/routes/search.ts',
+        explanation: 'Contextually HTML entity-encode all user input before interpolating into HTML templates.',
+        diff: `+import escapeHtml from 'escape-html';
+ 
+ router.get('/search', (req, res) => {
+-  res.send(\`<h1>Results for: \${req.query.q}</h1>\`);
++  res.send(\`<h1>Results for: \${escapeHtml(req.query.q as string)}</h1>\`);
+ });`,
+      },
+    },
+    cliVerification: 'curl -s "https://YOUR_TARGET_URL/search?q=%22%3E%3Cscript%3Ealert(1)%3C%2Fscript%3E" | grep "<script>alert(1)</script>"',
+  },
+
+  'ZX-ACT-REDIR-001': {
+    ruleId: 'ZX-ACT-REDIR-001',
+    title: 'Unvalidated Open Redirect Vulnerability',
+    summary: 'The application redirects users to destination URLs supplied via query parameters without validating against an allowed whitelist of internal paths.',
+    impact: 'Attackers craft believable phishing links using your trusted domain to lure victims to malicious websites.',
+    cwe: 'CWE-601: URL Redirection to Untrusted Site',
+    owasp: 'A01:2021-Broken Access Control',
+    frameworks: {
+      nextjs: {
+        filename: 'src/app/auth/callback/route.ts',
+        explanation: 'Verify that the redirection target is a relative path starting with / and not //.',
+        diff: ` export async function GET(request: Request) {
+   const { searchParams } = new URL(request.url);
+   const rawNext = searchParams.get('next') || '/dashboard';
+-  return NextResponse.redirect(new URL(rawNext, request.url));
++  const safeNext = (rawNext.startsWith('/') && !rawNext.startsWith('//')) ? rawNext : '/dashboard';
++  return NextResponse.redirect(new URL(safeNext, request.url));
+ }`,
+      },
+      express: {
+        filename: 'src/routes/auth.ts',
+        explanation: 'Enforce strict relative URL validation before issuing redirect responses.',
+        diff: ` router.get('/login-return', (req, res) => {
+-  res.redirect(req.query.redirect as string || '/');
++  const target = (req.query.redirect as string) || '/';
++  const isSafe = target.startsWith('/') && !target.startsWith('//');
++  res.redirect(isSafe ? target : '/');
+ });`,
+      },
+    },
+    cliVerification: 'curl -s -I "https://YOUR_TARGET_URL/login?redirect=https://example.com" | grep -i "Location:"',
+  },
+
+  'ZX-ACT-TRAV-001': {
+    ruleId: 'ZX-ACT-TRAV-001',
+    title: 'Path Traversal / Arbitrary File Read Vulnerability',
+    summary: 'File path parameters accept dot-dot-slash sequence payloads (../ or ..\\), allowing remote attackers to traverse directory boundaries and read host operating system files.',
+    impact: 'Exposure of sensitive host OS files (/etc/passwd, environment configs, SSH keys, application source code).',
+    cwe: 'CWE-22: Improper Limitation of a Pathname to a Restricted Directory',
+    owasp: 'A01:2021-Broken Access Control',
+    frameworks: {
+      nextjs: {
+        filename: 'src/app/api/docs/route.ts',
+        explanation: 'Normalize paths using path.resolve and verify they remain within the intended base directory.',
+        diff: ` import path from 'path';
+ import fs from 'fs/promises';
+ 
+ export async function GET(request: Request) {
+   const { searchParams } = new URL(request.url);
+   const filename = searchParams.get('file') || 'readme.txt';
+-  const filePath = path.join(BASE_DIR, filename);
+-  const content = await fs.readFile(filePath, 'utf-8');
++  const resolvedPath = path.resolve(BASE_DIR, filename);
++  if (!resolvedPath.startsWith(BASE_DIR)) {
++    return new Response('Access Denied', { status: 403 });
++  }
++  const content = await fs.readFile(resolvedPath, 'utf-8');
+   return new Response(content);
+ }`,
+      },
+      express: {
+        filename: 'src/routes/files.ts',
+        explanation: 'Verify canonical path prefix before serving files from the filesystem.',
+        diff: ` router.get('/download', (req, res) => {
+-  res.sendFile(path.join(__dirname, 'public', req.query.file as string));
++  const safePath = path.resolve(__dirname, 'public', req.query.file as string);
++  if (!safePath.startsWith(path.resolve(__dirname, 'public'))) {
++    return res.status(403).send('Forbidden');
++  }
++  res.sendFile(safePath);
+ });`,
+      },
+    },
+    cliVerification: 'curl -s "https://YOUR_TARGET_URL/api/download?file=../../../../etc/passwd"',
+  },
 };
 
 /**

@@ -12,6 +12,10 @@ import { corsCheck } from './checks/cors-check';
 import { exposedSecretsCheck } from './checks/exposed-secrets-check';
 import { cookiesCheck } from './checks/cookies-check';
 import { aiCodeSmellsCheck } from './checks/ai-code-smells-check';
+import { sqliCheck } from './checks/sqli-check';
+import { xssCheck } from './checks/xss-check';
+import { openRedirectCheck } from './checks/open-redirect-check';
+import { pathTraversalCheck } from './checks/path-traversal-check';
 
 export const ALL_SCAN_CHECKS: ScanCheck[] = [
   tlsCheck,
@@ -20,6 +24,10 @@ export const ALL_SCAN_CHECKS: ScanCheck[] = [
   exposedSecretsCheck,
   cookiesCheck,
   aiCodeSmellsCheck,
+  sqliCheck,
+  xssCheck,
+  openRedirectCheck,
+  pathTraversalCheck,
 ];
 
 export interface ScanJobRecord {

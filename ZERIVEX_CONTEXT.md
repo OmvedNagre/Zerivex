@@ -3,7 +3,7 @@
 > **Project:** ZERIVEX  
 > **Tagline:** "Security for software built with AI."  
 > **Brand Principle:** "Verify. Detect. Defend."  
-> **Current Phase:** PHASE 5 — REMEDIATION & REPORTING ENGINE  
+> **Current Phase:** PHASE 6 — DEEP WEB APPLICATION SCANNING (ACTIVE SECURITY TESTING)  
 > **Phase Status:** READY_FOR_REVIEW  
 > **Owner Authority:** The platform owner is the final authority for architecture, scope, phase approval, and security trade-offs.  
 > **Security Rule:** Security correctness over visual completion. Never claim a security feature works unless implemented and tested. Never fake findings.
@@ -19,7 +19,7 @@ Zerivex operates on a closed-loop security cycle:
 ---
 
 ## 2. Current Status & Phase State
-- **Current Phase:** `PHASE 5 — REMEDIATION & REPORTING ENGINE`
+- **Current Phase:** `PHASE 6 — DEEP WEB APPLICATION SCANNING (ACTIVE SECURITY TESTING)`
 - **Phase Status:** `READY_FOR_REVIEW`
 - **Completed Phases:**
   - `Phase 0A`: Pre-Implementation Discovery (`COMPLETE`)
@@ -31,7 +31,8 @@ Zerivex operates on a closed-loop security cycle:
   - `Phase 3`: Target Management & Verification (`COMPLETE` - SSRF defense, socket IP pinning, DNS TXT / HTML Meta / HTTP Header verification, active scan authorization lock)
   - `Phase 4`: Deterministic Scanner Engine (`COMPLETE` - 6 check modules, synchronous evidence redaction, deterministic 0-100 scoring, scan execution pipeline, findings triage & lifecycle management)
   - `Phase 5`: Remediation & Reporting Engine (`COMPLETE` - 23-rule remediation catalog, framework code diffs, closed-loop fix verification, print-ready executive PDF/HTML reports, technical JSON exports)
-- **Next Phase:** `PHASE 6 — DEEP WEB APPLICATION SCANNING` (Blocked on Owner Review & Sign-off)
+  - `Phase 6`: Deep Web Application Scanning (`COMPLETE` - 4 active check modules for SQLi, XSS, Open Redirect, and Path Traversal; token bucket rate limiter & circuit breaker; remediation catalog integration; 95/95 test suite passing)
+- **Next Phase:** `PHASE 7 — COMPREHENSIVE SECURITY TESTING & ATTACK SURFACE ENGINE` (Blocked on Owner Review & Sign-off)
 
 ---
 
@@ -51,13 +52,18 @@ Zerivex operates on a closed-loop security cycle:
   - `SafeHttpClient` with pre-flight DNS, socket-level IP pinning, CIDR blacklists (loopback, RFC1918, RFC6598, cloud metadata), and chained redirect re-validation.
   - Three independent domain verification protocols: DNS TXT (`_zerivex-challenge.<host>`), HTML `<meta name="zerivex-verification" ...>`, and HTTP header (`X-Zerivex-Verification`).
   - Active scanning authorization lock (ADR-0008): strictly blocks intrusive scans on unverified targets.
-- **Deterministic Scanner Engine (Phase 4):**
+- **Deterministic Scanner Engine (Phases 4 & 6):**
   - **Synchronous Evidence Redaction (ADR-0007):** Pre-persistence sanitizer scrubbing all API keys, credentials, JWTs, DB URLs, Private Keys, sensitive headers, and capping payloads at 64KB. Plaintext secrets NEVER enter PostgreSQL.
   - **Deterministic Scoring Engine:** Mathematical formula starting at 100 with fixed deductions (-25 Critical, -15 High, -5 Medium, -2 Low, 0 Informational), clamped between [0, 100].
-  - **6 Deterministic Check Modules:** `tlsCheck`, `headersCheck`, `corsCheck`, `exposedSecretsCheck`, `cookiesCheck`, `aiCodeSmellsCheck`.
-- **Remediation & Reporting Architecture (Phase 5):**
-  - **Remediation Knowledge Catalog (`remediation-catalog.ts`):** Indexes all 23 scan rules with plain-English summaries, security impact analyses, copy-pasteable unified code diffs (Next.js, Express, Nginx), and local CLI test commands.
-  - **Closed-Loop Fix Verification (`fix-verifier.ts`):** Single-rule targeted re-test against target endpoints to mathematically verify remediations, automatically transitioning findings to `FIXED` (with `FINDING_VERIFIED_FIXED` audit log) or `REOPENED` (with `FINDING_FIX_FAILED` audit log).
+  - **10 Deterministic Check Modules (6 Passive + 4 Active):**
+    - Passive: `tlsCheck`, `headersCheck`, `corsCheck`, `exposedSecretsCheck`, `cookiesCheck`, `aiCodeSmellsCheck`.
+    - Active: `sqliCheck`, `xssCheck`, `openRedirectCheck`, `pathTraversalCheck`.
+  - **Active Rate Limiter & Circuit Breaker Engine:**
+    - Token bucket per domain (5 req/sec cap, 5 burst capacity) to prevent denial of service.
+    - Automatic circuit breaker tripping to OPEN after 5 consecutive 5xx or connection failures.
+- **Remediation & Reporting Architecture (Phases 5 & 6):**
+  - **Remediation Knowledge Catalog (`remediation-catalog.ts`):** Indexes all 27 scan rules (including `ZX-ACT-SQLI-001`, `ZX-ACT-XSS-001`, `ZX-ACT-REDIR-001`, `ZX-ACT-TRAV-001`) with plain-English summaries, security impact analyses, copy-pasteable unified code diffs (Next.js, Express, Nginx), and local CLI test commands.
+  - **Closed-Loop Fix Verification (`fix-verifier.ts`):** Single-rule targeted re-test against target endpoints to mathematically verify remediations, automatically transitioning findings to `FIXED` (with `FINDING_VERIFIED_FIXED` audit log) or `REOPENED` (with `FINDING_FIX_FAILED` audit log). Enforces active authorization gate on re-tests.
   - **Executive & Technical Reporting (`report-generator.ts`):**
     - Executive HTML / PDF Report with printable styling (`@media print`), security scorecards, OWASP Top 10 breakdown, and findings remediation diffs.
     - Machine-readable technical JSON report format for CI/CD and developer tools.
@@ -77,12 +83,13 @@ Zerivex operates on a closed-loop security cycle:
 | **Authorization / RBAC**| `IMPLEMENTED` | `src/core/rbac/permissions.ts`, `authorization-guard.ts` with server-side role/permission guards & CSRF defense. |
 | **Target Management**   | `IMPLEMENTED` | `target-service.ts`, `verification-service.ts`, `/dashboard/targets`, `/dashboard/targets/[id]`. |
 | **SSRF Defense**        | `IMPLEMENTED` | `ip-validator.ts`, `safe-http-client.ts` with socket-level IP pinning and redirect re-validation. |
-| **Scanner Engine**      | `IMPLEMENTED` | 6 check modules, synchronous evidence redactor, deterministic 0-100 scorer, active scan authorization gate. |
+| **Scanner Engine**      | `IMPLEMENTED` | 10 check modules (6 passive + 4 active), synchronous evidence redactor, deterministic 0-100 scorer, active authorization lock. |
+| **Active Rate Limiter** | `IMPLEMENTED` | Token bucket (5 req/sec cap) & circuit breaker tripping on 5 consecutive 5xx errors to protect customer infrastructure. |
 | **Findings Management** | `IMPLEMENTED` | Unified findings inventory, status lifecycle triage, justification-backed risk acceptance, audit trail. |
-| **Remediation Engine**  | `IMPLEMENTED` | 23-rule catalog with framework diffs, CLI checks, and targeted fix verification service. |
+| **Remediation Engine**  | `IMPLEMENTED` | 27-rule catalog with framework diffs, CLI checks, and targeted fix verification service. |
 | **Reporting Engine**    | `IMPLEMENTED` | Executive HTML / PDF reports with print styling, technical JSON exports, download API routes. |
 | **Dashboard UI**        | `IMPLEMENTED` | Complete UI with scans, scan reports, findings inventory, fix guides, export modals, and sessions. |
-| **Security State** | `VERIFIED` | 76/76 security tests passing against live database across all 7 test suites. |
+| **Security State** | `VERIFIED` | 95/95 security tests passing against live database across all 8 test suites. |
 | **Test State** | `VERIFIED` | Vitest test suite running; `tests/security/` passing 100%. |
 
 ---
