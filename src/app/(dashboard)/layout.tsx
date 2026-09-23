@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { AuthProvider, useAuth } from '@/components/auth/AuthProvider';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 

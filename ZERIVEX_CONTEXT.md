@@ -3,7 +3,7 @@
 > **Project:** ZERIVEX  
 > **Tagline:** "Security for software built with AI."  
 > **Brand Principle:** "Verify. Detect. Defend."  
-> **Current Phase:** PHASE 2 — AUTHENTICATION + OWNER + RBAC  
+> **Current Phase:** PHASE 3 — TARGET MANAGEMENT & VERIFICATION  
 > **Phase Status:** READY_FOR_REVIEW  
 > **Owner Authority:** The platform owner is the final authority for architecture, scope, phase approval, and security trade-offs.  
 > **Security Rule:** Security correctness over visual completion. Never claim a security feature works unless implemented and tested. Never fake findings.
@@ -19,7 +19,7 @@ Zerivex operates on a closed-loop security cycle:
 ---
 
 ## 2. Current Status & Phase State
-- **Current Phase:** `PHASE 2 — AUTHENTICATION + OWNER + RBAC`
+- **Current Phase:** `PHASE 3 — TARGET MANAGEMENT & VERIFICATION`
 - **Phase Status:** `READY_FOR_REVIEW`
 - **Completed Phases:**
   - `Phase 0A`: Pre-Implementation Discovery (`COMPLETE`)
@@ -28,7 +28,8 @@ Zerivex operates on a closed-loop security cycle:
   - `Phase 0D`: Phase 0 Review & Gate Sign-off (`COMPLETE`)
   - `Phase 1`: Secure SaaS Foundation (`COMPLETE` - live Neon DB schema, multi-tenant repository, append-only audit trail)
   - `Phase 2`: Authentication + Owner + RBAC (`COMPLETE` - session token hashing, OAuth PKCE, owner bootstrap, sole owner guard, session revocation, 4-tier RBAC)
-- **Next Phase:** `PHASE 3 — TARGET MANAGEMENT & VERIFICATION` (Blocked on Owner Review & Sign-off)
+  - `Phase 3`: Target Management & Verification (`COMPLETE` - SSRF defense, socket IP pinning, DNS TXT / HTML Meta / HTTP Header verification, active scan authorization lock)
+- **Next Phase:** `PHASE 4 — DETERMINISTIC SCANNER ENGINE` (Blocked on Owner Review & Sign-off)
 
 ---
 
@@ -44,7 +45,10 @@ Zerivex operates on a closed-loop security cycle:
   2. *Platform Role:* What can you do? (OWNER > SUPER_ADMIN > ADMIN > SUPPORT > USER)
   3. *Tenant Ownership:* Which resources belong to you? (Organization + Membership + Project + Target)
   4. *Entitlements:* What tier features can you use? (Plan + Entitlements; OWNER receives implicit bypass via server policy).
-- **Scanner Engine:** Isolated deterministic scanner engine with strict SSRF defense (pre-flight DNS, socket-level IP pinning, CIDR blacklisting, redirect re-validation), explicit target verification scopes (ADR-0008), and synchronous evidence redaction (ADR-0007).
+- **Target Management & SSRF Defense:** 
+  - `SafeHttpClient` with pre-flight DNS, socket-level IP pinning, CIDR blacklists (loopback, RFC1918, RFC6598, cloud metadata), and chained redirect re-validation.
+  - Three independent domain verification protocols: DNS TXT (`_zerivex-challenge.<host>`), HTML `<meta name="zerivex-verification" ...>`, and HTTP header (`X-Zerivex-Verification`).
+  - Active scanning authorization lock (ADR-0008): strictly blocks intrusive scans on unverified targets.
 
 ---
 
@@ -59,10 +63,12 @@ Zerivex operates on a closed-loop security cycle:
 | **Authentication State**| `IMPLEMENTED` | SHA-256 session token hashing, Google PKCE + GitHub OAuth, `__Host-zerivex_session` cookie, logout/logout-all. |
 | **Platform Bootstrap**  | `IMPLEMENTED` | Atomic one-time owner bootstrap via `INITIAL_OWNER_EMAIL`, `platform_bootstraps` row lock, sole owner demotion protection. |
 | **Authorization / RBAC**| `IMPLEMENTED` | `src/core/rbac/permissions.ts`, `authorization-guard.ts` with server-side role/permission guards & CSRF defense. |
-| **Admin & Security UI** | `IMPLEMENTED` | `/login`, `/dashboard`, `/dashboard/settings/security` (session revocation), `/admin` control center. |
-| **Scanner State** | `PLANNED` | SafeHttpClient with IP pinning, 6 check modules, and evidence redactor architected for Phase 4. |
+| **Target Management**   | `IMPLEMENTED` | `target-service.ts`, `verification-service.ts`, `/dashboard/targets`, `/dashboard/targets/[id]`. |
+| **SSRF Defense**        | `IMPLEMENTED` | `ip-validator.ts`, `safe-http-client.ts` with socket-level IP pinning and redirect re-validation. |
+| **Admin & Security UI** | `IMPLEMENTED` | `/login`, `/dashboard`, `/dashboard/settings/security`, `/dashboard/targets`, `/admin` control center. |
+| **Scanner State** | `PLANNED` | 6 check modules, safe client runner, and evidence redactor architected for Phase 4. |
 | **Subscription State**  | `PLANNED` | Abstract billing and entitlement interface designed. |
-| **Security State** | `VERIFIED` | 23/23 security tests passing against live database across config, isolation, session, and RBAC. |
+| **Security State** | `VERIFIED` | 37/37 security tests passing against live database across config, isolation, session, RBAC, and targets. |
 | **Test State** | `VERIFIED` | Vitest test suite running; `tests/security/` passing 100%. |
 
 ---
@@ -85,10 +91,10 @@ Zerivex operates on a closed-loop security cycle:
 - Dependencies audited: **0 vulnerabilities**.
 - TypeScript strict compilation: **Passing cleanly (`tsc --noEmit`)**.
 - Next.js production build: **Compiled successfully (`next build`)**.
-- Security tests: **23/23 passing against live PostgreSQL**.
+- Security tests: **37/37 passing against live PostgreSQL**.
 
 ---
 
 ## 7. Current Hand-off & Next Action
-- **Current Phase Status:** `PHASE 2 — READY FOR REVIEW`
-- **Immediate Next Action:** Obtain Platform Owner sign-off on Phase 2 and proceed to **Phase 3: Target Management & Verification**.
+- **Current Phase Status:** `PHASE 3 — READY FOR REVIEW`
+- **Immediate Next Action:** Obtain Platform Owner sign-off on Phase 3 and proceed to **Phase 4: Deterministic Scanner Engine**.

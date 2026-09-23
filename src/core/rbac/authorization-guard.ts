@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { validateSessionToken, SessionContext, SESSION_COOKIE_NAME } from '@/core/auth/session-service';
 import { PlatformRole, Permission, roleHasPermission } from '@/core/rbac/permissions';
 import { recordAuditEvent } from '@/core/audit/audit-service';
@@ -127,4 +127,25 @@ export function verifyCsrfProtection(req: NextRequest): void {
   }
 
   throw new ForbiddenError('CSRF validation failed: missing valid origin or X-Requested-With header');
+}
+
+/**
+ * Convenient alias for requireAuthenticatedUser.
+ */
+export const requireAuth = requireAuthenticatedUser;
+
+/**
+ * Handle authentication and authorization errors consistently across API route handlers.
+ */
+export function handleAuthError(error: unknown): NextResponse {
+  if (error instanceof UnauthorizedError) {
+    return NextResponse.json({ error: error.message }, { status: 401 });
+  }
+  if (error instanceof ForbiddenError) {
+    return NextResponse.json({ error: error.message }, { status: 403 });
+  }
+  return NextResponse.json(
+    { error: (error as Error).message || 'Internal server error' },
+    { status: 500 }
+  );
 }
