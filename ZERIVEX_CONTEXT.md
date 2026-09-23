@@ -3,7 +3,7 @@
 > **Project:** ZERIVEX  
 > **Tagline:** "Security for software built with AI."  
 > **Brand Principle:** "Verify. Detect. Defend."  
-> **Current Phase:** PHASE 7 — COMPREHENSIVE SECURITY TESTING & ATTACK SURFACE ENGINE  
+> **Current Phase:** PHASE 8 — SCHEDULING, MONITORING & AUTOMATION ENGINE  
 > **Phase Status:** READY_FOR_REVIEW  
 > **Owner Authority:** The platform owner is the final authority for architecture, scope, phase approval, and security trade-offs.  
 > **Security Rule:** Security correctness over visual completion. Never claim a security feature works unless implemented and tested. Never fake findings.
@@ -19,7 +19,7 @@ Zerivex operates on a closed-loop security cycle:
 ---
 
 ## 2. Current Status & Phase State
-- **Current Phase:** `PHASE 7 — COMPREHENSIVE SECURITY TESTING & ATTACK SURFACE ENGINE`
+- **Current Phase:** `PHASE 8 — SCHEDULING, MONITORING & AUTOMATION ENGINE`
 - **Phase Status:** `READY_FOR_REVIEW`
 - **Completed Phases:**
   - `Phase 0A`: Pre-Implementation Discovery (`COMPLETE`)
@@ -33,7 +33,8 @@ Zerivex operates on a closed-loop security cycle:
   - `Phase 5`: Remediation & Reporting Engine (`COMPLETE` - 23-rule remediation catalog, framework code diffs, closed-loop fix verification, print-ready executive PDF/HTML reports, technical JSON exports)
   - `Phase 6`: Deep Web Application Scanning (`COMPLETE` - 4 active check modules for SQLi, XSS, Open Redirect, and Path Traversal; token bucket rate limiter & circuit breaker; 95/95 test suite passing)
   - `Phase 7`: Comprehensive Security Testing & Attack Surface Engine (`COMPLETE` - endpoint crawler, tech stack fingerprinting, 4 new checks: API/GraphQL, security.txt, HTTP methods/XST, stack trace leakage; 31 remediation rules; Attack Surface Explorer UI; 112/112 tests passing)
-- **Next Phase:** `PHASE 8 — SCHEDULING, MONITORING & AUTOMATION` (Blocked on Owner Review & Sign-off)
+  - `Phase 8`: Scheduling, Monitoring & Automation Engine (`COMPLETE` - deterministic 5-part cron evaluator, recurring scan schedules, target verification downgrade fail-safe, continuous monitoring & score regression detector, tenant alert feeds, Monitoring UI, 130/130 tests passing)
+- **Next Phase:** `PHASE 9 — CI/CD SECURITY INTEGRATION & DEVELOPER WORKFLOW` (Blocked on Owner Review & Sign-off)
 
 ---
 
@@ -81,9 +82,9 @@ Zerivex operates on a closed-loop security cycle:
 | :--- | :--- | :--- |
 | **Governance & Tooling** | `COMPLETE` | Next.js 16.3.5, TypeScript strict, Vitest 5.0.1, 0 npm audit vulnerabilities. |
 | **Config Validation** | `IMPLEMENTED` | Fail-closed runtime schema validation in `src/core/config/env-validator.ts` with 100% test coverage. |
-| **Database State** | `IMPLEMENTED` | Neon PostgreSQL live; 15 canonical tables migrated (`001_initial_schema.sql` + `002_attack_surface.sql`). |
+| **Database State** | `IMPLEMENTED` | Neon PostgreSQL live; 17 canonical tables migrated (`001_initial_schema.sql` + `002_attack_surface.sql` + `003_scheduling_monitoring.sql`). |
 | **Audit Engine** | `IMPLEMENTED` | Append-only `src/core/audit/audit-service.ts` with sensitive data scrubbing & transaction client support. |
-| **Multi-Tenancy / IDOR**| `IMPLEMENTED` | Tenant-scoped repository layer (`src/core/db/repositories/tenant-repository.ts`, `surface-repository.ts`). |
+| **Multi-Tenancy / IDOR**| `IMPLEMENTED` | Tenant-scoped repository layer (`tenant-repository.ts`, `surface-repository.ts`, `schedule-repository.ts`, `monitoring-repository.ts`). |
 | **Authentication State**| `IMPLEMENTED` | SHA-256 session token hashing, Google PKCE + GitHub OAuth, `__Host-zerivex_session` cookie, logout/logout-all. |
 | **Platform Bootstrap**  | `IMPLEMENTED` | Atomic one-time owner bootstrap via `INITIAL_OWNER_EMAIL`, `platform_bootstraps` row lock, sole owner demotion protection. |
 | **Authorization / RBAC**| `IMPLEMENTED` | `src/core/rbac/permissions.ts`, `authorization-guard.ts` with server-side role/permission guards & CSRF defense. |
@@ -91,12 +92,14 @@ Zerivex operates on a closed-loop security cycle:
 | **SSRF Defense**        | `IMPLEMENTED` | `ip-validator.ts`, `safe-http-client.ts` with socket-level IP pinning, redirect re-validation, TRACE/OPTIONS support. |
 | **Scanner Engine**      | `IMPLEMENTED` | 14 check modules (6 passive + 4 active + 4 API/surface), synchronous evidence redactor, deterministic 0-100 scorer. |
 | **Attack Surface Engine**| `IMPLEMENTED` | Route spider crawler, HTML form/param extractor, robots/sitemap parser, tech stack fingerprinter. |
+| **Scheduling Engine**   | `IMPLEMENTED` | Deterministic 5-part cron parser, recurring scan scheduler, target verification downgrade protection, atomic worker polling. |
+| **Continuous Monitoring**| `IMPLEMENTED` | Score regression detector ($\ge 10$ drop alert), newly introduced vulnerability alerts, historical trendlines, alert management. |
 | **Active Rate Limiter** | `IMPLEMENTED` | Token bucket (5 req/sec cap) & circuit breaker tripping on 5 consecutive 5xx errors to protect customer infrastructure. |
 | **Findings Management** | `IMPLEMENTED` | Unified findings inventory, status lifecycle triage, justification-backed risk acceptance, audit trail. |
 | **Remediation Engine**  | `IMPLEMENTED` | 31-rule catalog with framework diffs, CLI checks, and targeted fix verification service. |
 | **Reporting Engine**    | `IMPLEMENTED` | Executive HTML / PDF reports with print styling, technical JSON exports, download API routes. |
-| **Dashboard UI**        | `IMPLEMENTED` | Complete UI with scans, scan reports, findings inventory, fix guides, export modals, and Attack Surface Explorer. |
-| **Security State** | `VERIFIED` | 112/112 security tests passing against live database across all 9 test suites. |
+| **Dashboard UI**        | `IMPLEMENTED` | Complete UI with scans, scan reports, findings inventory, fix guides, Attack Surface Explorer, and Monitoring Center. |
+| **Security State** | `VERIFIED` | 130/130 security tests passing against live database across all 10 test suites. |
 | **Test State** | `VERIFIED` | Vitest test suite running; `tests/security/` passing 100%. |
 
 ---
@@ -118,11 +121,11 @@ Zerivex operates on a closed-loop security cycle:
 - `.env.local` configured with verified Neon database and CSPRNG secrets.
 - Dependencies audited: **0 vulnerabilities**.
 - TypeScript strict compilation: **Passing cleanly (`tsc --noEmit`)**.
-- Next.js production build: **Compiled successfully (`next build`, all 27 routes)**.
-- Security tests: **112/112 passing against live PostgreSQL**.
+- Next.js production build: **Compiled successfully (`next build`, all 29 routes)**.
+- Security tests: **130/130 passing against live PostgreSQL**.
 
 ---
 
 ## 7. Current Hand-off & Next Action
-- **Current Phase Status:** `PHASE 7 — READY FOR REVIEW`
-- **Immediate Next Action:** Obtain Platform Owner sign-off on Phase 7 and proceed to **Phase 8: Scheduling, Monitoring & Automation Engine**.
+- **Current Phase Status:** `PHASE 8 — READY FOR REVIEW`
+- **Immediate Next Action:** Obtain Platform Owner sign-off on Phase 8 and proceed to **Phase 9: CI/CD Security Integration & Developer Workflow**.

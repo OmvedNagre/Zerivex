@@ -203,6 +203,20 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
           >
             Attack Surface Map ↗
           </Link>
+          <Link
+            href={`/dashboard/targets/${id}/monitoring`}
+            style={{
+              padding: '0.4rem 0.8rem',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              color: 'var(--text-secondary)',
+              textDecoration: 'none',
+              transition: 'color var(--transition-fast)',
+            }}
+          >
+            Continuous Monitoring ↗
+          </Link>
         </div>
       </div>
 

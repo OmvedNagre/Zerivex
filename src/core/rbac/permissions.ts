@@ -21,7 +21,12 @@ export type Permission =
   | 'users:read'
   | 'users:manage'
   | 'platform:admin'
-  | 'platform:rules_manage';
+  | 'platform:rules_manage'
+  | 'schedules:create'
+  | 'schedules:read'
+  | 'schedules:update'
+  | 'schedules:delete'
+  | 'monitoring:read';
 
 /**
  * Platform role permissions map.
@@ -44,6 +49,11 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'users:manage',
     'platform:admin',
     'platform:rules_manage',
+    'schedules:create',
+    'schedules:read',
+    'schedules:update',
+    'schedules:delete',
+    'monitoring:read',
   ],
   SUPER_ADMIN: [
     'scans:create',
@@ -60,6 +70,11 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'users:read',
     'users:manage',
     'platform:admin',
+    'schedules:create',
+    'schedules:read',
+    'schedules:update',
+    'schedules:delete',
+    'monitoring:read',
   ],
   ADMIN: [
     'scans:create',
@@ -74,6 +89,11 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'findings:update',
     'audit:read',
     'users:read',
+    'schedules:create',
+    'schedules:read',
+    'schedules:update',
+    'schedules:delete',
+    'monitoring:read',
   ],
   SUPPORT: [
     'scans:read',
@@ -81,6 +101,8 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'findings:read',
     'audit:read',
     'users:read',
+    'schedules:read',
+    'monitoring:read',
   ],
   USER: [
     'scans:create',
@@ -93,6 +115,11 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'targets:verify',
     'findings:read',
     'findings:update',
+    'schedules:create',
+    'schedules:read',
+    'schedules:update',
+    'schedules:delete',
+    'monitoring:read',
   ],
 };
 

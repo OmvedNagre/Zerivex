@@ -192,6 +192,22 @@ export default function TargetAttackSurfacePage({
               Verification Center
             </Link>
 
+            <Link
+              href={`/dashboard/targets/${id}/monitoring`}
+              style={{
+                padding: '0.6rem 1rem',
+                backgroundColor: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                borderRadius: 'var(--radius-md)',
+                textDecoration: 'none',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                border: '1px solid var(--border-color)',
+              }}
+            >
+              Continuous Monitoring ↗
+            </Link>
+
             <button
               onClick={handleTriggerCrawl}
               disabled={crawling}

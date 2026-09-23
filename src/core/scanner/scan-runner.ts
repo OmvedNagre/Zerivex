@@ -22,6 +22,8 @@ import { httpMethodsCheck } from './checks/http-methods-check';
 import { stackTraceCheck } from './checks/stack-trace-check';
 import { crawlAttackSurface } from '@/core/surface/crawler';
 import { upsertDiscoveredEndpoints, upsertTechnologyFingerprints } from '@/core/surface/surface-repository';
+import { evaluateScanRegression } from '@/core/monitoring/regression-detector';
+import { createMonitoringAlert } from '@/core/monitoring/monitoring-repository';
 
 export const ALL_SCAN_CHECKS: ScanCheck[] = [
   tlsCheck,
@@ -370,6 +372,13 @@ export async function executeScanJob(scanJobId: string): Promise<{
 
     const completedJob = updatedJobRes.rows[0]!;
 
+    // 8. Trigger security regression evaluation
+    try {
+      await evaluateScanRegression(completedJob.id);
+    } catch (regErr) {
+      console.warn(`[ZERIVEX MONITORING] Regression evaluation failed for scan ${completedJob.id}:`, (regErr as Error).message);
+    }
+
     return { scanJob: completedJob, findings: savedFindings };
   } catch (err) {
     const errorMsg = (err as Error).message || 'Unknown scanner execution failure';
@@ -377,6 +386,20 @@ export async function executeScanJob(scanJobId: string): Promise<{
       errorMsg,
       job.id,
     ]);
+
+    try {
+      await createMonitoringAlert({
+        organizationId: job.organizationId,
+        targetId: job.targetId,
+        scanId: job.id,
+        alertType: 'SCAN_FAILED',
+        severity: 'HIGH',
+        title: `Scan Execution Failed: ${target.hostname}`,
+        message: `Security scan job ${job.id} failed: ${errorMsg}`,
+      });
+    } catch {
+      // Ignore secondary alert logging error
+    }
 
     throw err;
   }
