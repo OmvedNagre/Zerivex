@@ -173,6 +173,37 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
             )}
           </div>
         </div>
+
+        {/* Navigation Tabs */}
+        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+          <span
+            style={{
+              padding: '0.4rem 0.8rem',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              backgroundColor: 'var(--bg-secondary)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-color)',
+            }}
+          >
+            Verification Center
+          </span>
+          <Link
+            href={`/dashboard/targets/${id}/surface`}
+            style={{
+              padding: '0.4rem 0.8rem',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              color: 'var(--text-secondary)',
+              textDecoration: 'none',
+              transition: 'color var(--transition-fast)',
+            }}
+          >
+            Attack Surface Map ↗
+          </Link>
+        </div>
       </div>
 
       {/* Verification Status Banner */}

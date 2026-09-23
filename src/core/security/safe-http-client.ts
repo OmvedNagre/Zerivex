@@ -20,8 +20,9 @@ export interface SafeHttpResponse {
 }
 
 export interface SafeFetchOptions {
-  method?: 'GET' | 'HEAD' | 'POST';
+  method?: 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'OPTIONS' | 'TRACE' | 'PATCH' | string;
   headers?: Record<string, string>;
+  body?: string;
   timeoutMs?: number;
   maxRedirects?: number;
   followRedirects?: boolean;
@@ -205,6 +206,10 @@ export async function safeFetch(
       request.on('error', (err) => {
         reject(err);
       });
+
+      if (options.body) {
+        request.write(options.body);
+      }
 
       request.end();
     });

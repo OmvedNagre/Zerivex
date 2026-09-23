@@ -868,6 +868,135 @@ export default function ErrorBoundary({ error, reset }: { error: Error; reset: (
     },
     cliVerification: 'curl -s "https://YOUR_TARGET_URL/api/download?file=../../../../etc/passwd"',
   },
+
+  // 28. Phase 7: Exposed Sensitive APIs & GraphQL Introspection
+  'ZX-SEC-API-001': {
+    ruleId: 'ZX-SEC-API-001',
+    title: 'Exposed Sensitive API Endpoints & GraphQL Introspection',
+    summary:
+      'Disable unauthenticated GraphQL schema introspection and restrict internal telemetry/metrics endpoints (/metrics, /actuator, /env) behind private networks or administrative authorization.',
+    impact:
+      'Unauthenticated GraphQL schema introspection allows attackers to extract entire data graphs, object fields, and mutation schemas. Exposed metrics and telemetry disclose internal host names, CPU/memory profiles, and active services.',
+    cwe: 'CWE-200: Exposure of Sensitive Information to an Unauthorized Actor',
+    owasp: 'A01:2021-Broken Access Control',
+    frameworks: {
+      nextjs: {
+        filename: 'src/app/api/graphql/route.ts',
+        explanation: 'Disable GraphQL introspection in production environments while keeping it active during development.',
+        diff: ` import { ApolloServer } from '@apollo/server';
+ import { startServerAndCreateNextHandler } from '@as-integrations/next';
+
+ const server = new ApolloServer({
+   typeDefs,
+   resolvers,
+-  introspection: true,
++  introspection: process.env.NODE_ENV !== 'production',
+ });`,
+      },
+      express: {
+        filename: 'src/server.ts',
+        explanation: 'Protect metrics endpoints behind administrative role authentication.',
+        diff: ` // Protect /metrics behind admin authentication or internal CIDR
+-app.get('/metrics', metricsHandler);
++app.get('/metrics', requireAdminToken, metricsHandler);`,
+      },
+    },
+    cliVerification: 'curl -s -X POST -H "Content-Type: application/json" -d \'{"query":"{ __schema { types { name } } }"}\' https://YOUR_TARGET_URL/graphql',
+  },
+
+  // 29. Phase 7: RFC 9116 security.txt
+  'ZX-SEC-SECTXT-001': {
+    ruleId: 'ZX-SEC-SECTXT-001',
+    title: 'RFC 9116 Vulnerability Disclosure Policy (security.txt)',
+    summary:
+      'Implement an RFC 9116 compliant security.txt file at /.well-known/security.txt defining authorized security contact channels and policy expiration date.',
+    impact:
+      'Without a security.txt file, security researchers identifying critical vulnerabilities have no secure, authorized channel to report findings, increasing the likelihood of public zero-day disclosure.',
+    cwe: 'CWE-16: Configuration',
+    owasp: 'A05:2021-Security Misconfiguration',
+    frameworks: {
+      nextjs: {
+        filename: 'public/.well-known/security.txt',
+        explanation: 'Create an RFC 9116 compliant security.txt file with mandatory Contact and Expires directives.',
+        diff: `+Contact: mailto:security@yourcompany.com
++Contact: https://yourcompany.com/security
++Expires: 2027-12-31T23:59:59.000Z
++Preferred-Languages: en
++Canonical: https://yourcompany.com/.well-known/security.txt`,
+      },
+    },
+    cliVerification: 'curl -s https://YOUR_TARGET_URL/.well-known/security.txt',
+  },
+
+  // 30. Phase 7: HTTP Verb Tampering & Insecure Methods
+  'ZX-SEC-VERB-001': {
+    ruleId: 'ZX-SEC-VERB-001',
+    title: 'Insecure HTTP Methods & Verb Tampering Defenses',
+    summary:
+      'Disable unnecessary and dangerous HTTP verbs (such as TRACE, CONNECT, arbitrary PUT/DELETE) at the reverse proxy or web server layer.',
+    impact:
+      'The HTTP TRACE method enables Cross-Site Tracing (XST), which allows client-side attackers to bypass HttpOnly cookie security. Insecure verb handling may also bypass naive authentication filters configured only for GET/POST.',
+    cwe: 'CWE-698: Execution After Redirect (EAR) / Insecure Methods',
+    owasp: 'A05:2021-Security Misconfiguration',
+    frameworks: {
+      nextjs: {
+        filename: 'src/middleware.ts',
+        explanation: 'Reject TRACE and CONNECT HTTP requests in Next.js edge middleware with 405 Method Not Allowed.',
+        diff: ` export function middleware(request: NextRequest) {
++  if (['TRACE', 'CONNECT'].includes(request.method)) {
++    return new NextResponse('Method Not Allowed', { status: 405 });
++  }
+   return NextResponse.next();
+ }`,
+      },
+      express: {
+        filename: 'src/server.ts',
+        explanation: 'Reject TRACE and CONNECT HTTP requests in Express with 405 Method Not Allowed.',
+        diff: ` app.use((req, res, next) => {
++  if (req.method === 'TRACE' || req.method === 'CONNECT') {
++    return res.status(405).send('Method Not Allowed');
++  }
+   next();
+ });`,
+      },
+    },
+    cliVerification: 'curl -s -X TRACE https://YOUR_TARGET_URL/',
+  },
+
+  // 31. Phase 7: Stack Trace & Exception Disclosure
+  'ZX-SEC-STACK-001': {
+    ruleId: 'ZX-SEC-STACK-001',
+    title: 'Stack Trace & Detailed Exception Masking',
+    summary:
+      'Mask server-side exceptions and stack traces in production error handlers, logging full details internally while returning generic, safe error responses to clients.',
+    impact:
+      'Exposing raw stack traces reveals backend directory structures, third-party library versions, database drivers, and internal logic flaws that simplify targeted exploitation.',
+    cwe: 'CWE-209: Generation of Error Message Containing Sensitive Information',
+    owasp: 'A05:2021-Security Misconfiguration',
+    frameworks: {
+      nextjs: {
+        filename: 'src/app/error.tsx',
+        explanation: 'Avoid rendering error.stack in client components; return sanitized user-friendly text instead.',
+        diff: ` 'use client';
+ 
+-export default function ErrorPage({ error }: { error: Error }) {
+-  return <pre>{error.stack}</pre>;
++export default function ErrorPage() {
++  return <div>An unexpected error occurred. Please contact support.</div>;
+ }`,
+      },
+      express: {
+        filename: 'src/server.ts',
+        explanation: 'Log error stack traces internally and return generic JSON error messages in production.',
+        diff: ` app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+   console.error(err.stack);
+-  res.status(500).send(err.stack);
++  res.status(500).json({ error: 'Internal Server Error' });
+ });`,
+      },
+    },
+    cliVerification: 'curl -s -X POST -H "Content-Type: application/json" -d \'{"bad: json\' https://YOUR_TARGET_URL/api/test',
+  },
 };
 
 /**

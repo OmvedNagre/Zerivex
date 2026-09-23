@@ -226,7 +226,7 @@ MIIEowIBAAKCAQEA0Y3VfQ1...FAKEKEY...
 
   describe('3. Core Check Module Specifications', () => {
     it('verifies all deterministic check modules are registered', () => {
-      expect(ALL_SCAN_CHECKS.length).toBe(10);
+      expect(ALL_SCAN_CHECKS.length).toBe(14);
       const checkIds = ALL_SCAN_CHECKS.map((c) => c.id);
       expect(checkIds).toContain('check-tls');
       expect(checkIds).toContain('check-headers');
@@ -238,6 +238,10 @@ MIIEowIBAAKCAQEA0Y3VfQ1...FAKEKEY...
       expect(checkIds).toContain('check-xss');
       expect(checkIds).toContain('check-open-redirect');
       expect(checkIds).toContain('check-path-traversal');
+      expect(checkIds).toContain('api-security-check');
+      expect(checkIds).toContain('security-txt-check');
+      expect(checkIds).toContain('http-methods-check');
+      expect(checkIds).toContain('stack-trace-check');
     });
 
     it('TLS Check detects unencrypted HTTP immediately without socket invocation', async () => {

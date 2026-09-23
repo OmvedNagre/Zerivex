@@ -33,6 +33,18 @@ function findCheckModuleForRule(ruleId: string): ScanCheck | null {
   if (ruleId.startsWith('ZX-CORS')) {
     return ALL_SCAN_CHECKS.find((c) => c.id === 'check-cors') || null;
   }
+  if (ruleId.startsWith('ZX-SEC-API')) {
+    return ALL_SCAN_CHECKS.find((c) => c.id === 'api-security-check') || null;
+  }
+  if (ruleId.startsWith('ZX-SEC-SECTXT')) {
+    return ALL_SCAN_CHECKS.find((c) => c.id === 'security-txt-check') || null;
+  }
+  if (ruleId.startsWith('ZX-SEC-VERB')) {
+    return ALL_SCAN_CHECKS.find((c) => c.id === 'http-methods-check') || null;
+  }
+  if (ruleId.startsWith('ZX-SEC-STACK')) {
+    return ALL_SCAN_CHECKS.find((c) => c.id === 'stack-trace-check') || null;
+  }
   if (ruleId.startsWith('ZX-SEC')) {
     return ALL_SCAN_CHECKS.find((c) => c.id === 'check-exposed-secrets') || null;
   }

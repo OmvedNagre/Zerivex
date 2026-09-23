@@ -83,6 +83,10 @@ export class ActiveRateLimiter {
     await new Promise((resolve) => setTimeout(resolve, waitMs));
   }
 
+  async acquireToken(hostname: string): Promise<void> {
+    return this.acquire(hostname);
+  }
+
   /**
    * Reset rate limiter state for a hostname (useful in testing).
    */
@@ -184,3 +188,5 @@ export class CircuitBreaker {
 // Global default instances for active scanning
 export const defaultRateLimiter = new ActiveRateLimiter({ requestsPerSecond: 5, burstCapacity: 5 });
 export const defaultCircuitBreaker = new CircuitBreaker({ failureThreshold: 5, cooldownMs: 30000 });
+export const activeRateLimiter = defaultRateLimiter;
+export const circuitBreaker = defaultCircuitBreaker;

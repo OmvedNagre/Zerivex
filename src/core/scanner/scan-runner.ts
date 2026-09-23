@@ -16,6 +16,12 @@ import { sqliCheck } from './checks/sqli-check';
 import { xssCheck } from './checks/xss-check';
 import { openRedirectCheck } from './checks/open-redirect-check';
 import { pathTraversalCheck } from './checks/path-traversal-check';
+import { apiSecurityCheck } from './checks/api-security-check';
+import { securityTxtCheck } from './checks/security-txt-check';
+import { httpMethodsCheck } from './checks/http-methods-check';
+import { stackTraceCheck } from './checks/stack-trace-check';
+import { crawlAttackSurface } from '@/core/surface/crawler';
+import { upsertDiscoveredEndpoints, upsertTechnologyFingerprints } from '@/core/surface/surface-repository';
 
 export const ALL_SCAN_CHECKS: ScanCheck[] = [
   tlsCheck,
@@ -28,6 +34,10 @@ export const ALL_SCAN_CHECKS: ScanCheck[] = [
   xssCheck,
   openRedirectCheck,
   pathTraversalCheck,
+  apiSecurityCheck,
+  securityTxtCheck,
+  httpMethodsCheck,
+  stackTraceCheck,
 ];
 
 export interface ScanJobRecord {
@@ -207,18 +217,50 @@ export async function executeScanJob(scanJobId: string): Promise<{
   // 3. Transition status to RUNNING
   await query("UPDATE scan_jobs SET status = 'RUNNING', started_at = NOW() WHERE id = $1", [job.id]);
 
-  const scanContext: ScanContext = {
-    targetUrl: target.targetUrl,
-    hostname: target.hostname,
-    scanMode: job.scanMode,
-    organizationId: job.organizationId,
-    targetId: target.id,
-  };
-
   const rawFindings: RawFinding[] = [];
 
   try {
-    // 4. Run all registered check modules with fault tolerance
+    // 4. Map Attack Surface & Detect Technologies
+    let discoveredEndpoints: any[] = [];
+    try {
+      const surfaceResult = await crawlAttackSurface(target.targetUrl, {
+        maxDepth: 2,
+        maxPages: 15,
+        scanId: job.id,
+      });
+
+      if (surfaceResult.endpoints.length > 0) {
+        discoveredEndpoints = surfaceResult.endpoints;
+        await upsertDiscoveredEndpoints(
+          job.organizationId,
+          target.id,
+          job.id,
+          surfaceResult.endpoints
+        );
+      }
+
+      if (surfaceResult.technologies.length > 0) {
+        await upsertTechnologyFingerprints(
+          job.organizationId,
+          target.id,
+          job.id,
+          surfaceResult.technologies
+        );
+      }
+    } catch (crawlErr) {
+      console.warn('[ZERIVEX SCANNER] Attack surface crawl encountered a non-fatal error:', crawlErr);
+    }
+
+    const scanContext: ScanContext = {
+      targetUrl: target.targetUrl,
+      hostname: target.hostname,
+      scanMode: job.scanMode,
+      organizationId: job.organizationId,
+      targetId: target.id,
+      discoveredEndpoints,
+    };
+
+    // 5. Run all registered check modules with fault tolerance
     const results = await Promise.allSettled(
       ALL_SCAN_CHECKS.map(async (check) => {
         if (check.requiresActiveScan && job.scanMode !== 'VERIFIED_ACTIVE') {

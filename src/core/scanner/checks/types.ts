@@ -22,6 +22,12 @@ export interface ScanContext {
   scanMode: ScanMode;
   organizationId: string;
   targetId: string;
+  discoveredEndpoints?: Array<{
+    url: string;
+    path: string;
+    httpMethod: string;
+    parameters: Array<{ name: string; in: string }>;
+  }>;
 }
 
 export interface ScanCheck {
