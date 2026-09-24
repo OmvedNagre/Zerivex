@@ -208,6 +208,22 @@ export default function TargetAttackSurfacePage({
               Continuous Monitoring ↗
             </Link>
 
+            <Link
+              href={`/dashboard/targets/${id}/ci-cd`}
+              style={{
+                padding: '0.6rem 1rem',
+                backgroundColor: 'var(--bg-card)',
+                color: 'var(--text-primary)',
+                borderRadius: 'var(--radius-md)',
+                textDecoration: 'none',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                border: '1px solid var(--border-color)',
+              }}
+            >
+              CI/CD & Integrations ↗
+            </Link>
+
             <button
               onClick={handleTriggerCrawl}
               disabled={crawling}

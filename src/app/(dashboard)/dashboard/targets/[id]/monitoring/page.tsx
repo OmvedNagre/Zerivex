@@ -297,6 +297,19 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
           >
             Continuous Monitoring
           </span>
+          <Link
+            href={`/dashboard/targets/${id}/ci-cd`}
+            style={{
+              padding: '0.4rem 0.8rem',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              color: 'var(--text-secondary)',
+              textDecoration: 'none',
+            }}
+          >
+            CI/CD & Integrations ↗
+          </Link>
         </div>
       </div>
 

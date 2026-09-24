@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "test:security": "vitest run tests/security",
     "typecheck": "tsc --noEmit",
-    "admin:bootstrap": "tsx scripts/admin-bootstrap.ts"
+    "admin:bootstrap": "tsx scripts/admin-bootstrap.ts",
+    "db:migrate": "tsx scripts/migrate.ts"
   },
   "dependencies": {
     "next": "^16.3.5",

@@ -24,6 +24,7 @@ import { crawlAttackSurface } from '@/core/surface/crawler';
 import { upsertDiscoveredEndpoints, upsertTechnologyFingerprints } from '@/core/surface/surface-repository';
 import { evaluateScanRegression } from '@/core/monitoring/regression-detector';
 import { createMonitoringAlert } from '@/core/monitoring/monitoring-repository';
+import { dispatchWebhookEvent } from '@/core/webhooks/webhook-dispatcher';
 
 export const ALL_SCAN_CHECKS: ScanCheck[] = [
   tlsCheck,
@@ -379,6 +380,45 @@ export async function executeScanJob(scanJobId: string): Promise<{
       console.warn(`[ZERIVEX MONITORING] Regression evaluation failed for scan ${completedJob.id}:`, (regErr as Error).message);
     }
 
+    // 9. Dispatch outbound webhooks
+    try {
+      await dispatchWebhookEvent({
+        organizationId: completedJob.organizationId,
+        eventType: 'scan.completed',
+        data: {
+          scanId: completedJob.id,
+          targetId: completedJob.targetId,
+          hostname: target.hostname,
+          score: completedJob.score,
+          findingsCount: savedFindings.length,
+          criticalCount: savedFindings.filter((f) => f.severity === 'CRITICAL').length,
+          highCount: savedFindings.filter((f) => f.severity === 'HIGH').length,
+          status: 'COMPLETED',
+        },
+      });
+
+      const criticalFindings = savedFindings.filter((f) => f.severity === 'CRITICAL');
+      if (criticalFindings.length > 0) {
+        await dispatchWebhookEvent({
+          organizationId: completedJob.organizationId,
+          eventType: 'finding.critical',
+          data: {
+            scanId: completedJob.id,
+            targetId: completedJob.targetId,
+            hostname: target.hostname,
+            criticalCount: criticalFindings.length,
+            findings: criticalFindings.map((f) => ({
+              ruleId: f.ruleId,
+              title: f.title,
+              endpoint: f.resourceEndpoint,
+            })),
+          },
+        });
+      }
+    } catch (whErr) {
+      console.warn(`[ZERIVEX WEBHOOKS] Failed to dispatch webhooks for scan ${completedJob.id}:`, (whErr as Error).message);
+    }
+
     return { scanJob: completedJob, findings: savedFindings };
   } catch (err) {
     const errorMsg = (err as Error).message || 'Unknown scanner execution failure';
@@ -401,9 +441,26 @@ export async function executeScanJob(scanJobId: string): Promise<{
       // Ignore secondary alert logging error
     }
 
+    try {
+      await dispatchWebhookEvent({
+        organizationId: job.organizationId,
+        eventType: 'scan.failed',
+        data: {
+          scanId: job.id,
+          targetId: job.targetId,
+          hostname: target.hostname,
+          errorMessage: errorMsg,
+        },
+      });
+    } catch {
+      // Ignore secondary webhook error
+    }
+
     throw err;
   }
 }
+
+export const runScanJob = executeScanJob;
 
 /**
  * Get scan job details and all associated findings with strict tenant isolation.

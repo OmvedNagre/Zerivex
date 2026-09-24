@@ -1,94 +1,112 @@
 # HANDOFF.md: Short-Term AI Agent Continuation State
 
-> **Last Updated:** 2026-09-23T15:45:00+05:30  
+> **Last Updated:** 2026-09-24T09:35:00+05:30  
 > **Current Agent:** Antigravity (Lead Architect & Security Engineer)  
-> **Current Phase:** PHASE 8 — SCHEDULING, MONITORING & AUTOMATION ENGINE  
+> **Current Phase:** PHASE 9 — CI/CD SECURITY INTEGRATION & DEVELOPER WORKFLOW  
 > **Phase Status:** READY_FOR_REVIEW  
 
 ---
 
 ## 1. Current Task
-- **Executing:** Phase 8 — Scheduling, Monitoring & Automation Engine.
-- **Goal:** Implement standard 5-part cron parsing, recurring automated scan scheduler, fail-safe target verification downgrade protection (ADR-0008), continuous monitoring & security score regression detector, tenant alert feeds, Monitoring Center UI, and automated security test suite.
+- **Executing:** Phase 9 — CI/CD Security Integration & Developer Workflow.
+- **Goal:** Implement scoped machine-to-machine API keys with SHA-256 hash storage, build-breaking Security Quality Gates engine, OASIS SARIF v2.1.0 generator for GitHub Code Scanning, SSRF-hardened outbound webhook delivery engine with HMAC-SHA256 signatures, CI REST endpoints (`/api/v1/ci/scan`, `/api/v1/ci/scans/[id]/sarif`), Developer Settings UI, and Target CI/CD Hub.
 
 ---
 
 ## 2. Last Completed Task
-- Completed Phase 8:
-  - **Database Migration (`src/core/db/migrations/003_scheduling_monitoring.sql`):**
-    - Created `scan_schedules` table with frequency constraints, cron expressions, next_run_at indexing, and tenant scoping.
-    - Created `monitoring_alerts` table with alert types (`NEW_CRITICAL_FINDING`, `SECURITY_SCORE_DROP`, `TARGET_UNVERIFIED_DOWNGRADE`, `SCAN_FAILED`, `CIRCUIT_BREAKER_TRIPPED`), severity, metadata, and unread tracking.
+- Completed Phase 9:
+  - **Database Migration (`src/core/db/migrations/004_cicd_developer_workflow.sql`):**
+    - Created `api_keys` table with `key_hash` (SHA-256), `key_prefix`, `scopes`, `status`, `expires_at`, `last_used_at`, and `last_used_ip`.
+    - Created `webhooks` table with `secret` (HMAC signing key), `url`, `events`, and `is_active`.
+    - Created `webhook_deliveries` table with latency tracking, HTTP status codes, delivery payloads, and error logging.
+    - Created `quality_gate_policies` table with `min_security_score`, `fail_on_critical`, `max_high_findings`, `max_medium_findings`, and `fail_on_new_findings`.
     - Applied migration idempotently to live Neon PostgreSQL.
-  - **Deterministic Cron Evaluator (`src/core/scheduler/cron-evaluator.ts`):**
-    - Standard 5-field cron parsing (`minute hour dom month dow`).
-    - Standard presets: `DAILY` (`0 2 * * *`), `WEEKLY` (`0 3 * * 1`), `BIWEEKLY` (`0 3 1,15 * *`), `MONTHLY` (`0 4 1 * *`).
-    - Deterministic UTC next run timestamp calculator.
-  - **Multi-Tenant Schedule Repository (`src/core/scheduler/schedule-repository.ts`):**
-    - CRUD operations with strict tenant isolation.
-    - Atomic worker polling `pollDueSchedules` with PostgreSQL row lock `SELECT ... FOR UPDATE SKIP LOCKED`.
-  - **Scheduler Service & Dispatcher (`src/core/scheduler/scheduler-service.ts`):**
-    - `createScanScheduleWithValidation`: Enforces ADR-0008 (blocks `VERIFIED_ACTIVE` on unverified targets).
-    - `triggerScheduleNow`: Immediate on-demand execution.
-    - `dispatchDueSchedules`: Worker routine with automated downgrade fail-safe (if verified target status was revoked, safely downgrades to `PUBLIC_PASSIVE` and fires `TARGET_UNVERIFIED_DOWNGRADE` alert).
-  - **Continuous Monitoring & Regression Detector (`src/core/monitoring/regression-detector.ts`):**
-    - Compares current scan to immediately preceding completed scan for target.
-    - Flags security score regressions ($\ge 10$ points drop) as `SECURITY_SCORE_DROP` alerts.
-    - Diffs finding fingerprints `(rule_id, resource_endpoint)` to isolate newly introduced vulnerabilities.
-    - Emits `NEW_CRITICAL_FINDING` alerts for newly introduced Critical/High issues.
-    - Tracks resolved vulnerabilities.
-  - **Monitoring Repository (`src/core/monitoring/monitoring-repository.ts`):**
-    - Alert management with unread count, pagination, single/bulk mark as read.
-    - Historical security score trendline timeline for charting.
-  - **Scan Pipeline Integration (`src/core/scanner/scan-runner.ts`):**
-    - Automatically evaluates regressions on every completed scan job.
-    - Emits `SCAN_FAILED` alert on unexpected scanner execution aborts.
-  - **Audit Logging Integration (`src/core/audit/audit-service.ts`):**
-    - Added `SCHEDULE_CREATED`, `SCHEDULE_UPDATED`, `SCHEDULE_DELETED`, `SCHEDULE_TRIGGERED`, `REGRESSION_EVALUATED`.
+  - **API Key Management & Authentication Service (`src/core/auth/api-key-service.ts`):**
+    - Generated 256-bit CSPRNG keys formatted as `zx_live_<64_hex_chars>`.
+    - Never stores plaintext keys in database (only SHA-256 hashes).
+    - Single-reveal guarantee in user interface.
+    - Constant-time lookup, active validation, expiry checks, and asynchronous usage metadata updates.
+    - Key revocation with audit logging.
+  - **Unified Request Authentication Guard (`src/core/rbac/authorization-guard.ts`):**
+    - `requireApiOrSessionAuth` seamlessly handles either cookie sessions or `Authorization: Bearer zx_live_...` tokens.
+    - Capability scope enforcement (`scans:create`, `scans:read`, `ci:execute`, `qualitygate:manage`).
+  - **Quality Gate Policy Engine & Repository (`src/core/cicd/quality-gate-engine.ts`, `src/core/cicd/quality-gate-repository.ts`):**
+    - Deterministic pass/fail build breaker evaluation.
+    - Checks score >= minSecurityScore, zero criticals, high/medium thresholds, and new regression findings.
+    - Produces clean ANSI CLI output and Markdown formatted for GitHub PR comments.
+  - **OASIS SARIF v2.1.0 Generator (`src/core/reporting/sarif-generator.ts`):**
+    - Conforms to OASIS standard for native ingestion by GitHub Code Scanning (`upload-sarif@v3`).
+    - Maps finding severity to SARIF levels (`error`, `warning`, `note`).
+    - Embeds CWE and OWASP tags, physical locations, and remediation diffs.
+  - **Outbound Webhook Engine & Dispatcher (`src/core/webhooks/webhook-dispatcher.ts`, `src/core/webhooks/webhook-repository.ts`):**
+    - HMAC-SHA256 payload signing (`X-Zerivex-Signature-256: sha256=...`).
+    - Constant-time signature verification.
+    - Full SSRF protection via `SafeHttpClient` (blocking cloud metadata `169.254.169.254`, loopback, and private CIDR ranges).
+    - Automatic webhook dispatching on scan completion (`scan.completed`, `finding.critical`, `scan.failed`, `gate.failed`).
   - **API Routes:**
-    - `/api/schedules` (GET list, POST create)
-    - `/api/schedules/[id]` (GET details, PATCH update/pause, DELETE delete)
-    - `/api/schedules/[id]/run` (POST on-demand trigger)
-    - `/api/targets/[id]/monitoring` (GET trends, alerts, schedules)
-    - `/api/monitoring/alerts` (GET tenant alerts, PATCH mark read)
+    - `POST /api/v1/ci/scan` (Synchronous/asynchronous CI scan execution with Quality Gate verdict)
+    - `GET /api/v1/ci/scans/[id]` (CI scan status & gate report polling)
+    - `GET /api/v1/ci/scans/[id]/sarif` (OASIS SARIF v2.1.0 download)
+    - `GET /api/v1/ci/scans/[id]/summary` (Markdown PR comment export)
+    - `GET`, `POST /api/api-keys` (API key listing and creation)
+    - `DELETE /api/api-keys/[id]` (API key revocation)
+    - `GET`, `POST /api/webhooks` (Webhook subscription listing and creation)
+    - `GET`, `PATCH`, `DELETE /api/webhooks/[id]` (Webhook management and delivery logs)
+    - `POST /api/webhooks/[id]/test` (Webhook test ping)
+    - `GET`, `PUT /api/quality-gates` (Quality Gate policy management)
   - **UI Layer:**
-    - `/dashboard/targets/[id]/monitoring`: Continuous Monitoring & Schedules Center with score history timeline, schedule manager, create modal, and alerts feed.
-    - Updated navigation tabs in target details and attack surface views.
+    - `/dashboard/settings/api-keys`: API Key creation with one-time reveal modal, masked prefix table, and revoke controls.
+    - `/dashboard/settings/webhooks`: Outbound Webhook management with secret reveal, delivery logs inspector, and test ping.
+    - `/dashboard/targets/[id]/ci-cd`: Target CI/CD Hub with copyable GitHub Actions workflow (`.github/workflows/zerivex.yml`), GitLab CI, cURL pipeline script, and interactive Quality Gate policy editor.
+    - Updated navigation tabs in target details, attack surface, and monitoring views.
   - **Automated Security Tests:**
-    - Built `tests/security/scheduling-monitoring.test.ts` (**18/18 passing**).
-    - Entire platform security test suite: **130/130 passing** across all 10 test files.
+    - Built `tests/security/ci-cd-developer-workflow.test.ts` (**21/21 passing**).
+    - Full security test suite: **153/153 passing** across all 11 test suites.
     - TypeScript strict compilation: **0 errors (`tsc --noEmit`)**.
-    - Next.js production build: **Compiled successfully (all 29 routes)**.
+    - Next.js production build: **Compiled successfully (all 46 routes)**.
     - Dependencies audited: **0 vulnerabilities**.
 
 ---
 
 ## 3. Files Created & Modified
-- `src/core/db/migrations/003_scheduling_monitoring.sql` (NEW)
-- `src/core/scheduler/cron-evaluator.ts` (NEW)
-- `src/core/scheduler/schedule-repository.ts` (NEW)
-- `src/core/scheduler/scheduler-service.ts` (NEW)
-- `src/core/monitoring/monitoring-repository.ts` (NEW)
-- `src/core/monitoring/regression-detector.ts` (NEW)
-- `src/app/api/schedules/route.ts` (NEW)
-- `src/app/api/schedules/[id]/route.ts` (NEW)
-- `src/app/api/schedules/[id]/run/route.ts` (NEW)
-- `src/app/api/targets/[id]/monitoring/route.ts` (NEW)
-- `src/app/api/monitoring/alerts/route.ts` (NEW)
-- `src/app/(dashboard)/dashboard/targets/[id]/monitoring/page.tsx` (NEW)
-- `tests/security/scheduling-monitoring.test.ts` (NEW)
+- `src/core/db/migrations/004_cicd_developer_workflow.sql` (NEW)
+- `scripts/migrate.ts` (NEW)
+- `src/core/auth/api-key-service.ts` (NEW)
+- `src/core/cicd/quality-gate-engine.ts` (NEW)
+- `src/core/cicd/quality-gate-repository.ts` (NEW)
+- `src/core/reporting/sarif-generator.ts` (NEW)
+- `src/core/webhooks/webhook-repository.ts` (NEW)
+- `src/core/webhooks/webhook-dispatcher.ts` (NEW)
+- `src/app/api/v1/ci/scan/route.ts` (NEW)
+- `src/app/api/v1/ci/scans/[id]/route.ts` (NEW)
+- `src/app/api/v1/ci/scans/[id]/sarif/route.ts` (NEW)
+- `src/app/api/v1/ci/scans/[id]/summary/route.ts` (NEW)
+- `src/app/api/api-keys/route.ts` (NEW)
+- `src/app/api/api-keys/[id]/route.ts` (NEW)
+- `src/app/api/webhooks/route.ts` (NEW)
+- `src/app/api/webhooks/[id]/route.ts` (NEW)
+- `src/app/api/webhooks/[id]/test/route.ts` (NEW)
+- `src/app/api/quality-gates/route.ts` (NEW)
+- `src/app/(dashboard)/dashboard/settings/api-keys/page.tsx` (NEW)
+- `src/app/(dashboard)/dashboard/settings/webhooks/page.tsx` (NEW)
+- `src/app/(dashboard)/dashboard/targets/[id]/ci-cd/page.tsx` (NEW)
+- `tests/security/ci-cd-developer-workflow.test.ts` (NEW)
 - `src/core/rbac/permissions.ts` (MODIFIED)
+- `src/core/rbac/authorization-guard.ts` (MODIFIED)
 - `src/core/audit/audit-service.ts` (MODIFIED)
 - `src/core/scanner/scan-runner.ts` (MODIFIED)
 - `src/app/(dashboard)/dashboard/targets/[id]/page.tsx` (MODIFIED)
 - `src/app/(dashboard)/dashboard/targets/[id]/surface/page.tsx` (MODIFIED)
+- `src/app/(dashboard)/dashboard/targets/[id]/monitoring/page.tsx` (MODIFIED)
+- `package.json` (MODIFIED)
 - `ZERIVEX_CONTEXT.md` & `HANDOFF.md` (MODIFIED)
 
 ---
 
 ## 4. Test & Verification State
-- **Full Test Suite:** 132/132 tests passing across all 10 test suites (`config.test.ts`, `database-isolation.test.ts`, `session.test.ts`, `auth-rbac.test.ts`, `target-verification.test.ts`, `scanner-engine.test.ts`, `remediation-reporting.test.ts`, `active-scanner.test.ts`, `attack-surface.test.ts`, `scheduling-monitoring.test.ts`).
+- **Full Test Suite:** 153/153 tests passing across all 11 test suites (`config.test.ts`, `database-isolation.test.ts`, `session.test.ts`, `auth-rbac.test.ts`, `target-verification.test.ts`, `scanner-engine.test.ts`, `remediation-reporting.test.ts`, `active-scanner.test.ts`, `attack-surface.test.ts`, `scheduling-monitoring.test.ts`, `ci-cd-developer-workflow.test.ts`).
 - **Typecheck:** `tsc --noEmit` passed with 0 errors.
-- **Build:** `next build` passed with 0 errors (all 29 routes compiled in 701ms).
+- **Build:** `next build` passed with 0 errors (all 46 routes compiled cleanly).
 - **Dependency Audit:** `npm audit` returned 0 vulnerabilities.
 - **Failing Tests:** None.
 - **Known Bugs:** None.
@@ -96,16 +114,17 @@
 ---
 
 ## 5. Security Concerns & Guardrails
-- Active probes and recurring active scans MUST NEVER execute against unverified targets (ADR-0008). If a target loses verification after schedule creation, worker automatically down-scopes to passive scanning and alerts the team.
-- Concurrency-safe job dispatching utilizes `SELECT ... FOR UPDATE SKIP LOCKED` to prevent duplicate parallel scan runs.
-- Cross-tenant IDOR defense: All schedules and monitoring alerts are strictly isolated by `organization_id`.
-- All scheduling actions and regression alerts are recorded in the append-only audit trail.
+- Plaintext API keys are never stored; only SHA-256 hashes are persisted in PostgreSQL.
+- API keys enforce capability scopes (`scans:create`, `scans:read`, `targets:read`, `reports:read`, `ci:execute`).
+- CI scans strictly enforce ADR-0008: active intrusive scans remain locked on unverified targets.
+- Webhook dispatcher enforces SSRF protections through `SafeHttpClient`, rejecting all requests to private networks, loopback, or cloud metadata endpoints.
+- Outbound webhooks include cryptographically secure HMAC-SHA256 signatures (`X-Zerivex-Signature-256`) to protect consumer systems against spoofing.
 
 ---
 
 ## 6. What Should Happen Next
-1. Platform Owner reviews Phase 8 Completion Report and Walkthrough.
-2. Platform Owner approves transition to **Phase 9: CI/CD Security Integration & Developer Workflow**.
+1. Platform Owner reviews Phase 9 Completion Report and Walkthrough.
+2. Platform Owner approves transition to **Phase 10: Enterprise Teams, Audit Vault & Collaboration**.
 
 ---
 

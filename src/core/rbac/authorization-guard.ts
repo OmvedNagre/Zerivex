@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateSessionToken, SessionContext, SESSION_COOKIE_NAME } from '@/core/auth/session-service';
 import { PlatformRole, Permission, roleHasPermission } from '@/core/rbac/permissions';
 import { recordAuditEvent } from '@/core/audit/audit-service';
+import { validateApiKey, ApiKeyContext, API_KEY_PREFIX } from '@/core/auth/api-key-service';
+import { getUserActiveOrganization } from '@/core/auth/organization-context';
 
 export class UnauthorizedError extends Error {
   readonly statusCode = 401;
@@ -17,6 +19,16 @@ export class ForbiddenError extends Error {
     super(message);
     this.name = 'ForbiddenError';
   }
+}
+
+export interface RequestAuthContext {
+  authType: 'SESSION' | 'API_KEY';
+  userId: string;
+  organizationId: string;
+  userRole: PlatformRole;
+  scopes?: string[];
+  sessionContext?: SessionContext;
+  apiKeyContext?: ApiKeyContext;
 }
 
 /**
@@ -49,6 +61,68 @@ export function requirePermission(context: SessionContext, permission: Permissio
   if (!roleHasPermission(context.user.role, permission)) {
     throw new ForbiddenError(`Role '${context.user.role}' lacks required permission: '${permission}'`);
   }
+}
+
+/**
+ * Unified authentication guard supporting both interactive session cookies and
+ * automation API keys (Authorization: Bearer zx_live_...).
+ */
+export async function requireApiOrSessionAuth(
+  req: NextRequest,
+  requiredPermission?: Permission
+): Promise<RequestAuthContext> {
+  const authHeader = req.headers.get('authorization');
+
+  // 1. Check for API key (Bearer zx_live_...)
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const rawKey = authHeader.slice(7).trim();
+    if (rawKey.startsWith(API_KEY_PREFIX)) {
+      const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip');
+      const apiKeyCtx = await validateApiKey(rawKey, clientIp);
+
+      if (!apiKeyCtx) {
+        throw new UnauthorizedError('Invalid, expired, or revoked API key');
+      }
+
+      // If a permission is required, verify the API key scopes include it
+      if (requiredPermission) {
+        if (!apiKeyCtx.scopes.includes(requiredPermission as string)) {
+          throw new ForbiddenError(`API key lacks required scope: '${requiredPermission}'`);
+        }
+      }
+
+      return {
+        authType: 'API_KEY',
+        userId: apiKeyCtx.userId,
+        organizationId: apiKeyCtx.organizationId,
+        userRole: apiKeyCtx.userRole,
+        scopes: apiKeyCtx.scopes,
+        apiKeyContext: apiKeyCtx,
+      };
+    }
+  }
+
+  // 2. Fall back to session cookie authentication
+  verifyCsrfProtection(req);
+  const sessionCtx = await requireAuthenticatedUser(req);
+
+  if (requiredPermission) {
+    requirePermission(sessionCtx, requiredPermission);
+  }
+
+  let organizationId = sessionCtx.organizationId;
+  if (!organizationId) {
+    const orgCtx = await getUserActiveOrganization(sessionCtx.user.id);
+    organizationId = orgCtx.organizationId;
+  }
+
+  return {
+    authType: 'SESSION',
+    userId: sessionCtx.user.id,
+    organizationId,
+    userRole: sessionCtx.user.role,
+    sessionContext: sessionCtx,
+  };
 }
 
 /**

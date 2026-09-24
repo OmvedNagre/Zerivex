@@ -19,7 +19,7 @@ Zerivex operates on a closed-loop security cycle:
 ---
 
 ## 2. Current Status & Phase State
-- **Current Phase:** `PHASE 8 — SCHEDULING, MONITORING & AUTOMATION ENGINE`
+- **Current Phase:** `PHASE 9 — CI/CD SECURITY INTEGRATION & DEVELOPER WORKFLOW`
 - **Phase Status:** `READY_FOR_REVIEW`
 - **Completed Phases:**
   - `Phase 0A`: Pre-Implementation Discovery (`COMPLETE`)
@@ -34,7 +34,8 @@ Zerivex operates on a closed-loop security cycle:
   - `Phase 6`: Deep Web Application Scanning (`COMPLETE` - 4 active check modules for SQLi, XSS, Open Redirect, and Path Traversal; token bucket rate limiter & circuit breaker; 95/95 test suite passing)
   - `Phase 7`: Comprehensive Security Testing & Attack Surface Engine (`COMPLETE` - endpoint crawler, tech stack fingerprinting, 4 new checks: API/GraphQL, security.txt, HTTP methods/XST, stack trace leakage; 31 remediation rules; Attack Surface Explorer UI; 112/112 tests passing)
   - `Phase 8`: Scheduling, Monitoring & Automation Engine (`COMPLETE` - deterministic 5-part cron evaluator, recurring scan schedules, target verification downgrade fail-safe, continuous monitoring & score regression detector, tenant alert feeds, Monitoring UI, 130/130 tests passing)
-- **Next Phase:** `PHASE 9 — CI/CD SECURITY INTEGRATION & DEVELOPER WORKFLOW` (Blocked on Owner Review & Sign-off)
+  - `Phase 9`: CI/CD Security Integration & Developer Workflow (`COMPLETE` - scoped API keys with SHA-256 hash storage, build-breaker Quality Gate policy engine, OASIS SARIF v2.1.0 generator, SSRF-hardened outbound webhooks with HMAC-SHA256 signatures, CI REST endpoints, Developer Settings & Target CI/CD Hub UI, 153/153 tests passing)
+- **Next Phase:** `PHASE 10 — ENTERPRISE TEAMS, AUDIT VAULT & COLLABORATION` (Blocked on Owner Review & Sign-off)
 
 ---
 
@@ -82,24 +83,27 @@ Zerivex operates on a closed-loop security cycle:
 | :--- | :--- | :--- |
 | **Governance & Tooling** | `COMPLETE` | Next.js 16.3.5, TypeScript strict, Vitest 5.0.1, 0 npm audit vulnerabilities. |
 | **Config Validation** | `IMPLEMENTED` | Fail-closed runtime schema validation in `src/core/config/env-validator.ts` with 100% test coverage. |
-| **Database State** | `IMPLEMENTED` | Neon PostgreSQL live; 17 canonical tables migrated (`001_initial_schema.sql` + `002_attack_surface.sql` + `003_scheduling_monitoring.sql`). |
+| **Database State** | `IMPLEMENTED` | Neon PostgreSQL live; 21 canonical tables migrated (`001_initial_schema.sql` + `002_attack_surface.sql` + `003_scheduling_monitoring.sql` + `004_cicd_developer_workflow.sql`). |
 | **Audit Engine** | `IMPLEMENTED` | Append-only `src/core/audit/audit-service.ts` with sensitive data scrubbing & transaction client support. |
-| **Multi-Tenancy / IDOR**| `IMPLEMENTED` | Tenant-scoped repository layer (`tenant-repository.ts`, `surface-repository.ts`, `schedule-repository.ts`, `monitoring-repository.ts`). |
-| **Authentication State**| `IMPLEMENTED` | SHA-256 session token hashing, Google PKCE + GitHub OAuth, `__Host-zerivex_session` cookie, logout/logout-all. |
+| **Multi-Tenancy / IDOR**| `IMPLEMENTED` | Tenant-scoped repository layer (`tenant-repository.ts`, `surface-repository.ts`, `schedule-repository.ts`, `monitoring-repository.ts`, `webhook-repository.ts`, `quality-gate-repository.ts`). |
+| **Authentication State**| `IMPLEMENTED` | SHA-256 session token hashing, Google PKCE + GitHub OAuth, `__Host-zerivex_session` cookie, API Key bearer auth, logout/logout-all. |
 | **Platform Bootstrap**  | `IMPLEMENTED` | Atomic one-time owner bootstrap via `INITIAL_OWNER_EMAIL`, `platform_bootstraps` row lock, sole owner demotion protection. |
-| **Authorization / RBAC**| `IMPLEMENTED` | `src/core/rbac/permissions.ts`, `authorization-guard.ts` with server-side role/permission guards & CSRF defense. |
+| **Authorization / RBAC**| `IMPLEMENTED` | `src/core/rbac/permissions.ts`, `authorization-guard.ts` with unified API key / session auth & capability scope enforcement. |
 | **Target Management**   | `IMPLEMENTED` | `target-service.ts`, `verification-service.ts`, `/dashboard/targets`, `/dashboard/targets/[id]`. |
-| **SSRF Defense**        | `IMPLEMENTED` | `ip-validator.ts`, `safe-http-client.ts` with socket-level IP pinning, redirect re-validation, TRACE/OPTIONS support. |
+| **SSRF Defense**        | `IMPLEMENTED` | `ip-validator.ts`, `safe-http-client.ts` with socket-level IP pinning, redirect re-validation, TRACE/OPTIONS support, webhook egress protection. |
 | **Scanner Engine**      | `IMPLEMENTED` | 14 check modules (6 passive + 4 active + 4 API/surface), synchronous evidence redactor, deterministic 0-100 scorer. |
 | **Attack Surface Engine**| `IMPLEMENTED` | Route spider crawler, HTML form/param extractor, robots/sitemap parser, tech stack fingerprinter. |
 | **Scheduling Engine**   | `IMPLEMENTED` | Deterministic 5-part cron parser, recurring scan scheduler, target verification downgrade protection, atomic worker polling. |
 | **Continuous Monitoring**| `IMPLEMENTED` | Score regression detector ($\ge 10$ drop alert), newly introduced vulnerability alerts, historical trendlines, alert management. |
 | **Active Rate Limiter** | `IMPLEMENTED` | Token bucket (5 req/sec cap) & circuit breaker tripping on 5 consecutive 5xx errors to protect customer infrastructure. |
+| **CI/CD Quality Gates**  | `IMPLEMENTED` | Build-breaker Quality Gate engine with configurable score thresholds, severity caps, and regression blockers. |
+| **API Keys & Webhooks**  | `IMPLEMENTED` | Scoped API keys with SHA-256 hash storage, HMAC-SHA256 signed outbound webhooks, SSRF-safe delivery engine. |
+| **SARIF v2.1.0 Engine**  | `IMPLEMENTED` | OASIS SARIF v2.1.0 export format for native GitHub Code Scanning and GitLab SAST/DAST integration. |
 | **Findings Management** | `IMPLEMENTED` | Unified findings inventory, status lifecycle triage, justification-backed risk acceptance, audit trail. |
 | **Remediation Engine**  | `IMPLEMENTED` | 31-rule catalog with framework diffs, CLI checks, and targeted fix verification service. |
 | **Reporting Engine**    | `IMPLEMENTED` | Executive HTML / PDF reports with print styling, technical JSON exports, download API routes. |
-| **Dashboard UI**        | `IMPLEMENTED` | Complete UI with scans, scan reports, findings inventory, fix guides, Attack Surface Explorer, and Monitoring Center. |
-| **Security State** | `VERIFIED` | 132/132 security tests passing against live database across all 10 test suites. |
+| **Dashboard UI**        | `IMPLEMENTED` | Complete UI with scans, reports, findings, Attack Surface Explorer, Monitoring Center, Developer Settings, and Target CI/CD Hub. |
+| **Security State** | `VERIFIED` | 153/153 security tests passing against live database across all 11 test suites. |
 | **Test State** | `VERIFIED` | Vitest test suite running; `tests/security/` passing 100%. |
 
 ---
@@ -121,11 +125,11 @@ Zerivex operates on a closed-loop security cycle:
 - `.env.local` configured with verified Neon database and CSPRNG secrets.
 - Dependencies audited: **0 vulnerabilities**.
 - TypeScript strict compilation: **Passing cleanly (`tsc --noEmit`)**.
-- Next.js production build: **Compiled successfully (`next build`, all 29 routes)**.
-- Security tests: **132/132 passing against live PostgreSQL**.
+- Next.js production build: **Compiled successfully (`next build`, all 46 routes)**.
+- Security tests: **153/153 passing against live PostgreSQL**.
 
 ---
 
 ## 7. Current Hand-off & Next Action
-- **Current Phase Status:** `PHASE 8 — READY FOR REVIEW`
-- **Immediate Next Action:** Obtain Platform Owner sign-off on Phase 8 and proceed to **Phase 9: CI/CD Security Integration & Developer Workflow**.
+- **Current Phase Status:** `PHASE 9 — READY FOR REVIEW`
+- **Immediate Next Action:** Obtain Platform Owner sign-off on Phase 9 and proceed to **Phase 10: Enterprise Teams, Audit Vault & Collaboration**.

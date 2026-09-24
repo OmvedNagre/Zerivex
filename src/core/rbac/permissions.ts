@@ -26,7 +26,16 @@ export type Permission =
   | 'schedules:read'
   | 'schedules:update'
   | 'schedules:delete'
-  | 'monitoring:read';
+  | 'monitoring:read'
+  | 'apikeys:create'
+  | 'apikeys:read'
+  | 'apikeys:revoke'
+  | 'webhooks:create'
+  | 'webhooks:read'
+  | 'webhooks:update'
+  | 'webhooks:delete'
+  | 'ci:execute'
+  | 'qualitygate:manage';
 
 /**
  * Platform role permissions map.
@@ -54,6 +63,15 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'schedules:update',
     'schedules:delete',
     'monitoring:read',
+    'apikeys:create',
+    'apikeys:read',
+    'apikeys:revoke',
+    'webhooks:create',
+    'webhooks:read',
+    'webhooks:update',
+    'webhooks:delete',
+    'ci:execute',
+    'qualitygate:manage',
   ],
   SUPER_ADMIN: [
     'scans:create',
@@ -75,6 +93,15 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'schedules:update',
     'schedules:delete',
     'monitoring:read',
+    'apikeys:create',
+    'apikeys:read',
+    'apikeys:revoke',
+    'webhooks:create',
+    'webhooks:read',
+    'webhooks:update',
+    'webhooks:delete',
+    'ci:execute',
+    'qualitygate:manage',
   ],
   ADMIN: [
     'scans:create',
@@ -94,6 +121,15 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'schedules:update',
     'schedules:delete',
     'monitoring:read',
+    'apikeys:create',
+    'apikeys:read',
+    'apikeys:revoke',
+    'webhooks:create',
+    'webhooks:read',
+    'webhooks:update',
+    'webhooks:delete',
+    'ci:execute',
+    'qualitygate:manage',
   ],
   SUPPORT: [
     'scans:read',
@@ -103,6 +139,8 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'users:read',
     'schedules:read',
     'monitoring:read',
+    'apikeys:read',
+    'webhooks:read',
   ],
   USER: [
     'scans:create',
@@ -120,6 +158,15 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'schedules:update',
     'schedules:delete',
     'monitoring:read',
+    'apikeys:create',
+    'apikeys:read',
+    'apikeys:revoke',
+    'webhooks:create',
+    'webhooks:read',
+    'webhooks:update',
+    'webhooks:delete',
+    'ci:execute',
+    'qualitygate:manage',
   ],
 };
 
