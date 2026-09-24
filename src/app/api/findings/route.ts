@@ -34,9 +34,13 @@ export async function GET(req: NextRequest) {
         f.cwe_id as "cweId",
         f.owasp_category as "owaspCategory",
         f.created_at as "createdAt",
+        f.assigned_user_id as "assignedUserId",
+        u.email as "assignedUserEmail",
+        u.display_name as "assignedUserName",
         t.target_url as "targetUrl"
       FROM findings f
       JOIN targets t ON t.id = f.target_id
+      LEFT JOIN users u ON u.id = f.assigned_user_id
       WHERE f.organization_id = $1
     `;
 

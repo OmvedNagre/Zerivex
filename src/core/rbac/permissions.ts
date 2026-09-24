@@ -4,7 +4,7 @@
 
 export type PlatformRole = 'OWNER' | 'SUPER_ADMIN' | 'ADMIN' | 'SUPPORT' | 'USER';
 
-export type OrganizationRole = 'ORG_OWNER' | 'ORG_ADMIN' | 'ORG_MEMBER';
+export type OrganizationRole = 'ORG_OWNER' | 'ORG_ADMIN' | 'ORG_MEMBER' | 'ORG_VIEWER' | 'ORG_AUDITOR';
 
 export type Permission =
   | 'scans:create'
@@ -35,7 +35,14 @@ export type Permission =
   | 'webhooks:update'
   | 'webhooks:delete'
   | 'ci:execute'
-  | 'qualitygate:manage';
+  | 'qualitygate:manage'
+  | 'org:manage'
+  | 'org:invite'
+  | 'org:members_read'
+  | 'org:members_manage'
+  | 'audit:export'
+  | 'findings:comment'
+  | 'findings:assign';
 
 /**
  * Platform role permissions map.
@@ -72,6 +79,13 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'webhooks:delete',
     'ci:execute',
     'qualitygate:manage',
+    'org:manage',
+    'org:invite',
+    'org:members_read',
+    'org:members_manage',
+    'audit:export',
+    'findings:comment',
+    'findings:assign',
   ],
   SUPER_ADMIN: [
     'scans:create',
@@ -102,6 +116,13 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'webhooks:delete',
     'ci:execute',
     'qualitygate:manage',
+    'org:manage',
+    'org:invite',
+    'org:members_read',
+    'org:members_manage',
+    'audit:export',
+    'findings:comment',
+    'findings:assign',
   ],
   ADMIN: [
     'scans:create',
@@ -130,6 +151,13 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'webhooks:delete',
     'ci:execute',
     'qualitygate:manage',
+    'org:manage',
+    'org:invite',
+    'org:members_read',
+    'org:members_manage',
+    'audit:export',
+    'findings:comment',
+    'findings:assign',
   ],
   SUPPORT: [
     'scans:read',
@@ -141,6 +169,8 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'monitoring:read',
     'apikeys:read',
     'webhooks:read',
+    'org:members_read',
+    'audit:export',
   ],
   USER: [
     'scans:create',
@@ -167,6 +197,13 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'webhooks:delete',
     'ci:execute',
     'qualitygate:manage',
+    'org:manage',
+    'org:invite',
+    'org:members_read',
+    'org:members_manage',
+    'audit:export',
+    'findings:comment',
+    'findings:assign',
   ],
 };
 
@@ -178,5 +215,120 @@ export function roleHasPermission(role: PlatformRole, permission: Permission): b
     return true; // Owner possesses all platform capabilities
   }
   const permissions = ROLE_PERMISSIONS[role] || [];
+  return permissions.includes(permission);
+}
+
+/**
+ * Organization Role Capability Mapping
+ */
+export const ORG_ROLE_PERMISSIONS: Record<OrganizationRole, readonly Permission[]> = {
+  ORG_OWNER: [
+    'scans:create',
+    'scans:read',
+    'scans:cancel',
+    'targets:create',
+    'targets:read',
+    'targets:update',
+    'targets:delete',
+    'targets:verify',
+    'findings:read',
+    'findings:update',
+    'audit:read',
+    'schedules:create',
+    'schedules:read',
+    'schedules:update',
+    'schedules:delete',
+    'monitoring:read',
+    'apikeys:create',
+    'apikeys:read',
+    'apikeys:revoke',
+    'webhooks:create',
+    'webhooks:read',
+    'webhooks:update',
+    'webhooks:delete',
+    'ci:execute',
+    'qualitygate:manage',
+    'org:manage',
+    'org:invite',
+    'org:members_read',
+    'org:members_manage',
+    'audit:export',
+    'findings:comment',
+    'findings:assign',
+  ],
+  ORG_ADMIN: [
+    'scans:create',
+    'scans:read',
+    'scans:cancel',
+    'targets:create',
+    'targets:read',
+    'targets:update',
+    'targets:delete',
+    'targets:verify',
+    'findings:read',
+    'findings:update',
+    'audit:read',
+    'schedules:create',
+    'schedules:read',
+    'schedules:update',
+    'schedules:delete',
+    'monitoring:read',
+    'apikeys:create',
+    'apikeys:read',
+    'apikeys:revoke',
+    'webhooks:create',
+    'webhooks:read',
+    'webhooks:update',
+    'webhooks:delete',
+    'ci:execute',
+    'qualitygate:manage',
+    'org:invite',
+    'org:members_read',
+    'org:members_manage',
+    'audit:export',
+    'findings:comment',
+    'findings:assign',
+  ],
+  ORG_MEMBER: [
+    'scans:create',
+    'scans:read',
+    'scans:cancel',
+    'targets:read',
+    'findings:read',
+    'findings:update',
+    'schedules:read',
+    'monitoring:read',
+    'apikeys:read',
+    'ci:execute',
+    'org:members_read',
+    'findings:comment',
+    'findings:assign',
+  ],
+  ORG_VIEWER: [
+    'scans:read',
+    'targets:read',
+    'findings:read',
+    'schedules:read',
+    'monitoring:read',
+    'org:members_read',
+    'audit:read',
+  ],
+  ORG_AUDITOR: [
+    'scans:read',
+    'targets:read',
+    'findings:read',
+    'schedules:read',
+    'monitoring:read',
+    'org:members_read',
+    'audit:read',
+    'audit:export',
+  ],
+};
+
+/**
+ * Check whether an organization role possesses a specific permission.
+ */
+export function orgRoleHasPermission(orgRole: OrganizationRole, permission: Permission): boolean {
+  const permissions = ORG_ROLE_PERMISSIONS[orgRole] || [];
   return permissions.includes(permission);
 }

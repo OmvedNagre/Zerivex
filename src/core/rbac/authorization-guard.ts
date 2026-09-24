@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { query } from '@/core/db/database';
 import { validateSessionToken, SessionContext, SESSION_COOKIE_NAME } from '@/core/auth/session-service';
-import { PlatformRole, Permission, roleHasPermission } from '@/core/rbac/permissions';
+import { PlatformRole, Permission, roleHasPermission, OrganizationRole, orgRoleHasPermission } from '@/core/rbac/permissions';
 import { recordAuditEvent } from '@/core/audit/audit-service';
 import { validateApiKey, ApiKeyContext, API_KEY_PREFIX } from '@/core/auth/api-key-service';
 import { getUserActiveOrganization } from '@/core/auth/organization-context';
@@ -136,6 +137,46 @@ export function requirePlatformRole(context: SessionContext, allowedRoles: Platf
   if (!allowedRoles.includes(context.user.role)) {
     throw new ForbiddenError(`Action restricted to roles: [${allowedRoles.join(', ')}]`);
   }
+}
+
+/**
+ * Fetch an authenticated user's role within a specific organization.
+ */
+export async function getMemberOrgRole(
+  userId: string,
+  organizationId: string
+): Promise<OrganizationRole | null> {
+  const res = await query<{ role: OrganizationRole }>(
+    'SELECT role FROM memberships WHERE user_id = $1 AND organization_id = $2',
+    [userId, organizationId]
+  );
+  return res.rows[0]?.role ?? null;
+}
+
+/**
+ * Enforce that the user holds a specific capability within their organization.
+ * If user is Platform OWNER, always grant full organization capabilities.
+ */
+export async function requireOrgRolePermission(
+  userId: string,
+  organizationId: string,
+  permission: Permission,
+  platformRole?: PlatformRole
+): Promise<OrganizationRole> {
+  if (platformRole === 'OWNER') {
+    return 'ORG_OWNER';
+  }
+
+  const role = await getMemberOrgRole(userId, organizationId);
+  if (!role) {
+    throw new ForbiddenError('You are not a member of this organization');
+  }
+
+  if (!orgRoleHasPermission(role, permission)) {
+    throw new ForbiddenError(`Organization role '${role}' lacks required permission: '${permission}'`);
+  }
+
+  return role;
 }
 
 /**

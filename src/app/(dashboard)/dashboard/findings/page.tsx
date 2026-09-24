@@ -21,6 +21,9 @@ interface FindingItem {
   cweId: string | null;
   owaspCategory: string | null;
   createdAt: string;
+  assignedUserId?: string | null;
+  assignedUserEmail?: string | null;
+  assignedUserName?: string | null;
 }
 
 export default function FindingsPage() {
@@ -40,6 +43,16 @@ export default function FindingsPage() {
   const [riskReason, setRiskReason] = useState<string>('');
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
+
+  // Collaboration modal & comments
+  const [collabFinding, setCollabFinding] = useState<FindingItem | null>(null);
+  const [collabComments, setCollabComments] = useState<any[]>([]);
+  const [collabLoading, setCollabLoading] = useState(false);
+  const [collabError, setCollabError] = useState<string | null>(null);
+  const [newCommentText, setNewCommentText] = useState('');
+  const [postingComment, setPostingComment] = useState(false);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [assigning, setAssigning] = useState(false);
 
   // Remediation & Fix Verification Modal
   const [remediationFinding, setRemediationFinding] = useState<FindingItem | null>(null);
@@ -86,6 +99,110 @@ export default function FindingsPage() {
     setNewStatus(f.status);
     setRiskReason(f.acceptedRiskReason || '');
     setUpdateError(null);
+  };
+
+  const handleOpenCollabModal = async (finding: FindingItem) => {
+    setCollabFinding(finding);
+    setCollabLoading(true);
+    setCollabError(null);
+    setNewCommentText('');
+    try {
+      const [commentsRes, membersRes] = await Promise.all([
+        fetch(`/api/findings/${finding.id}/comments`),
+        fetch('/api/teams/members'),
+      ]);
+      const commentsData = await commentsRes.json();
+      const membersData = await membersRes.json();
+
+      if (commentsData.success) {
+        setCollabComments(commentsData.data.comments);
+      }
+      if (membersData.success) {
+        setTeamMembers(membersData.data.members);
+      }
+    } catch (err: any) {
+      setCollabError(err?.message || 'Failed to load comments');
+    } finally {
+      setCollabLoading(false);
+    }
+  };
+
+  const handleAddComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!collabFinding || !newCommentText.trim()) return;
+    setPostingComment(true);
+    setCollabError(null);
+    try {
+      const res = await fetch(`/api/findings/${collabFinding.id}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: newCommentText.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setCollabError(data.error || 'Failed to post comment');
+        return;
+      }
+      setCollabComments((prev) => [...prev, data.data.comment]);
+      setNewCommentText('');
+    } catch (err: any) {
+      setCollabError(err?.message || 'Error posting comment');
+    } finally {
+      setPostingComment(false);
+    }
+  };
+
+  const handleAssignUser = async (userId: string | null) => {
+    if (!collabFinding) return;
+    setAssigning(true);
+    setCollabError(null);
+    try {
+      const res = await fetch(`/api/findings/${collabFinding.id}/assign`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignedUserId: userId || null }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setCollabError(data.error || 'Failed to assign finding');
+        return;
+      }
+
+      setCollabFinding((prev) =>
+        prev
+          ? {
+              ...prev,
+              assignedUserId: data.data.assignedUserId,
+              assignedUserEmail: data.data.assignedUserEmail,
+              assignedUserName: data.data.assignedUserName,
+            }
+          : null
+      );
+
+      setFindings((prev) =>
+        prev.map((f) =>
+          f.id === collabFinding.id
+            ? {
+                ...f,
+                assignedUserId: data.data.assignedUserId,
+                assignedUserEmail: data.data.assignedUserEmail,
+                assignedUserName: data.data.assignedUserName,
+              }
+            : f
+        )
+      );
+
+      // Refresh comments to display new system note
+      const commentsRes = await fetch(`/api/findings/${collabFinding.id}/comments`);
+      const commentsData = await commentsRes.json();
+      if (commentsData.success) {
+        setCollabComments(commentsData.data.comments);
+      }
+    } catch (err: any) {
+      setCollabError(err?.message || 'Error assigning finding');
+    } finally {
+      setAssigning(false);
+    }
   };
 
   const handleOpenRemediationModal = (finding: FindingItem) => {
@@ -510,6 +627,14 @@ export default function FindingsPage() {
                           {new Date(finding.createdAt).toLocaleDateString()}
                         </span>
                       </div>
+                      {finding.assignedUserEmail && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <span style={{ color: '#60a5fa' }}>👤</span>
+                          <span style={{ color: '#60a5fa', fontWeight: 500, fontSize: '0.8rem' }}>
+                            {finding.assignedUserName || finding.assignedUserEmail}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -521,6 +646,15 @@ export default function FindingsPage() {
                       style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
                     >
                       ⚡ Fix Guide & Verify
+                    </button>
+
+                    <button
+                      onClick={() => handleOpenCollabModal(finding)}
+                      className="btn btn-secondary"
+                      style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                    >
+                      <span>💬</span>
+                      <span>Discuss & Assign</span>
                     </button>
 
                     <Link
@@ -934,6 +1068,307 @@ export default function FindingsPage() {
                   disabled={updating}
                 >
                   {updating ? 'Saving...' : 'Save Triage'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Collaboration & Discussion Modal */}
+      {collabFinding && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1.5rem',
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '680px',
+              maxHeight: '90vh',
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-lg)',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: '1.25rem 1.5rem',
+                borderBottom: '1px solid var(--border-subtle)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      padding: '0.15rem 0.45rem',
+                      borderRadius: '4px',
+                      backgroundColor:
+                        collabFinding.severity === 'CRITICAL'
+                          ? 'rgba(239, 68, 68, 0.2)'
+                          : collabFinding.severity === 'HIGH'
+                          ? 'rgba(249, 115, 22, 0.2)'
+                          : 'rgba(234, 179, 8, 0.2)',
+                      color:
+                        collabFinding.severity === 'CRITICAL'
+                          ? '#f87171'
+                          : collabFinding.severity === 'HIGH'
+                          ? '#fb923c'
+                          : '#fbbf24',
+                    }}
+                  >
+                    {collabFinding.severity}
+                  </span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                    {collabFinding.ruleId}
+                  </span>
+                </div>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                  {collabFinding.title}
+                </h2>
+              </div>
+
+              <button
+                onClick={() => setCollabFinding(null)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '1.25rem', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Assignee Bar */}
+            <div
+              style={{
+                padding: '0.85rem 1.5rem',
+                backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                borderBottom: '1px solid var(--border-subtle)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                  Assignee:
+                </span>
+                <select
+                  value={collabFinding.assignedUserId || ''}
+                  onChange={(e) => handleAssignUser(e.target.value || null)}
+                  disabled={assigning}
+                  style={{
+                    backgroundColor: 'var(--bg-main)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.35rem 0.65rem',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    cursor: assigning ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <option value="">Unassigned</option>
+                  {teamMembers.map((member) => (
+                    <option key={member.userId} value={member.userId}>
+                      {member.displayName || member.email} ({member.role})
+                    </option>
+                  ))}
+                </select>
+                {assigning && (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Updating...</span>
+                )}
+              </div>
+
+              {collabFinding.resourceEndpoint && (
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                  {collabFinding.resourceEndpoint}
+                </div>
+              )}
+            </div>
+
+            {/* Scrollable Comments Thread */}
+            <div
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: '1.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem',
+                maxHeight: '360px',
+              }}
+            >
+              {collabError && (
+                <div
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    color: '#f87171',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.85rem',
+                  }}
+                >
+                  {collabError}
+                </div>
+              )}
+
+              {collabLoading ? (
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
+                  Loading discussion thread...
+                </div>
+              ) : collabComments.length === 0 ? (
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem', fontSize: '0.9rem' }}>
+                  No comments yet. Start the engineering collaboration thread below.
+                </div>
+              ) : (
+                collabComments.map((comment) => {
+                  if (comment.commentType === 'SYSTEM_NOTE') {
+                    return (
+                      <div
+                        key={comment.id}
+                        style={{
+                          textAlign: 'center',
+                          margin: '0.25rem 0',
+                        }}
+                      >
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                            color: 'var(--text-muted)',
+                            fontSize: '0.75rem',
+                            padding: '0.25rem 0.65rem',
+                            borderRadius: '999px',
+                            border: '1px solid var(--border-subtle)',
+                          }}
+                        >
+                          ℹ️ {comment.content} • {new Date(comment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={comment.id}
+                      style={{
+                        display: 'flex',
+                        gap: '0.75rem',
+                        alignItems: 'flex-start',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '50%',
+                          backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                          color: '#60a5fa',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 700,
+                          fontSize: '0.8rem',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {(comment.authorName || comment.authorEmail || 'U')[0].toUpperCase()}
+                      </div>
+                      <div
+                        style={{
+                          flex: 1,
+                          backgroundColor: 'var(--bg-main)',
+                          border: '1px solid var(--border-subtle)',
+                          borderRadius: 'var(--radius-md)',
+                          padding: '0.75rem 1rem',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                            {comment.authorName || comment.authorEmail}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            {new Date(comment.createdAt).toLocaleString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                          {comment.content}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Post Comment Input */}
+            <form
+              onSubmit={handleAddComment}
+              style={{
+                padding: '1rem 1.5rem',
+                borderTop: '1px solid var(--border-subtle)',
+                backgroundColor: 'var(--bg-main)',
+              }}
+            >
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <textarea
+                  rows={2}
+                  placeholder="Leave a comment or mitigation update..."
+                  value={newCommentText}
+                  onChange={(e) => setNewCommentText(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: '0.6rem 0.85rem',
+                    backgroundColor: 'var(--bg-card)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-sm)',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.85rem',
+                    fontFamily: 'inherit',
+                    outline: 'none',
+                    resize: 'none',
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={postingComment || !newCommentText.trim()}
+                  style={{
+                    backgroundColor: 'var(--accent-primary)',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '0 1.25rem',
+                    borderRadius: 'var(--radius-sm)',
+                    fontWeight: 600,
+                    fontSize: '0.85rem',
+                    cursor: postingComment || !newCommentText.trim() ? 'not-allowed' : 'pointer',
+                    alignSelf: 'stretch',
+                  }}
+                >
+                  {postingComment ? 'Posting...' : 'Post'}
                 </button>
               </div>
             </form>
