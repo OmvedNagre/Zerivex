@@ -7,6 +7,7 @@ import {
   VerificationMethod,
   VerificationScope,
 } from '@/core/targets/target-service';
+import { checkTargetQuota } from '@/core/billing/entitlement-service';
 
 export async function GET(req: NextRequest) {
   try {
@@ -47,6 +48,22 @@ export async function POST(req: NextRequest) {
     }
 
     const orgCtx = await getUserActiveOrganization(auth.user.id);
+
+    // Enforce billing target quota
+    const quota = await checkTargetQuota(orgCtx.organizationId, auth.user.role);
+    if (!quota.allowed) {
+      return NextResponse.json(
+        {
+          error: quota.reason,
+          quota: {
+            current: quota.current,
+            max: quota.max,
+            planId: quota.planId,
+          },
+        },
+        { status: 403 }
+      );
+    }
 
     const target = await registerTarget({
       organizationId: orgCtx.organizationId,

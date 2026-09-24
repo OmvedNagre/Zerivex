@@ -337,7 +337,17 @@ export default function TargetsPage() {
                   marginBottom: '1.25rem',
                 }}
               >
-                {formError}
+                <div>{formError}</div>
+                {formError.toLowerCase().includes('limit') && (
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <Link
+                      href="/dashboard/billing"
+                      style={{ color: '#60a5fa', fontWeight: 600, textDecoration: 'underline' }}
+                    >
+                      View Billing & Upgrade Plan (INR ₹) &rarr;
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 

@@ -42,7 +42,9 @@ export type Permission =
   | 'org:members_manage'
   | 'audit:export'
   | 'findings:comment'
-  | 'findings:assign';
+  | 'findings:assign'
+  | 'billing:read'
+  | 'billing:manage';
 
 /**
  * Platform role permissions map.
@@ -86,6 +88,8 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'audit:export',
     'findings:comment',
     'findings:assign',
+    'billing:read',
+    'billing:manage',
   ],
   SUPER_ADMIN: [
     'scans:create',
@@ -123,6 +127,8 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'audit:export',
     'findings:comment',
     'findings:assign',
+    'billing:read',
+    'billing:manage',
   ],
   ADMIN: [
     'scans:create',
@@ -158,6 +164,7 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'audit:export',
     'findings:comment',
     'findings:assign',
+    'billing:read',
   ],
   SUPPORT: [
     'scans:read',
@@ -171,6 +178,7 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'webhooks:read',
     'org:members_read',
     'audit:export',
+    'billing:read',
   ],
   USER: [
     'scans:create',
@@ -204,6 +212,8 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'audit:export',
     'findings:comment',
     'findings:assign',
+    'billing:read',
+    'billing:manage',
   ],
 };
 
@@ -255,6 +265,8 @@ export const ORG_ROLE_PERMISSIONS: Record<OrganizationRole, readonly Permission[
     'audit:export',
     'findings:comment',
     'findings:assign',
+    'billing:read',
+    'billing:manage',
   ],
   ORG_ADMIN: [
     'scans:create',

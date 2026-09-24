@@ -292,7 +292,19 @@ export default function ScansPage() {
                   marginBottom: '1.25rem',
                 }}
               >
-                {launchError}
+                <div>{launchError}</div>
+                {(launchError.toLowerCase().includes('allocation') ||
+                  launchError.toLowerCase().includes('plan') ||
+                  launchError.toLowerCase().includes('upgrade')) && (
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <Link
+                      href="/dashboard/billing"
+                      style={{ color: '#60a5fa', fontWeight: 600, textDecoration: 'underline' }}
+                    >
+                      View Billing & Upgrade Plan (INR ₹) &rarr;
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 

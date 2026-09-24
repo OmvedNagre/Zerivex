@@ -7,6 +7,11 @@ import {
   listScanJobsForOrg,
 } from '@/core/scanner/scan-runner';
 import { ScanMode } from '@/core/scanner/checks/types';
+import {
+  checkScanQuota,
+  checkFeatureAccess,
+  recordScanUsage,
+} from '@/core/billing/entitlement-service';
 
 export async function GET(req: NextRequest) {
   try {
@@ -43,14 +48,53 @@ export async function POST(req: NextRequest) {
     }
 
     const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const selectedMode: ScanMode = (scanMode as ScanMode) || 'PUBLIC_PASSIVE';
 
-    // 1. Create scan job (enforces authorization gate)
+    // 1. Enforce monthly scan quota
+    const quota = await checkScanQuota(orgCtx.organizationId, auth.user.role);
+    if (!quota.allowed) {
+      return NextResponse.json(
+        {
+          error: quota.reason,
+          quota: {
+            current: quota.current,
+            max: quota.max,
+            planId: quota.planId,
+          },
+        },
+        { status: 403 }
+      );
+    }
+
+    // 2. Enforce active scanning feature access
+    if (selectedMode === 'VERIFIED_ACTIVE') {
+      const featureCheck = await checkFeatureAccess(
+        orgCtx.organizationId,
+        'deepActiveScans',
+        auth.user.role
+      );
+      if (!featureCheck.allowed) {
+        return NextResponse.json(
+          {
+            error: featureCheck.reason,
+            feature: 'deepActiveScans',
+            planId: featureCheck.planId,
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    // 3. Create scan job (enforces target ownership & authorization gate)
     const scanJob = await createScanJob({
       organizationId: orgCtx.organizationId,
       targetId,
       requesterUserId: auth.user.id,
-      scanMode: (scanMode as ScanMode) || 'PUBLIC_PASSIVE',
+      scanMode: selectedMode,
     });
+
+    // 4. Record monthly scan usage
+    await recordScanUsage(orgCtx.organizationId);
 
     // 2. Execute scan job
     const result = await executeScanJob(scanJob.id);

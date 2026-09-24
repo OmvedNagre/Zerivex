@@ -6,11 +6,30 @@ import {
 } from '@/core/rbac/authorization-guard';
 import { exportAuditVault } from '@/core/audit/audit-vault';
 import { AuditAction } from '@/core/audit/audit-service';
+import { checkFeatureAccess } from '@/core/billing/entitlement-service';
 
 export async function GET(req: NextRequest) {
   try {
     const auth = await requireApiOrSessionAuth(req, 'audit:export');
     await requireOrgRolePermission(auth.userId, auth.organizationId, 'audit:export', auth.userRole);
+
+    // Enforce Enterprise plan entitlement for Compliance Audit Vault export
+    const featureAccess = await checkFeatureAccess(
+      auth.organizationId,
+      'complianceAuditVault',
+      auth.userRole
+    );
+    if (!featureAccess.allowed) {
+      return NextResponse.json(
+        {
+          error: featureAccess.reason,
+          feature: 'complianceAuditVault',
+          planId: featureAccess.planId,
+          upgradeRequired: true,
+        },
+        { status: 403 }
+      );
+    }
 
     const { searchParams } = new URL(req.url);
 

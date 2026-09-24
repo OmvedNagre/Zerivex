@@ -60,6 +60,9 @@ function DashboardHeader() {
             <a href="/dashboard/audit-vault" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
               Audit Vault
             </a>
+            <a href="/dashboard/billing" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+              Billing
+            </a>
             <a href="/dashboard/settings/security" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
               Sessions
             </a>
