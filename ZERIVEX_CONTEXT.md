@@ -3,8 +3,8 @@
 > **Project:** ZERIVEX  
 > **Tagline:** "Security for software built with AI."  
 > **Brand Principle:** "Verify. Detect. Defend."  
-> **Current Phase:** PHASE 8 — SCHEDULING, MONITORING & AUTOMATION ENGINE  
-> **Phase Status:** READY_FOR_REVIEW  
+> **Current Phase:** PHASE 11 — PRODUCTION POLISH, BILLING & ENTERPRISE READINESS  
+> **Phase Status:** COMPLETE  
 > **Owner Authority:** The platform owner is the final authority for architecture, scope, phase approval, and security trade-offs.  
 > **Security Rule:** Security correctness over visual completion. Never claim a security feature works unless implemented and tested. Never fake findings.
 
@@ -85,9 +85,9 @@ Zerivex operates on a closed-loop security cycle:
 | :--- | :--- | :--- |
 | **Governance & Tooling** | `COMPLETE` | Next.js 16.3.5, TypeScript strict, Vitest 5.0.1, 0 npm audit vulnerabilities. |
 | **Config Validation** | `IMPLEMENTED` | Fail-closed runtime schema validation in `src/core/config/env-validator.ts` with 100% test coverage. |
-| **Database State** | `IMPLEMENTED` | Neon PostgreSQL live; 21 canonical tables migrated (`001_initial_schema.sql` + `002_attack_surface.sql` + `003_scheduling_monitoring.sql` + `004_cicd_developer_workflow.sql`). |
+| **Database State** | `IMPLEMENTED` | Neon PostgreSQL live; 23 canonical tables migrated (`001_initial_schema.sql` through `006_billing_subscriptions_entitlements.sql`). |
 | **Audit Engine** | `IMPLEMENTED` | Append-only `src/core/audit/audit-service.ts` with sensitive data scrubbing & transaction client support. |
-| **Multi-Tenancy / IDOR**| `IMPLEMENTED` | Tenant-scoped repository layer (`tenant-repository.ts`, `surface-repository.ts`, `schedule-repository.ts`, `monitoring-repository.ts`, `webhook-repository.ts`, `quality-gate-repository.ts`). |
+| **Multi-Tenancy / IDOR**| `IMPLEMENTED` | Tenant-scoped repository layer (`tenant-repository.ts`, `surface-repository.ts`, `schedule-repository.ts`, `monitoring-repository.ts`, `webhook-repository.ts`, `quality-gate-repository.ts`, `subscription-repository.ts`). |
 | **Authentication State**| `IMPLEMENTED` | SHA-256 session token hashing, Google PKCE + GitHub OAuth, `__Host-zerivex_session` cookie, API Key bearer auth, logout/logout-all. |
 | **Platform Bootstrap**  | `IMPLEMENTED` | Atomic one-time owner bootstrap via `INITIAL_OWNER_EMAIL`, `platform_bootstraps` row lock, sole owner demotion protection. |
 | **Authorization / RBAC**| `IMPLEMENTED` | `src/core/rbac/permissions.ts`, `authorization-guard.ts` with unified API key / session auth & capability scope enforcement. |
@@ -101,12 +101,18 @@ Zerivex operates on a closed-loop security cycle:
 | **CI/CD Quality Gates**  | `IMPLEMENTED` | Build-breaker Quality Gate engine with configurable score thresholds, severity caps, and regression blockers. |
 | **API Keys & Webhooks**  | `IMPLEMENTED` | Scoped API keys with SHA-256 hash storage, HMAC-SHA256 signed outbound webhooks, SSRF-safe delivery engine. |
 | **SARIF v2.1.0 Engine**  | `IMPLEMENTED` | OASIS SARIF v2.1.0 export format for native GitHub Code Scanning and GitLab SAST/DAST integration. |
+| **Enterprise Teams**    | `IMPLEMENTED` | 5-tier member hierarchy, SHA-256 token-hashed invitations, Sole Owner Protection Guard. |
+| **Audit Vault**         | `IMPLEMENTED` | Cryptographic tamper-evident chain verification, RFC 4180 CSV & SIEM JSON streaming exports. |
+| **Collaboration**       | `IMPLEMENTED` | Threaded finding discussions, team member assignment, activity timeline notes. |
+| **Subscriptions & Quotas**| `IMPLEMENTED` | Canonical INR ₹ pricing matrix, subscriptions & usage ledgers in Neon DB, server-side target & scan quota guards. |
+| **Stripe Billing Engine**| `IMPLEMENTED` | Native Node.js HTTP/TLS + crypto HMAC-SHA256 signature verification (0 npm deps), INR currency checkout, simulated fallback. |
+| **Platform Owner Override**| `IMPLEMENTED` | Server-side entitlement bypass for `role: 'OWNER'` without mutating customer billing records. |
 | **Findings Management** | `IMPLEMENTED` | Unified findings inventory, status lifecycle triage, justification-backed risk acceptance, audit trail. |
 | **Remediation Engine**  | `IMPLEMENTED` | 31-rule catalog with framework diffs, CLI checks, and targeted fix verification service. |
 | **Reporting Engine**    | `IMPLEMENTED` | Executive HTML / PDF reports with print styling, technical JSON exports, download API routes. |
-| **Dashboard UI**        | `IMPLEMENTED` | Complete UI with scans, reports, findings, Attack Surface Explorer, Monitoring Center, Developer Settings, and Target CI/CD Hub. |
-| **Security State** | `VERIFIED` | 153/153 security tests passing against live database across all 11 test suites. |
-| **Test State** | `VERIFIED` | Vitest test suite running; `tests/security/` passing 100%. |
+| **Dashboard UI**        | `IMPLEMENTED` | Complete UI with Overview, Targets, Scans, Findings, Team, Audit Vault, Billing, and Settings. |
+| **Security State**      | `VERIFIED` | 197/197 security and integration tests passing against live database across all 13 test suites. |
+| **Test State**          | `VERIFIED` | Vitest test suite running; `tests/security/` passing 100%. |
 
 ---
 
@@ -119,6 +125,7 @@ Zerivex operates on a closed-loop security cycle:
 - `ADR-0006`: Canonical PostgreSQL Persistence Engine (Exclusion of SQLite for Production).
 - `ADR-0007`: Mandatory Multi-Stage Evidence Redaction Pipeline.
 - `ADR-0008`: Explicit Target Verification Scopes for Scanning Authorization.
+- `ADR-0009`: Native Zero-Dependency Stripe Billing Engine with HMAC-SHA256 Signature Verification.
 
 ---
 
@@ -127,11 +134,12 @@ Zerivex operates on a closed-loop security cycle:
 - `.env.local` configured with verified Neon database and CSPRNG secrets.
 - Dependencies audited: **0 vulnerabilities**.
 - TypeScript strict compilation: **Passing cleanly (`tsc --noEmit`)**.
-- Next.js production build: **Compiled successfully (`next build`, all 46 routes)**.
-- Security tests: **153/153 passing against live PostgreSQL**.
+- Next.js production build: **Compiled successfully (`next build`, all 62 routes)**.
+- Security tests: **197/197 passing against live PostgreSQL**.
 
 ---
 
 ## 7. Current Hand-off & Next Action
-- **Current Phase Status:** `PHASE 9 — READY FOR REVIEW`
-- **Immediate Next Action:** Obtain Platform Owner sign-off on Phase 9 and proceed to **Phase 10: Enterprise Teams, Audit Vault & Collaboration**.
+- **Current Phase Status:** `PHASE 11 — COMPLETE`
+- **Immediate Next Action:** Production Launch Preparation, deployment readiness verification, and operational documentation.
+
