@@ -54,6 +54,9 @@ function DashboardHeader() {
             <a href="/dashboard/findings" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
               Findings
             </a>
+            <a href="/dashboard/agency" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+              Agency Hub
+            </a>
             <a href="/dashboard/team" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
               Team
             </a>

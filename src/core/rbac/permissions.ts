@@ -44,7 +44,11 @@ export type Permission =
   | 'findings:comment'
   | 'findings:assign'
   | 'billing:read'
-  | 'billing:manage';
+  | 'billing:manage'
+  | 'agency:read'
+  | 'agency:manage'
+  | 'agency:branding_manage'
+  | 'agency:clients_manage';
 
 /**
  * Platform role permissions map.
@@ -90,6 +94,10 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'findings:assign',
     'billing:read',
     'billing:manage',
+    'agency:read',
+    'agency:manage',
+    'agency:branding_manage',
+    'agency:clients_manage',
   ],
   SUPER_ADMIN: [
     'scans:create',
@@ -124,11 +132,14 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'org:invite',
     'org:members_read',
     'org:members_manage',
-    'audit:export',
     'findings:comment',
     'findings:assign',
     'billing:read',
     'billing:manage',
+    'agency:read',
+    'agency:manage',
+    'agency:branding_manage',
+    'agency:clients_manage',
   ],
   ADMIN: [
     'scans:create',
@@ -165,6 +176,9 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'findings:comment',
     'findings:assign',
     'billing:read',
+    'agency:read',
+    'agency:branding_manage',
+    'agency:clients_manage',
   ],
   SUPPORT: [
     'scans:read',
@@ -179,6 +193,7 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'org:members_read',
     'audit:export',
     'billing:read',
+    'agency:read',
   ],
   USER: [
     'scans:create',
@@ -214,6 +229,10 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
     'findings:assign',
     'billing:read',
     'billing:manage',
+    'agency:read',
+    'agency:manage',
+    'agency:branding_manage',
+    'agency:clients_manage',
   ],
 };
 
@@ -267,6 +286,10 @@ export const ORG_ROLE_PERMISSIONS: Record<OrganizationRole, readonly Permission[
     'findings:assign',
     'billing:read',
     'billing:manage',
+    'agency:read',
+    'agency:manage',
+    'agency:branding_manage',
+    'agency:clients_manage',
   ],
   ORG_ADMIN: [
     'scans:create',
@@ -300,6 +323,9 @@ export const ORG_ROLE_PERMISSIONS: Record<OrganizationRole, readonly Permission[
     'audit:export',
     'findings:comment',
     'findings:assign',
+    'agency:read',
+    'agency:branding_manage',
+    'agency:clients_manage',
   ],
   ORG_MEMBER: [
     'scans:create',
@@ -315,6 +341,7 @@ export const ORG_ROLE_PERMISSIONS: Record<OrganizationRole, readonly Permission[
     'org:members_read',
     'findings:comment',
     'findings:assign',
+    'agency:read',
   ],
   ORG_VIEWER: [
     'scans:read',
@@ -324,6 +351,7 @@ export const ORG_ROLE_PERMISSIONS: Record<OrganizationRole, readonly Permission[
     'monitoring:read',
     'org:members_read',
     'audit:read',
+    'agency:read',
   ],
   ORG_AUDITOR: [
     'scans:read',
@@ -334,6 +362,7 @@ export const ORG_ROLE_PERMISSIONS: Record<OrganizationRole, readonly Permission[
     'org:members_read',
     'audit:read',
     'audit:export',
+    'agency:read',
   ],
 };
 

@@ -7,6 +7,8 @@
 import { query } from '@/core/db/database';
 import { getRemediationForRule } from '@/core/remediation/remediation-catalog';
 import { FindingRecord, ScanJobRecord } from '@/core/scanner/scan-runner';
+import { getAgencyBranding } from '@/core/agency/agency-service';
+import { AgencyBrandingRecord } from '@/core/agency/types';
 
 export interface ScanReportData {
   scanJob: ScanJobRecord & { targetUrl: string; targetHostname: string; organizationName: string };
@@ -116,9 +118,11 @@ export async function getScanReportData(
  */
 export async function generateTechnicalJsonReport(
   scanJobId: string,
-  organizationId: string
+  organizationId: string,
+  customBranding?: AgencyBrandingRecord | null
 ): Promise<Record<string, unknown>> {
   const { scanJob, findings, summary } = await getScanReportData(scanJobId, organizationId);
+  const branding = customBranding !== undefined ? customBranding : await getAgencyBranding(organizationId);
 
   const enrichedFindings = findings.map((f) => {
     const remediation = getRemediationForRule(f.ruleId);
@@ -148,12 +152,21 @@ export async function generateTechnicalJsonReport(
   return {
     schemaVersion: '1.0.0',
     reportType: 'ZERIVEX_TECHNICAL_SECURITY_REPORT',
-    generator: 'Zerivex Deterministic Scanner v1.0',
+    generator: branding?.companyName ? `${branding.companyName} Security Engine` : 'Zerivex Deterministic Scanner v1.0',
     generatedAt: new Date().toISOString(),
     organization: {
       id: scanJob.organizationId,
       name: scanJob.organizationName,
     },
+    branding: branding
+      ? {
+          companyName: branding.companyName,
+          logoUrl: branding.logoUrl,
+          primaryColor: branding.primaryColor,
+          reportFooterText: branding.reportFooterText,
+          supportEmail: branding.supportEmail,
+        }
+      : null,
     scan: {
       id: scanJob.id,
       targetUrl: scanJob.targetUrl,
@@ -175,10 +188,13 @@ export async function generateTechnicalJsonReport(
  */
 export async function generateExecutiveHtmlReport(
   scanJobId: string,
-  organizationId: string
+  organizationId: string,
+  customBranding?: AgencyBrandingRecord | null
 ): Promise<string> {
   const { scanJob, findings, summary } = await getScanReportData(scanJobId, organizationId);
+  const branding = customBranding !== undefined ? customBranding : await getAgencyBranding(organizationId);
 
+  const brandColor = branding?.primaryColor || '#0f172a';
   const scoreColor =
     scanJob.score === null
       ? '#64748b'
@@ -311,7 +327,7 @@ export async function generateExecutiveHtmlReport(
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Zerivex Security Assessment Report — ${escapeHtml(scanJob.targetHostname)}</title>
+  <title>${branding ? escapeHtml(branding.companyName) : 'Zerivex'} Security Assessment Report — ${escapeHtml(scanJob.targetHostname)}</title>
   <style>
     @page {
       margin: 1.5cm;
@@ -336,7 +352,7 @@ export async function generateExecutiveHtmlReport(
       margin: 0 auto;
     }
     .header-bar {
-      border-bottom: 2px solid #0f172a;
+      border-bottom: 2px solid ${brandColor};
       padding-bottom: 18px;
       margin-bottom: 24px;
       display: flex;
@@ -347,7 +363,7 @@ export async function generateExecutiveHtmlReport(
       font-weight: 800;
       font-size: 22px;
       letter-spacing: -0.02em;
-      color: #0f172a;
+      color: ${brandColor};
     }
     .tagline {
       font-size: 11px;
@@ -401,7 +417,7 @@ export async function generateExecutiveHtmlReport(
   <div class="container">
     <!-- Action Bar for Browsers -->
     <div class="no-print" style="margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px;">
-      <button onclick="window.print()" style="background: #2563eb; color: #ffffff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">
+      <button onclick="window.print()" style="background: ${brandColor}; color: #ffffff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">
         🖨️ Print or Save as PDF
       </button>
       <a href="?format=json" style="background: #f1f5f9; color: #0f172a; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; border: 1px solid #cbd5e1;">
@@ -412,8 +428,12 @@ export async function generateExecutiveHtmlReport(
     <!-- Header -->
     <div class="header-bar">
       <div>
-        <div class="logo">ZERIVEX</div>
-        <div class="tagline">Security for software built with AI. &bull; <em>Verify. Detect. Defend.</em></div>
+        ${branding?.logoUrl ? `<img src="${escapeHtml(branding.logoUrl)}" alt="${escapeHtml(branding.companyName)}" style="max-height: 44px; max-width: 220px; object-fit: contain; margin-bottom: 8px; display: block;" />` : ''}
+        <div class="logo">${escapeHtml(branding?.companyName || 'ZERIVEX')}</div>
+        <div class="tagline">
+          ${branding ? `Security Assessment &bull; Powered by Zerivex Engine` : 'Security for software built with AI. &bull; <em>Verify. Detect. Defend.</em>'}
+          ${branding?.supportEmail ? ` &bull; Contact: <a href="mailto:${escapeHtml(branding.supportEmail)}" style="color: inherit; text-decoration: underline;">${escapeHtml(branding.supportEmail)}</a>` : ''}
+        </div>
       </div>
       <div style="text-align: right; font-size: 12px; color: #64748b;">
         <div><strong>Assessment Report</strong></div>
@@ -500,8 +520,15 @@ export async function generateExecutiveHtmlReport(
 
     <!-- Footer & Governance Statement -->
     <div style="border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 40px; font-size: 11px; color: #94a3b8; text-align: center;">
+      ${
+        branding?.reportFooterText
+          ? `<div style="margin-bottom: 12px; padding: 10px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; color: #334155; font-size: 12px; font-weight: 500;">
+              ${escapeHtml(branding.reportFooterText)}
+            </div>`
+          : ''
+      }
       <p style="margin: 0 0 4px;">
-        <strong>ZERIVEX SECURITY GUARANTEE:</strong> Every finding documented in this report was verified through deterministic checks against live endpoint responses. No findings, scores, or evidence in this report are simulated or hallucinated.
+        <strong>${branding ? escapeHtml(branding.companyName).toUpperCase() : 'ZERIVEX'} SECURITY GUARANTEE:</strong> Every finding documented in this report was verified through deterministic checks against live endpoint responses. No findings, scores, or evidence in this report are simulated or hallucinated.
       </p>
       <p style="margin: 0;">
         All captured evidence was scrubbed synchronously prior to persistence per ADR-0007. Report generated on ${new Date().toUTCString()}.
