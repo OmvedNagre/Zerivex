@@ -1,21 +1,57 @@
 # HANDOFF.md: Short-Term AI Agent Continuation State
 
-> **Last Updated:** 2026-09-25T10:35:00+05:30  
+> **Last Updated:** 2026-09-25T17:58:00+05:30  
 > **Current Agent:** Antigravity (Lead Architect & Security Engineer)  
-> **Current Phase:** PHASE 12 — TEAMS & AGENCIES (AGENCY WORKFLOWS, MULTI-CLIENT ARCHITECTURE & WHITE-LABEL REPORTING)  
+> **Current Phase:** PHASE 13 — SECURITY RESOURCES & ACADEMY (EDUCATIONAL CONTENT, KNOWLEDGE HUB, INTERACTIVE REMEDIATION PLAYBOOKS & DEVELOPER GUIDES)  
 > **Phase Status:** COMPLETE (Awaiting Owner Review & Sign-off)  
 
 ---
 
 ## 1. Current Task
-- **Completed:** Phase 12 — Teams & Agencies (Agency Workflows, Multi-Client Architecture & White-Label Reporting).
-- **Goal:** Implement agency organization mode, multi-client workspace provisioning with strict multi-tenant IDOR isolation, cross-client attack surface portfolio dashboard, custom white-label reporting with parent agency token inheritance, and restricted stakeholder access grants.
-- **Status:** 100% Implemented, 10/10 Phase 12 security tests passing, 207/207 full regression tests passing across all 14 test suites, 0 type errors, 0 npm audit vulnerabilities, all 66 Next.js routes compiled cleanly.
+- **Completed:** Phase 13 — Security Resources & Academy (Educational Content, Knowledge Hub, Interactive Remediation Playbooks & Developer Guides).
+- **Goal:** Establish a world-class educational knowledge hub and interactive remediation playbooks covering modern web applications built with AI coding tools (Cursor, Lovable, v0, Bolt, Claude Code, Antigravity).
+- **Status:** 100% Implemented, 23/23 Phase 13 security tests passing, 230/230 full regression tests passing across all 15 test suites, 0 type errors, 0 npm audit vulnerabilities, all 44 Next.js production routes compiled cleanly.
 
 ---
 
 ## 2. Last Completed Task
-- Completed Phase 12:
+- Completed Phase 13:
+  - **Academy Domain Types & Knowledge Model (`src/core/academy/types.ts`):**
+    - Defined types for `AcademyArticle`, `LearningTrack`, `AcademyCategory`, `DifficultyLevel`, `FrameworkSnippet`, `CliVerificationCommand`, and paginated `AcademySearchResult`.
+  - **Curated Knowledge Catalog (`src/core/academy/academy-catalog.ts`):**
+    - 4 structured learning tracks: `ai-code-smells`, `api-modern-web`, `injection-sanitization`, `identity-rbac-tenancy`.
+    - 10 comprehensive, production-grade security guides covering:
+      - `securing-ai-generated-code` (AI Hallucinations & Leaked Credentials, CWE-798, OWASP A02, ZX-AI-SMELL-001)
+      - `overly-permissive-cors` (Wildcard Origins with Credentials, CWE-942, OWASP A05, ZX-CORS-001)
+      - `client-side-secret-leakage` (Exposing API Keys in Frontend Bundles, CWE-522, OWASP A02, ZX-SECRETS-001)
+      - `ssrf-defense-in-depth` (SSRF in AI Integrations & Webhooks, CWE-918, OWASP A10, ZX-SSRF-001)
+      - `nextjs-server-actions-auth` (Missing Authorization in Server Actions, CWE-862, OWASP A01, ZX-SEC-API-001, ZX-AUTH-001)
+      - `sql-injection-modern-orms` (SQL Injection via Raw ORM Queries, CWE-89, OWASP A03, ZX-SQLI-001)
+      - `xss-react-hydration` (DOM-Based XSS in React Hydration, CWE-79, OWASP A03, ZX-XSS-001)
+      - `essential-security-headers` (Hardening Web Applications with HTTP Headers, CWE-693, OWASP A05, ZX-HEADERS-001)
+      - `multi-tenant-idor-isolation` (Tenant Isolation & IDOR Defenses, CWE-639, OWASP A01, ZX-AUTH-001)
+      - `session-security-token-hashing` (Cryptographically Secure Token Hashing, CWE-384, OWASP A07, ZX-SESS-001, ZX-COOKIE-001)
+    - Every article includes: AI pitfall context ("Why AI Generates This"), vulnerable code example, multi-framework remediation snippets (Next.js, Express, Nginx), local CLI verification commands (`curl`, `openssl`), pre-deployment audit checklist, CWE/OWASP metadata, and mapped scanner rule IDs.
+  - **Academy Service Engine (`src/core/academy/academy-service.ts`):**
+    - `listLearningTracks`: lists all curated tracks.
+    - `getLearningTrackById`: resolves track and associated article summaries.
+    - `getArticleBySlug`: retrieves full article details with related playbooks (excluding self).
+    - `getArticleByRuleId`: bi-directional finding linkage mapping scanner findings (`ZX-*`) directly to full remediation articles.
+    - `searchAcademy`: keyword text search, category filtering, track filtering, difficulty filtering, tag normalization, and offset/limit pagination.
+  - **Academy REST API Endpoints:**
+    - `GET /api/academy`: Paginated search and filtering endpoint returning articles, tracks, category counts.
+    - `GET /api/academy/[slug]`: Retrieves full article details, framework snippets, verification tests, and related recommendations.
+  - **User Experience & Navigation:**
+    - Public Academy Hub (`src/app/academy/page.tsx`): Curated track cards, instant keyword search, category tabs, difficulty dropdown, and card grid with reading times and tags.
+    - Public Article Reader (`src/app/academy/[slug]/page.tsx`): Dedicated reader with "Why AI Generates This" callout, vulnerable code block with red border, framework code diff tabs (Next.js, Express, Nginx) with 1-click copy, CLI test commands, interactive checklist, and related playbooks.
+    - Dashboard Academy Hub (`src/app/(dashboard)/dashboard/academy/page.tsx`): Authenticated in-console view with learning tracks, category tabs, difficulty filters, and direct rule ID search.
+    - Top Nav Integration (`src/app/(dashboard)/layout.tsx`): Added "Academy" link to dashboard header navigation.
+  - **Automated Testing & Security Validation:**
+    - `tests/security/security-resources-academy.test.ts`: 23 comprehensive tests covering catalog integrity, search engine, track resolution, slug lookup, rule ID resolution, REST APIs, and core rule family coverage.
+    - Full regression run: **230/230 tests passed across all 15 test suites** in Vitest.
+    - 0 TypeScript errors (`npm run typecheck`).
+    - 0 vulnerabilities (`npm audit`).
+    - Next.js production build succeeded with all 44 routes generated (`npm run build`).
   - **Database Migration (`src/core/db/migrations/007_agency_workflows_multi_client.sql`):**
     - Added `is_agency BOOLEAN DEFAULT false` column to `organizations` table.
     - Created `agency_branding` table (`organization_id`, `company_name`, `logo_url`, `primary_color`, `report_footer_text`, `support_email`).
