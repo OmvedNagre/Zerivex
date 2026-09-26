@@ -1,21 +1,52 @@
 # HANDOFF.md: Short-Term AI Agent Continuation State
 
-> **Last Updated:** 2026-09-25T17:58:00+05:30  
+> **Last Updated:** 2026-09-26T10:50:00+05:30  
 > **Current Agent:** Antigravity (Lead Architect & Security Engineer)  
-> **Current Phase:** PHASE 13 — SECURITY RESOURCES & ACADEMY (EDUCATIONAL CONTENT, KNOWLEDGE HUB, INTERACTIVE REMEDIATION PLAYBOOKS & DEVELOPER GUIDES)  
+> **Current Phase:** PHASE 14 — PRODUCTION HARDENING (WORKER ISOLATION, NETWORK EGRESS CONTROLS, WAF & RATE LIMITING, OBSERVABILITY, BACKUP/DR & PRODUCTION SECURITY TESTING)  
 > **Phase Status:** COMPLETE (Awaiting Owner Review & Sign-off)  
 
 ---
 
 ## 1. Current Task
-- **Completed:** Phase 13 — Security Resources & Academy (Educational Content, Knowledge Hub, Interactive Remediation Playbooks & Developer Guides).
-- **Goal:** Establish a world-class educational knowledge hub and interactive remediation playbooks covering modern web applications built with AI coding tools (Cursor, Lovable, v0, Bolt, Claude Code, Antigravity).
-- **Status:** 100% Implemented, 23/23 Phase 13 security tests passing, 230/230 full regression tests passing across all 15 test suites, 0 type errors, 0 npm audit vulnerabilities, all 44 Next.js production routes compiled cleanly.
+- **Completed:** Phase 14 — Production Hardening (Worker Isolation, Network Egress Controls, WAF & Rate Limiting, Observability, Backup/DR & Production Security Testing).
+- **Goal:** Harden the platform for high availability, fault tolerance, anti-DDoS, outbound egress protection, and zero-leakage observability.
+- **Status:** 100% Implemented, 28/28 Phase 14 security tests passing, 258/258 full regression tests passing across all 16 test suites, 0 type errors, 0 npm audit vulnerabilities, all 47 Next.js production routes compiled cleanly.
 
 ---
 
 ## 2. Last Completed Task
-- Completed Phase 13:
+- Completed Phase 14:
+  - **Network Egress Security Firewall (`src/core/security/egress-firewall.ts`):**
+    - Protocol enforcement: strictly whitelists `http:` and `https:`, rejects `file:`, `ftp:`, `gopher:`, `dict:`, `ldap:`, `data:`.
+    - Comprehensive CIDR blocklist (IPv4 & IPv6): blocks all private (RFC 1918), loopback, link-local, carrier-grade NAT, and cloud metadata endpoints (`169.254.169.254`, `::1`, `fc00::/7`, `fe80::/10`).
+    - Pre-flight multi-A/AAAA DNS resolution with socket-level IP pinning to eliminate TOCTOU DNS rebinding attacks.
+  - **Isolated Scan Worker Pool (`src/core/scanner/worker-pool.ts`):**
+    - Concurrency management with priority queue (default max 4 concurrent scans).
+    - Per-job execution watchdog with automated `AbortSignal` cancellation on timeout.
+    - Domain-level circuit breaker tripping after consecutive target connection failures with 60-second cooldown.
+    - Graceful shutdown handlers (`drainAndStop`) to cleanly complete running jobs and release connections.
+  - **Production Rate Limiting & Reverse Proxy WAF (`src/core/security/rate-limiter.ts` & `src/middleware.ts`):**
+    - High-performance in-memory sliding window token bucket rate limiter.
+    - Tiered limit presets: `AUTH` (10 req/min), `SCANS` (20 req/min), `API_STANDARD` (120 req/min), `PUBLIC` (60 req/min).
+    - Reverse proxy client IP extractor with anti-spoofing (`CF-Connecting-IP`, `X-Real-IP`, `X-Forwarded-For`).
+    - Request payload size protection rejecting mutations exceeding 2MB (or 10MB on upload routes) with HTTP 413.
+    - Edge security headers (`X-Content-Type-Options`, `X-Frame-Options: DENY`, `X-XSS-Protection`, `Referrer-Policy`, `Permissions-Policy`, `Strict-Transport-Security`).
+  - **Production Observability & Zero-Leakage Logger (`src/core/observability/`):**
+    - Recursive PII and credential scrubbing (`scrubbing-rules.ts`): sanitizes passwords, bearer tokens, API keys, session secrets, database connection strings, and JWTs across nested objects and errors.
+    - Structured JSON logger (`logger.ts`) with correlation IDs (`traceId`, `spanId`).
+    - Health diagnostics service (`health-service.ts`) tracking database latency, memory RSS/heap, process uptime, and worker queue metrics.
+  - **System Health & Container Probes:**
+    - `GET /api/health`: Comprehensive system health report (HTTP 200 or 503).
+    - `GET /api/health/live`: Fast container liveness probe (HTTP 200).
+    - `GET /api/health/ready`: Container readiness probe testing database connection (HTTP 200 or 503).
+  - **Disaster Recovery & High Availability Runbook (`docs/runbooks/DISASTER_RECOVERY.md`):**
+    - Documented RPO (< 1 hr), RTO (< 30 min), Neon Serverless Point-In-Time-Recovery (PITR), emergency secret rotation, and incident escalation protocols.
+  - **Automated Testing & Security Validation:**
+    - `tests/security/production-hardening.test.ts`: 28 comprehensive security tests covering egress firewall, worker pool concurrency, circuit breaker cooldown, rate limiter sliding window, reverse proxy IP resolution, PII/secret scrubbing, and health probes.
+    - Full regression run: **258/258 tests passed across all 16 test suites** in Vitest.
+    - 0 TypeScript compiler errors (`npm run typecheck`).
+    - 0 npm audit security vulnerabilities (`npm audit`).
+    - Next.js production build succeeded with all 47 routes compiled cleanly (`npm run build`).
   - **Academy Domain Types & Knowledge Model (`src/core/academy/types.ts`):**
     - Defined types for `AcademyArticle`, `LearningTrack`, `AcademyCategory`, `DifficultyLevel`, `FrameworkSnippet`, `CliVerificationCommand`, and paginated `AcademySearchResult`.
   - **Curated Knowledge Catalog (`src/core/academy/academy-catalog.ts`):**

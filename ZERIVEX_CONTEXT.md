@@ -3,7 +3,7 @@
 > **Project:** ZERIVEX  
 > **Tagline:** "Security for software built with AI."  
 > **Brand Principle:** "Verify. Detect. Defend."  
-> **Current Phase:** PHASE 13 — SECURITY RESOURCES & ACADEMY (EDUCATIONAL CONTENT, KNOWLEDGE HUB, INTERACTIVE REMEDIATION PLAYBOOKS & DEVELOPER GUIDES)  
+> **Current Phase:** PHASE 14 — PRODUCTION HARDENING (WORKER ISOLATION, NETWORK EGRESS CONTROLS, WAF & RATE LIMITING, OBSERVABILITY, BACKUP/DR & PRODUCTION SECURITY TESTING)  
 > **Phase Status:** COMPLETE  
 > **Owner Authority:** The platform owner is the final authority for architecture, scope, phase approval, and security trade-offs.  
 > **Security Rule:** Security correctness over visual completion. Never claim a security feature works unless implemented and tested. Never fake findings.
@@ -19,7 +19,7 @@ Zerivex operates on a closed-loop security cycle:
 ---
 
 ## 2. Current Status & Phase State
-- **Current Phase:** `PHASE 13 — SECURITY RESOURCES & ACADEMY (EDUCATIONAL CONTENT, KNOWLEDGE HUB, INTERACTIVE REMEDIATION PLAYBOOKS & DEVELOPER GUIDES)`
+- **Current Phase:** `PHASE 14 — PRODUCTION HARDENING (WORKER ISOLATION, NETWORK EGRESS CONTROLS, WAF & RATE LIMITING, OBSERVABILITY, BACKUP/DR & PRODUCTION SECURITY TESTING)`
 - **Phase Status:** `COMPLETE`
 - **Completed Phases:**
   - `Phase 0A`: Pre-Implementation Discovery (`COMPLETE`)
@@ -39,7 +39,8 @@ Zerivex operates on a closed-loop security cycle:
   - `Phase 11`: Production Polish, Billing & Enterprise Readiness (`COMPLETE` - canonical INR ₹ pricing matrix, subscriptions & usage ledgers in Neon PostgreSQL, server-side target & scan quota guards, native Stripe billing engine with HMAC-SHA256 signature verification and simulated dev mode, Platform Owner entitlement override, real-time Billing UI with progress meters, 197/197 tests passing, 0 audit vulnerabilities)
   - `Phase 12`: Teams & Agencies (`COMPLETE` - agency organization mode, multi-client workspace provisioning, cross-client aggregated attack surface portfolio cockpit, white-label custom branding inheritance for executive reports, restricted stakeholder access grants `CLIENT_VIEWER`/`CLIENT_MANAGER`, 207/207 tests passing across 14 test suites, 0 audit vulnerabilities)
   - `Phase 13`: Security Resources & Academy (`COMPLETE` - educational content, knowledge hub, interactive multi-framework remediation playbooks with Next.js/Express/Nginx snippets, CLI verification tests, pre-deployment checklists, public & dashboard academy hubs, REST API, bi-directional scan findings rule linkage, 230/230 tests passing across 15 test suites, 0 audit vulnerabilities)
-- **Next Phase:** Phase 14 / Automated Security Verification & Advanced Compliance Integrations
+  - `Phase 14`: Production Hardening (`COMPLETE` - isolated worker pool with concurrency control, timeout watchdogs & circuit breakers; network egress firewall blocking all private/loopback/cloud metadata IPv4/IPv6 ranges; tiered sliding-window rate limiter with reverse proxy IP resolution; structured JSON logger with recursive PII & secret redactor; system health diagnostics and container liveness/readiness probes `/api/health`, `/api/health/live`, `/api/health/ready`; disaster recovery runbook; 258/258 tests passing across 16 test suites; 0 audit vulnerabilities)
+- **Next Phase:** Phase 15 / Self-Scan & Launch Readiness
 
 ---
 
