@@ -72,6 +72,9 @@ function DashboardHeader() {
             <a href="/dashboard/settings/security" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
               Sessions
             </a>
+            <a href="/dashboard/launch-readiness" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+              Launch Readiness
+            </a>
             {isOwner && (
               <a
                 href="/admin"

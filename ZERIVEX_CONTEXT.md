@@ -3,7 +3,7 @@
 > **Project:** ZERIVEX  
 > **Tagline:** "Security for software built with AI."  
 > **Brand Principle:** "Verify. Detect. Defend."  
-> **Current Phase:** PHASE 14 — PRODUCTION HARDENING (WORKER ISOLATION, NETWORK EGRESS CONTROLS, WAF & RATE LIMITING, OBSERVABILITY, BACKUP/DR & PRODUCTION SECURITY TESTING)  
+> **Current Phase:** PHASE 15 — SELF-SCAN & LAUNCH READINESS (DOGFOODING SELF-SCAN, STRIDE THREAT MODEL REVIEW, PRODUCTION CONFIG CHECKLIST & OFFICIAL LAUNCH CERTIFICATION)  
 > **Phase Status:** COMPLETE  
 > **Owner Authority:** The platform owner is the final authority for architecture, scope, phase approval, and security trade-offs.  
 > **Security Rule:** Security correctness over visual completion. Never claim a security feature works unless implemented and tested. Never fake findings.
@@ -19,7 +19,7 @@ Zerivex operates on a closed-loop security cycle:
 ---
 
 ## 2. Current Status & Phase State
-- **Current Phase:** `PHASE 14 — PRODUCTION HARDENING (WORKER ISOLATION, NETWORK EGRESS CONTROLS, WAF & RATE LIMITING, OBSERVABILITY, BACKUP/DR & PRODUCTION SECURITY TESTING)`
+- **Current Phase:** `PHASE 15 — SELF-SCAN & LAUNCH READINESS`
 - **Phase Status:** `COMPLETE`
 - **Completed Phases:**
   - `Phase 0A`: Pre-Implementation Discovery (`COMPLETE`)
@@ -40,7 +40,8 @@ Zerivex operates on a closed-loop security cycle:
   - `Phase 12`: Teams & Agencies (`COMPLETE` - agency organization mode, multi-client workspace provisioning, cross-client aggregated attack surface portfolio cockpit, white-label custom branding inheritance for executive reports, restricted stakeholder access grants `CLIENT_VIEWER`/`CLIENT_MANAGER`, 207/207 tests passing across 14 test suites, 0 audit vulnerabilities)
   - `Phase 13`: Security Resources & Academy (`COMPLETE` - educational content, knowledge hub, interactive multi-framework remediation playbooks with Next.js/Express/Nginx snippets, CLI verification tests, pre-deployment checklists, public & dashboard academy hubs, REST API, bi-directional scan findings rule linkage, 230/230 tests passing across 15 test suites, 0 audit vulnerabilities)
   - `Phase 14`: Production Hardening (`COMPLETE` - isolated worker pool with concurrency control, timeout watchdogs & circuit breakers; network egress firewall blocking all private/loopback/cloud metadata IPv4/IPv6 ranges; tiered sliding-window rate limiter with reverse proxy IP resolution; structured JSON logger with recursive PII & secret redactor; system health diagnostics and container liveness/readiness probes `/api/health`, `/api/health/live`, `/api/health/ready`; disaster recovery runbook; 258/258 tests passing across 16 test suites; 0 audit vulnerabilities)
-- **Next Phase:** Phase 15 / Self-Scan & Launch Readiness
+  - `Phase 15`: Self-Scan & Launch Readiness (`COMPLETE` - ZERIVEX self-scan dogfooding engine executing 15 check categories with certified 100/100 score; subsystem launch readiness evaluator auditing 10 core subsystems; interactive Launch Readiness Cockpit in console; REST APIs `/api/launch-readiness` & `/api/launch-readiness/scan`; STRIDE & OWASP Top 10 Threat Model Review; Production Configuration Checklist; Official Platform Launch Runbook; RFC 9116 security.txt route & file; 269/269 tests passing across 17 test suites; 0 audit vulnerabilities)
+- **Next Phase:** Phase 16 / Official Platform Launch & Public Availability
 
 ---
 

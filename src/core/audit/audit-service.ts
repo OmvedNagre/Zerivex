@@ -56,7 +56,8 @@ export type AuditAction =
   | 'AGENCY_CLIENT_STATUS_CHANGED'
   | 'AGENCY_BRANDING_UPDATED'
   | 'AGENCY_CLIENT_ACCESS_GRANTED'
-  | 'AGENCY_CLIENT_ACCESS_REVOKED';
+  | 'AGENCY_CLIENT_ACCESS_REVOKED'
+  | 'SELF_SCAN_TRIGGERED';
 
 export interface AuditLogEntry {
   id: string;

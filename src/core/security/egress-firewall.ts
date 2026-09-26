@@ -2,6 +2,8 @@ import dns from 'dns/promises';
 import net from 'net';
 import { isProhibitedHostname, isProhibitedIpAddress } from './ip-validator';
 
+export { isProhibitedHostname, isProhibitedIpAddress } from './ip-validator';
+
 /**
  * Custom error thrown when outbound network traffic violates egress firewall policy.
  */

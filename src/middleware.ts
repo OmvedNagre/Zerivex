@@ -72,6 +72,10 @@ export function middleware(req: NextRequest) {
   response.headers.set('X-XSS-Protection', '1; mode=block');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' https:; style-src 'self' https:; font-src 'self' https: data:; img-src 'self' data: https: blob:; connect-src 'self' https:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self';"
+  );
+  response.headers.set(
     'Permissions-Policy',
     'camera=(), microphone=(), geolocation=(), browsing-topics=()'
   );
