@@ -139,43 +139,82 @@ export default function TargetsPage() {
     }
   };
 
+  const verifiedCount = targets.filter((t) => t.verificationStatus === 'VERIFIED').length;
+  const pendingCount = targets.filter((t) => t.verificationStatus === 'PENDING').length;
+  const unverifiedCount = targets.filter((t) => t.verificationStatus !== 'VERIFIED' && t.verificationStatus !== 'PENDING').length;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
-            Attack Surface Targets
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+            <span className="pulse-indicator" />
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'var(--font-mono)' }}>
+              Attack Surface Management
+            </span>
+          </div>
+          <h1 style={{ fontSize: '1.85rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '0.35rem' }}>
+            Authorized Targets & Domains
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-            Register and verify target applications to authorize continuous security assessments.
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', maxWidth: '650px' }}>
+            Register and cryptographically verify domain ownership to authorize passive and intrusive security scans according to RFC 9116 and strict egress validation.
           </p>
         </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          style={{
-            padding: '0.65rem 1.25rem',
-            backgroundColor: 'var(--accent-primary)',
-            color: '#fff',
-            borderRadius: 'var(--radius-md)',
-            fontWeight: 600,
-            fontSize: '0.9rem',
-            border: 'none',
-            cursor: 'pointer',
-            boxShadow: 'var(--shadow-sm)',
-            transition: 'background-color var(--transition-fast)',
-          }}
+          className="btn-cyber-primary"
+          style={{ height: '42px' }}
         >
-          + Add Target
+          <span>+</span> Register New Target
         </button>
+      </div>
+
+      {/* KPI Cards Strip */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Total Scope Endpoints
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
+            {targets.length}
+          </div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+            Endpoints configured in policy
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--emerald)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Verified & Scannable
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#34d399', marginTop: '0.25rem' }}>
+            {verifiedCount}
+          </div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+            Ownership cryptographically proven
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--cyan)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Pending Verification
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#38bdf8', marginTop: '0.25rem' }}>
+            {pendingCount + unverifiedCount}
+          </div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+            Awaiting DNS TXT or HTTP token
+          </div>
+        </div>
       </div>
 
       {error && (
         <div
           style={{
             padding: '1rem',
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            backgroundColor: 'rgba(239, 68, 68, 0.12)',
             border: '1px solid rgba(239, 68, 68, 0.3)',
             borderRadius: 'var(--radius-md)',
             color: '#f87171',
@@ -188,54 +227,47 @@ export default function TargetsPage() {
 
       {/* Target Table */}
       <div
+        className="glass-panel"
         style={{
-          backgroundColor: 'var(--bg-card)',
           borderRadius: 'var(--radius-lg)',
-          border: '1px solid var(--border-color)',
           overflow: 'hidden',
-          boxShadow: 'var(--shadow-sm)',
         }}
       >
         {loading ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            Loading targets...
+          <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+            <div style={{ display: 'inline-block', width: '28px', height: '28px', border: '3px solid rgba(59, 130, 246, 0.2)', borderTopColor: 'var(--accent-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: '1rem' }} />
+            <div>Synchronizing registered targets...</div>
           </div>
         ) : targets.length === 0 ? (
           <div style={{ padding: '4rem 2rem', textAlign: 'center' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🎯</div>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '0.5rem' }}>No targets registered yet</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '420px', margin: '0 auto 1.5rem' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', margin: '0 auto 1.25rem' }}>
+              🎯
+            </div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>No targets registered yet</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '440px', margin: '0 auto 1.5rem' }}>
               Add your web applications, APIs, or domains to begin automated verification and vulnerability assessments.
             </p>
             <button
               onClick={() => setIsModalOpen(true)}
-              style={{
-                padding: '0.6rem 1.2rem',
-                backgroundColor: 'var(--accent-primary)',
-                color: '#fff',
-                borderRadius: 'var(--radius-md)',
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                border: 'none',
-                cursor: 'pointer',
-              }}
+              className="btn-cyber-primary"
             >
-              Add First Target
+              + Register First Target
             </button>
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
-                <th style={{ padding: '0.85rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Target Endpoint</th>
-                <th style={{ padding: '0.85rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Verification Status</th>
-                <th style={{ padding: '0.85rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Scope</th>
-                <th style={{ padding: '0.85rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Method</th>
-                <th style={{ padding: '0.85rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Registered</th>
-                <th style={{ padding: '0.85rem 1.25rem', textAlign: 'right', color: 'var(--text-secondary)', fontWeight: 600 }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border-subtle)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                  <th style={{ padding: '1rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Target Endpoint</th>
+                  <th style={{ padding: '1rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Verification Status</th>
+                  <th style={{ padding: '1rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Scope</th>
+                  <th style={{ padding: '1rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Method</th>
+                  <th style={{ padding: '1rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Registered</th>
+                  <th style={{ padding: '1rem 1.25rem', textAlign: 'right', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
               {targets.map((t) => (
                 <tr
                   key={t.id}
@@ -286,6 +318,7 @@ export default function TargetsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -427,35 +460,19 @@ export default function TargetsPage() {
                 </select>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.25rem' }}>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  style={{
-                    padding: '0.65rem 1.25rem',
-                    backgroundColor: 'transparent',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: 'var(--radius-md)',
-                    color: 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    fontWeight: 500,
-                  }}
+                  className="btn-cyber-secondary"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  style={{
-                    padding: '0.65rem 1.25rem',
-                    backgroundColor: 'var(--accent-primary)',
-                    color: '#fff',
-                    borderRadius: 'var(--radius-md)',
-                    border: 'none',
-                    cursor: submitting ? 'not-allowed' : 'pointer',
-                    fontWeight: 600,
-                    opacity: submitting ? 0.7 : 1,
-                  }}
+                  className="btn-cyber-primary"
+                  style={{ opacity: submitting ? 0.7 : 1 }}
                 >
                   {submitting ? 'Registering...' : 'Register Target'}
                 </button>

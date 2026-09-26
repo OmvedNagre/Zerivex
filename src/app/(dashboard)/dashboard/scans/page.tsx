@@ -85,28 +85,15 @@ export default function ScansPage() {
   const getScoreBadge = (score: number | null) => {
     if (score === null) return <span style={{ color: 'var(--text-muted)' }}>—</span>;
 
-    let color = '#34d399'; // Green (80-100)
-    let bg = 'rgba(16, 185, 129, 0.15)';
+    let badgeClass = 'cyber-badge-emerald';
     if (score < 50) {
-      color = '#f87171'; // Red
-      bg = 'rgba(239, 68, 68, 0.15)';
+      badgeClass = 'cyber-badge-red';
     } else if (score < 80) {
-      color = '#fbbf24'; // Amber
-      bg = 'rgba(245, 158, 11, 0.15)';
+      badgeClass = 'cyber-badge-amber';
     }
 
     return (
-      <span
-        style={{
-          padding: '0.2rem 0.6rem',
-          borderRadius: 'var(--radius-sm)',
-          fontSize: '0.85rem',
-          fontWeight: 700,
-          backgroundColor: bg,
-          color,
-          fontFamily: 'monospace',
-        }}
-      >
+      <span className={`cyber-badge ${badgeClass}`} style={{ fontFamily: 'var(--font-mono)' }}>
         {score} / 100
       </span>
     );
@@ -115,103 +102,165 @@ export default function ScansPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'COMPLETED':
-        return <span style={{ color: '#34d399', fontWeight: 600, fontSize: '0.8rem' }}>✓ COMPLETED</span>;
+        return (
+          <span className="cyber-badge cyber-badge-emerald">
+            ✓ COMPLETED
+          </span>
+        );
       case 'RUNNING':
-        return <span style={{ color: '#38bdf8', fontWeight: 600, fontSize: '0.8rem' }}>⚙ RUNNING</span>;
+        return (
+          <span className="cyber-badge cyber-badge-cyan">
+            <span style={{ display: 'inline-block', animation: 'spin 1.5s linear infinite' }}>⚙</span> RUNNING
+          </span>
+        );
       case 'FAILED':
-        return <span style={{ color: '#f87171', fontWeight: 600, fontSize: '0.8rem' }}>✗ FAILED</span>;
+        return (
+          <span className="cyber-badge cyber-badge-red">
+            ✗ FAILED
+          </span>
+        );
       default:
-        return <span style={{ color: '#fbbf24', fontWeight: 600, fontSize: '0.8rem' }}>⏳ QUEUED</span>;
+        return (
+          <span className="cyber-badge cyber-badge-amber">
+            ⏳ QUEUED
+          </span>
+        );
     }
   };
+
+  const completedCount = scans.filter((s) => s.status === 'COMPLETED').length;
+  const inFlightCount = scans.filter((s) => s.status === 'RUNNING' || s.status === 'QUEUED').length;
+  const validScores = scans.filter((s) => s.score !== null).map((s) => s.score as number);
+  const avgScore = validScores.length > 0 ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length) : 100;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+            <span className="pulse-indicator" />
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'var(--font-mono)' }}>
+              Deterministic Engine
+            </span>
+          </div>
+          <h1 style={{ fontSize: '1.85rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '0.35rem' }}>
             Security Assessment Scans
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-            Deterministic, evidence-based vulnerability scanning engine for modern web endpoints.
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', maxWidth: '650px' }}>
+            Evidence-based vulnerability scanning engine for modern web endpoints, analyzing headers, TLS ciphers, leaked tokens, and cloud misconfigurations.
           </p>
         </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          style={{
-            padding: '0.65rem 1.25rem',
-            backgroundColor: 'var(--accent-primary)',
-            color: '#fff',
-            borderRadius: 'var(--radius-md)',
-            fontWeight: 600,
-            fontSize: '0.9rem',
-            border: 'none',
-            cursor: 'pointer',
-            boxShadow: 'var(--shadow-sm)',
-          }}
+          className="btn-cyber-primary"
+          style={{ height: '42px' }}
         >
-          + Launch Scan
+          <span>+</span> Launch New Scan
         </button>
       </div>
 
+      {/* Metrics Ribbon */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Total Executions
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
+            {scans.length}
+          </div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+            Historical scan runs recorded
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--emerald)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Completed Assessments
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#34d399', marginTop: '0.25rem' }}>
+            {completedCount}
+          </div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+            Deterministic reports generated
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--cyan)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Active / Queued
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#38bdf8', marginTop: '0.25rem' }}>
+            {inFlightCount}
+          </div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+            Worker execution queue
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem' }}>
+          <div style={{ fontSize: '0.8rem', color: '#a78bfa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Fleet Mean Score
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#c4b5fd', marginTop: '0.25rem' }}>
+            {avgScore}<span style={{ fontSize: '1rem', color: 'var(--text-dim)', fontWeight: 500 }}>/100</span>
+          </div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+            Aggregate target baseline
+          </div>
+        </div>
+      </div>
+
       {error && (
-        <div style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: 'var(--radius-md)' }}>
+        <div style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.12)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.9rem' }}>
           {error}
         </div>
       )}
 
       {/* Scans Table */}
       <div
+        className="glass-panel"
         style={{
-          backgroundColor: 'var(--bg-card)',
           borderRadius: 'var(--radius-lg)',
-          border: '1px solid var(--border-color)',
           overflow: 'hidden',
-          boxShadow: 'var(--shadow-sm)',
         }}
       >
         {loading ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            Loading scan history...
+          <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+            <div style={{ display: 'inline-block', width: '28px', height: '28px', border: '3px solid rgba(59, 130, 246, 0.2)', borderTopColor: 'var(--accent-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: '1rem' }} />
+            <div>Synchronizing scan execution records...</div>
           </div>
         ) : scans.length === 0 ? (
           <div style={{ padding: '4rem 2rem', textAlign: 'center' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🔬</div>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '0.5rem' }}>No scans executed yet</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '420px', margin: '0 auto 1.5rem' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', margin: '0 auto 1.25rem' }}>
+              🔬
+            </div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>No scans executed yet</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '440px', margin: '0 auto 1.5rem' }}>
               Launch your first security scan against a registered target to identify misconfigurations and vulnerabilities.
             </p>
             <button
               onClick={() => setIsModalOpen(true)}
-              style={{
-                padding: '0.6rem 1.2rem',
-                backgroundColor: 'var(--accent-primary)',
-                color: '#fff',
-                borderRadius: 'var(--radius-md)',
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                border: 'none',
-                cursor: 'pointer',
-              }}
+              className="btn-cyber-primary"
             >
-              Launch First Scan
+              + Launch First Scan
             </button>
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
-                <th style={{ padding: '0.85rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Target Endpoint</th>
-                <th style={{ padding: '0.85rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Scan Mode</th>
-                <th style={{ padding: '0.85rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Status</th>
-                <th style={{ padding: '0.85rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Security Score</th>
-                <th style={{ padding: '0.85rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Executed At</th>
-                <th style={{ padding: '0.85rem 1.25rem', textAlign: 'right', color: 'var(--text-secondary)', fontWeight: 600 }}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border-subtle)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                  <th style={{ padding: '1rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Target Endpoint</th>
+                  <th style={{ padding: '1rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Scan Mode</th>
+                  <th style={{ padding: '1rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Status</th>
+                  <th style={{ padding: '1rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Security Score</th>
+                  <th style={{ padding: '1rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Executed At</th>
+                  <th style={{ padding: '1rem 1.25rem', textAlign: 'right', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
               {scans.map((s) => (
                 <tr key={s.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                   <td style={{ padding: '1rem 1.25rem' }}>
@@ -241,6 +290,7 @@ export default function ScansPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -403,35 +453,19 @@ export default function ScansPage() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.25rem' }}>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  style={{
-                    padding: '0.65rem 1.25rem',
-                    backgroundColor: 'transparent',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: 'var(--radius-md)',
-                    color: 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    fontWeight: 500,
-                  }}
+                  className="btn-cyber-secondary"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={launching}
-                  style={{
-                    padding: '0.65rem 1.25rem',
-                    backgroundColor: 'var(--accent-primary)',
-                    color: '#fff',
-                    borderRadius: 'var(--radius-md)',
-                    border: 'none',
-                    cursor: launching ? 'not-allowed' : 'pointer',
-                    fontWeight: 600,
-                    opacity: launching ? 0.7 : 1,
-                  }}
+                  className="btn-cyber-primary"
+                  style={{ opacity: launching ? 0.7 : 1 }}
                 >
                   {launching ? 'Executing Assessment...' : 'Start Assessment'}
                 </button>

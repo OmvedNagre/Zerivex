@@ -344,24 +344,30 @@ export default function FindingsPage() {
   const fixedCount = findings.filter((f) => f.status === 'FIXED').length;
 
   return (
-    <div className="container" style={{ padding: '2rem 1.5rem 5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '0.4rem', color: 'var(--text-primary)' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+            <span className="pulse-indicator" />
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'var(--font-mono)' }}>
+              Vulnerability Management
+            </span>
+          </div>
+          <h1 style={{ fontSize: '1.85rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '0.35rem' }}>
             Security Findings Inventory
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Consolidated vulnerability database from deterministic scanner runs with closed-loop fix verification.
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', maxWidth: '650px' }}>
+            Consolidated vulnerability database from deterministic scanner runs with closed-loop fix verification, CWE taxonomy, and actionable remediation diffs.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button onClick={() => fetchFindings()} className="btn btn-secondary" style={{ fontSize: '0.85rem' }}>
-            Refresh
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <button onClick={() => fetchFindings()} className="btn-cyber-secondary">
+            ↻ Refresh
           </button>
-          <Link href="/dashboard/scans" className="btn btn-primary" style={{ fontSize: '0.85rem' }}>
-            Launch Scan
+          <Link href="/dashboard/scans" className="btn-cyber-primary">
+            + Launch Scan
           </Link>
         </div>
       </div>
@@ -370,58 +376,67 @@ export default function FindingsPage() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
           gap: '1rem',
-          marginBottom: '2rem',
         }}
       >
-        <div className="card" style={{ padding: '1.25rem', backgroundColor: 'var(--bg-card)' }}>
-          <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem' }}>
+          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em' }}>
             Total Findings
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
             {totalCount}
           </div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+            Discovered across target fleet
+          </div>
         </div>
 
-        <div className="card" style={{ padding: '1.25rem', backgroundColor: 'var(--bg-card)' }}>
-          <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#f87171', marginBottom: '0.35rem' }}>
+        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem' }}>
+          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#f87171', fontWeight: 600, letterSpacing: '0.05em' }}>
             Open Critical / High
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f87171', fontFamily: 'monospace' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#f87171', marginTop: '0.25rem' }}>
             {criticalHighOpenCount}
           </div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+            Immediate action required
+          </div>
         </div>
 
-        <div className="card" style={{ padding: '1.25rem', backgroundColor: 'var(--bg-card)' }}>
-          <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#fbbf24', marginBottom: '0.35rem' }}>
+        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem' }}>
+          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#fbbf24', fontWeight: 600, letterSpacing: '0.05em' }}>
             Accepted Risks
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#fbbf24', fontFamily: 'monospace' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#fbbf24', marginTop: '0.25rem' }}>
             {acceptedRiskCount}
+          </div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+            Business justified exceptions
           </div>
         </div>
 
-        <div className="card" style={{ padding: '1.25rem', backgroundColor: 'var(--bg-card)' }}>
-          <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#34d399', marginBottom: '0.35rem' }}>
-            Resolved (Fixed)
+        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem' }}>
+          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#34d399', fontWeight: 600, letterSpacing: '0.05em' }}>
+            Resolved & Verified
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#34d399', fontFamily: 'monospace' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#34d399', marginTop: '0.25rem' }}>
             {fixedCount}
+          </div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+            Confirmed closed loop
           </div>
         </div>
       </div>
 
       {/* Filters Bar */}
       <div
-        className="card"
+        className="glass-panel"
         style={{
-          padding: '1rem 1.25rem',
-          marginBottom: '1.5rem',
-          backgroundColor: 'var(--bg-card)',
+          padding: '1.25rem 1.5rem',
           display: 'flex',
           flexWrap: 'wrap',
-          gap: '1rem',
+          gap: '1.25rem',
           alignItems: 'center',
           justifyContent: 'space-between',
         }}
@@ -548,11 +563,10 @@ export default function FindingsPage() {
             return (
               <div
                 key={finding.id}
-                className="card"
+                className="glass-panel"
                 style={{
                   border: `1px solid ${isExpanded ? sev.border : 'var(--border-subtle)'}`,
-                  backgroundColor: 'var(--bg-card)',
-                  padding: '1.25rem 1.5rem',
+                  padding: '1.5rem',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
@@ -642,16 +656,16 @@ export default function FindingsPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                     <button
                       onClick={() => handleOpenRemediationModal(finding)}
-                      className="btn btn-primary"
-                      style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
+                      className="btn-cyber-primary"
+                      style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem' }}
                     >
                       ⚡ Fix Guide & Verify
                     </button>
 
                     <button
                       onClick={() => handleOpenCollabModal(finding)}
-                      className="btn btn-secondary"
-                      style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                      className="btn-cyber-secondary"
+                      style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
                     >
                       <span>💬</span>
                       <span>Discuss & Assign</span>
@@ -659,24 +673,24 @@ export default function FindingsPage() {
 
                     <Link
                       href={`/dashboard/scans/${finding.scanId}`}
-                      className="btn btn-secondary"
-                      style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem', textDecoration: 'none' }}
+                      className="btn-cyber-secondary"
+                      style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem', textDecoration: 'none' }}
                     >
                       Scan Details
                     </Link>
 
                     <button
                       onClick={() => handleOpenStatusModal(finding)}
-                      className="btn btn-secondary"
-                      style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
+                      className="btn-cyber-secondary"
+                      style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem' }}
                     >
                       Triage
                     </button>
 
                     <button
                       onClick={() => toggleExpand(finding.id)}
-                      className="btn btn-secondary"
-                      style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
+                      className="btn-cyber-secondary"
+                      style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem' }}
                     >
                       {isExpanded ? 'Hide Evidence ▲' : 'Evidence ▼'}
                     </button>
