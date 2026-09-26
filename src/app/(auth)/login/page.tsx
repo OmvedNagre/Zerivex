@@ -136,6 +136,32 @@ function LoginForm() {
           </svg>
           Continue with GitHub
         </a>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0.25rem 0' }}>
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle)' }} />
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>or sandbox</span>
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle)' }} />
+        </div>
+
+        <a
+          href={getLoginUrl('mock')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.75rem',
+            backgroundColor: 'rgba(37, 99, 235, 0.12)',
+            color: '#60a5fa',
+            border: '1px solid rgba(59, 130, 246, 0.35)',
+            padding: '0.75rem 1rem',
+            borderRadius: 'var(--radius-sm)',
+            fontWeight: 700,
+            fontSize: '0.95rem',
+            textDecoration: 'none',
+          }}
+        >
+          <span>⚡</span> One-Click Local Sign-In (Owner / Admin)
+        </a>
       </div>
 
       <div
