@@ -100,7 +100,10 @@ export default function DashboardPage() {
       const res = await fetch('/api/targets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: quickScanUrl.trim() }),
+        body: JSON.stringify({
+          targetUrl: quickScanUrl.trim(),
+          url: quickScanUrl.trim(),
+        }),
       });
       const data = await res.json();
 
@@ -109,10 +112,17 @@ export default function DashboardPage() {
         return;
       }
 
-      setQuickScanMessage(`Target registered successfully! Redirecting to target details...`);
+      const targetId = data.data?.target?.id;
+      if (!targetId) {
+        setQuickScanMessage('Target registered, redirecting to targets list...');
+        window.location.href = '/dashboard/targets';
+        return;
+      }
+
+      setQuickScanMessage(`Target ready! Redirecting to verification center...`);
       setTimeout(() => {
-        window.location.href = `/dashboard/targets/${data.data.target.id}`;
-      }, 1000);
+        window.location.href = `/dashboard/targets/${targetId}`;
+      }, 500);
     } catch (err) {
       setQuickScanMessage(`Error: ${(err as Error).message}`);
     } finally {

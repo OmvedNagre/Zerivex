@@ -138,8 +138,20 @@ export async function safeFetch(
       : 80;
 
     // Custom agent with custom lookup pinning the exact pre-validated IP
-    const customLookup: http.AgentOptions['lookup'] = (_hostname, _opts, callback) => {
-      callback(null, pinnedIp, net.isIPv6(pinnedIp) ? 6 : 4);
+    const customLookup: http.AgentOptions['lookup'] = (
+      _hostname: string,
+      options: any,
+      callback: any
+    ) => {
+      const cb = typeof options === 'function' ? options : callback;
+      const opts = typeof options === 'object' && options !== null ? options : {};
+      const family = net.isIPv6(pinnedIp) ? 6 : 4;
+
+      if (opts.all) {
+        cb(null, [{ address: pinnedIp, family }]);
+      } else {
+        cb(null, pinnedIp, family);
+      }
     };
 
     const agent = isHttps

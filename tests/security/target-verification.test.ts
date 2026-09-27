@@ -9,6 +9,8 @@ import {
   verifyTarget,
   getVerificationInstructions,
   assertTargetScanAuthorization,
+  extractApexDomain,
+  getDnsChallengeCandidates,
 } from '@/core/targets/verification-service';
 import { validateTargetUrl, safeFetch, SecuritySSRFError } from '@/core/security/safe-http-client';
 import { isProhibitedIpAddress } from '@/core/security/ip-validator';
@@ -231,6 +233,40 @@ describe('Target Management, SSRF Defense & Verification Protocols (Phase 3)', (
       await expect(safeFetch('http://169.254.169.254/latest/meta-data')).rejects.toThrow(
         /Matches prohibited IP range: Link-Local & Cloud Metadata/
       );
+    });
+
+    it('correctly extracts apex domains and resolves DNS candidate hostnames', () => {
+      expect(extractApexDomain('www.omved.live')).toBe('omved.live');
+      expect(extractApexDomain('staging.api.omved.live')).toBe('omved.live');
+      expect(extractApexDomain('omved.live')).toBe('omved.live');
+      expect(extractApexDomain('sub.example.co.uk')).toBe('example.co.uk');
+
+      const candidates = getDnsChallengeCandidates('www.omved.live', 'omved.live');
+      expect(candidates).toContain('_zerivex-challenge.www.omved.live');
+      expect(candidates).toContain('_zerivex-challenge.omved.live');
+      expect(candidates).toContain('www.omved.live');
+      expect(candidates).toContain('omved.live');
+    });
+
+    it('supports instant verification bypass for platform owners and development sandbox', async () => {
+      const targetA = (await query<{ id: string }>('SELECT id FROM targets WHERE organization_id = $1 LIMIT 1', [orgAId])).rows[0]!;
+
+      // Reset to unverified
+      await query("UPDATE targets SET verification_status = 'UNVERIFIED', verified_at = NULL WHERE id = $1", [targetA.id]);
+
+      const bypassResult = await verifyTarget({
+        targetId: targetA.id,
+        organizationId: orgAId,
+        actorUserId: userAId,
+        bypass: true,
+      });
+
+      expect(bypassResult.success).toBe(true);
+      expect(bypassResult.diagnostic).toContain('Sandbox authorization');
+
+      const updatedTarget = await getTargetById(targetA.id, orgAId);
+      expect(updatedTarget.verificationStatus).toBe('VERIFIED');
+      expect(updatedTarget.verifiedAt).not.toBeNull();
     });
   });
 });

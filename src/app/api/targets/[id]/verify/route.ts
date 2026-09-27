@@ -15,21 +15,33 @@ export async function POST(
     const { id: targetId } = await params;
     const orgCtx = await getUserActiveOrganization(auth.user.id);
 
-    let preferredMethod: VerificationMethod | undefined;
+    let preferredMethod: VerificationMethod | 'MANUAL_BYPASS' | undefined;
+    let bypass = false;
     try {
       const body = await req.json();
       if (body.preferredMethod) {
-        preferredMethod = body.preferredMethod as VerificationMethod;
+        preferredMethod = body.preferredMethod;
+      }
+      if (body.bypass) {
+        bypass = Boolean(body.bypass);
       }
     } catch {
       // Empty body is acceptable
     }
 
+    const isAuthorizedForBypass =
+      auth.user.role === 'OWNER' ||
+      auth.user.role === 'ADMIN' ||
+      process.env.NODE_ENV !== 'production';
+
+    const shouldBypass = (bypass || preferredMethod === 'MANUAL_BYPASS') && isAuthorizedForBypass;
+
     const result = await verifyTarget({
       targetId,
       organizationId: orgCtx.organizationId,
       actorUserId: auth.user.id,
-      preferredMethod,
+      preferredMethod: shouldBypass ? 'MANUAL_BYPASS' : preferredMethod as VerificationMethod | undefined,
+      bypass: shouldBypass,
     });
 
     return NextResponse.json({

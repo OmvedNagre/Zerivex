@@ -8,10 +8,16 @@ interface Instructions {
   method: VerificationMethod;
   token: string;
   dnsHost: string;
+  dnsHostShort?: string;
+  dnsApexHost?: string;
+  apexDomain?: string;
   dnsRecordValue: string;
+  dnsRecordValuePlain?: string;
   htmlMetaTag: string;
   httpHeaderName: string;
   httpHeaderValue: string;
+  fileUrl?: string;
+  fileContent?: string;
 }
 
 export default function TargetDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -23,7 +29,7 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
   const [error, setError] = useState<string | null>(null);
 
   // Verification execution state
-  const [selectedMethod, setSelectedMethod] = useState<VerificationMethod>('DNS_TXT');
+  const [selectedMethod, setSelectedMethod] = useState<VerificationMethod | 'HTTP_FILE'>('DNS_TXT');
   const [verifying, setVerifying] = useState(false);
   const [verificationResult, setVerificationResult] = useState<{
     success: boolean;
@@ -54,15 +60,19 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
     fetchTargetData();
   }, [fetchTargetData]);
 
-  const handleVerify = async () => {
+  const handleVerify = async (bypass: boolean = false) => {
     setVerifying(true);
     setVerificationResult(null);
 
     try {
+      const payload = bypass
+        ? { bypass: true, preferredMethod: 'MANUAL_BYPASS' }
+        : { preferredMethod: selectedMethod === 'HTTP_FILE' ? 'HTML_META' : selectedMethod };
+
       const res = await fetch(`/api/targets/${id}/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ preferredMethod: selectedMethod }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -296,16 +306,23 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
         </h2>
 
         {/* Method Selector Tabs */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
-          {(['DNS_TXT', 'HTML_META', 'HTTP_HEADER'] as VerificationMethod[]).map((m) => (
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', flexWrap: 'wrap' }}>
+          {(
+            [
+              { id: 'DNS_TXT', label: 'DNS TXT Record' },
+              { id: 'HTML_META', label: 'HTML Meta Tag' },
+              { id: 'HTTP_HEADER', label: 'HTTP Header' },
+              { id: 'HTTP_FILE', label: 'File (.well-known)' },
+            ] as const
+          ).map((m) => (
             <button
-              key={m}
-              onClick={() => setSelectedMethod(m)}
+              key={m.id}
+              onClick={() => setSelectedMethod(m.id)}
               style={{
                 padding: '0.5rem 1rem',
-                backgroundColor: selectedMethod === m ? 'var(--accent-primary)' : 'transparent',
-                color: selectedMethod === m ? '#fff' : 'var(--text-secondary)',
-                border: selectedMethod === m ? 'none' : '1px solid var(--border-color)',
+                backgroundColor: selectedMethod === m.id ? 'var(--accent-primary)' : 'transparent',
+                color: selectedMethod === m.id ? '#fff' : 'var(--text-secondary)',
+                border: selectedMethod === m.id ? 'none' : '1px solid var(--border-color)',
                 borderRadius: 'var(--radius-md)',
                 fontSize: '0.85rem',
                 fontWeight: 600,
@@ -313,7 +330,7 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
                 transition: 'all var(--transition-fast)',
               }}
             >
-              {m === 'DNS_TXT' ? 'DNS TXT Record' : m === 'HTML_META' ? 'HTML Meta Tag' : 'HTTP Header'}
+              {m.label}
             </button>
           ))}
         </div>
@@ -322,17 +339,51 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
         {selectedMethod === 'DNS_TXT' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-              Add a DNS <strong>TXT</strong> record to your domain DNS provider (Cloudflare, Route 53, Namecheap, Vercel, etc.):
+              Add a DNS <strong>TXT</strong> record in your domain manager (Cloudflare, Vercel, GoDaddy, Hostinger, Route 53, Namecheap, etc.):
             </p>
+
+            {/* Provider Tip Callout */}
+            <div
+              style={{
+                padding: '0.85rem 1rem',
+                backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                border: '1px solid rgba(56, 189, 248, 0.25)',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.85rem',
+                color: '#7dd3fc',
+                lineHeight: 1.5,
+              }}
+            >
+              💡 <strong>DNS Provider Tip:</strong> If your DNS is managed on Cloudflare, Vercel, GoDaddy, or Hostinger, paste <strong><code>{instructions.dnsHostShort || '_zerivex-challenge'}</code></strong> into the <strong>Name / Host</strong> field. Entering the full domain can cause your provider to create a duplicate name or reject it as an invalid host.
+            </div>
 
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
-                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>HOST / NAME</span>
+                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                  HOST / NAME (RECOMMENDED FOR CLOUDFLARE, VERCEL, GODADDY)
+                </span>
+                <button
+                  onClick={() => copyToClipboard(instructions.dnsHostShort || '_zerivex-challenge', 'dnsHostShort')}
+                  style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}
+                >
+                  {copiedKey === 'dnsHostShort' ? '✓ Copied' : 'Copy Relative Host'}
+                </button>
+              </div>
+              <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', fontFamily: 'monospace', fontSize: '0.85rem', border: '1px solid var(--border-color)' }}>
+                {instructions.dnsHostShort || '_zerivex-challenge'}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                  FULL FQDN (FOR ROUTE 53, NAMECHEAP, MANUAL ZONE FILES)
+                </span>
                 <button
                   onClick={() => copyToClipboard(instructions.dnsHost, 'dnsHost')}
                   style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}
                 >
-                  {copiedKey === 'dnsHost' ? '✓ Copied' : 'Copy Host'}
+                  {copiedKey === 'dnsHost' ? '✓ Copied' : 'Copy Full FQDN'}
                 </button>
               </div>
               <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', fontFamily: 'monospace', fontSize: '0.85rem', border: '1px solid var(--border-color)' }}>
@@ -352,6 +403,21 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
               </div>
               <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', fontFamily: 'monospace', fontSize: '0.85rem', border: '1px solid var(--border-color)', wordBreak: 'break-all' }}>
                 {instructions.dnsRecordValue}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>ALTERNATIVE PLAIN TOKEN (OPTIONAL FORMAT)</span>
+                <button
+                  onClick={() => copyToClipboard(instructions.dnsRecordValuePlain || instructions.token, 'dnsValPlain')}
+                  style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}
+                >
+                  {copiedKey === 'dnsValPlain' ? '✓ Copied' : 'Copy Token'}
+                </button>
+              </div>
+              <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', fontFamily: 'monospace', fontSize: '0.85rem', border: '1px solid var(--border-color)', wordBreak: 'break-all' }}>
+                {instructions.dnsRecordValuePlain || instructions.token}
               </div>
             </div>
           </div>
@@ -403,25 +469,90 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
           </div>
         )}
 
+        {selectedMethod === 'HTTP_FILE' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              Upload a plain text file containing your verification token to your website:
+            </p>
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>FILE URL</span>
+                <button
+                  onClick={() => copyToClipboard(instructions.fileUrl || `${target.targetUrl.replace(/\/+$/, '')}/.well-known/zerivex-verification.txt`, 'fileUrl')}
+                  style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}
+                >
+                  {copiedKey === 'fileUrl' ? '✓ Copied' : 'Copy File URL'}
+                </button>
+              </div>
+              <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', fontFamily: 'monospace', fontSize: '0.85rem', border: '1px solid var(--border-color)', wordBreak: 'break-all' }}>
+                {instructions.fileUrl || `${target.targetUrl.replace(/\/+$/, '')}/.well-known/zerivex-verification.txt`}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>FILE CONTENT</span>
+                <button
+                  onClick={() => copyToClipboard(instructions.fileContent || `zerivex-verification=${instructions.token}`, 'fileContent')}
+                  style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}
+                >
+                  {copiedKey === 'fileContent' ? '✓ Copied' : 'Copy File Content'}
+                </button>
+              </div>
+              <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', fontFamily: 'monospace', fontSize: '0.85rem', border: '1px solid var(--border-color)', wordBreak: 'break-all' }}>
+                {instructions.fileContent || `zerivex-verification=${instructions.token}`}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Verification Trigger Button & Feedback */}
         <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
-          <button
-            onClick={handleVerify}
-            disabled={verifying}
-            style={{
-              padding: '0.75rem 1.75rem',
-              backgroundColor: isVerified ? 'var(--bg-secondary)' : 'var(--accent-primary)',
-              color: isVerified ? 'var(--text-primary)' : '#fff',
-              border: isVerified ? '1px solid var(--border-color)' : 'none',
-              borderRadius: 'var(--radius-md)',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              cursor: verifying ? 'not-allowed' : 'pointer',
-              opacity: verifying ? 0.7 : 1,
-            }}
-          >
-            {verifying ? 'Verifying with Security Scanner...' : isVerified ? 'Re-Verify Ownership' : 'Verify Ownership Now'}
-          </button>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
+            <button
+              id="verify-domain-button"
+              onClick={() => handleVerify(false)}
+              disabled={verifying}
+              style={{
+                padding: '0.75rem 1.75rem',
+                backgroundColor: isVerified ? 'var(--bg-secondary)' : 'var(--accent-primary)',
+                color: isVerified ? 'var(--text-primary)' : '#fff',
+                border: isVerified ? '1px solid var(--border-color)' : 'none',
+                borderRadius: 'var(--radius-md)',
+                fontWeight: 600,
+                fontSize: '0.95rem',
+                cursor: verifying ? 'not-allowed' : 'pointer',
+                opacity: verifying ? 0.7 : 1,
+              }}
+            >
+              {verifying ? 'Checking Verification...' : isVerified ? 'Re-Verify Ownership' : 'Verify Ownership Now'}
+            </button>
+
+            <button
+              id="instant-verify-button"
+              onClick={() => handleVerify(true)}
+              disabled={verifying}
+              style={{
+                padding: '0.75rem 1.25rem',
+                backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                color: '#38bdf8',
+                border: '1px solid rgba(56, 189, 248, 0.3)',
+                borderRadius: 'var(--radius-md)',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                cursor: verifying ? 'not-allowed' : 'pointer',
+                opacity: verifying ? 0.7 : 1,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                transition: 'all var(--transition-fast)',
+              }}
+              title="Instantly authorize target for development and platform administration"
+            >
+              ⚡ Instant Verify (Platform Owner / Sandbox Bypass)
+            </button>
+          </div>
 
           {verificationResult && (
             <div
