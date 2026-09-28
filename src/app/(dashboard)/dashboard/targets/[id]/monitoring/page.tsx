@@ -26,6 +26,8 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
   const [scanMode, setScanMode] = useState<ScanMode>('PUBLIC_PASSIVE');
   const [submitting, setSubmitting] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [modalSuccess, setModalSuccess] = useState<string | null>(null);
+  const [modalError, setModalError] = useState<string | null>(null);
 
   // Trigger running state
   const [runningScheduleId, setRunningScheduleId] = useState<string | null>(null);
@@ -61,6 +63,8 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
 
     try {
       setSubmitting(true);
+      setModalError(null);
+      setModalSuccess(null);
       setError(null);
 
       const res = await fetch('/api/schedules', {
@@ -68,6 +72,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           targetId: target.id,
+          projectId: target.projectId,
           name: scheduleName.trim() || `${frequency} Security Scan`,
           frequency,
           customCron: frequency === 'CUSTOM' ? customCron : undefined,
@@ -80,13 +85,25 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
         throw new Error(data.error || 'Failed to create scan schedule');
       }
 
-      setActionSuccess('Schedule successfully created!');
-      setShowCreateModal(false);
-      setScheduleName('');
-      setTimeout(() => setActionSuccess(null), 3500);
+      const scanTypeLabel = scanMode === 'VERIFIED_ACTIVE' ? 'Full Active' : 'Public Passive';
+      const scheduleTimeLabel = frequency === 'DAILY' ? 'daily at 02:00 UTC' : frequency === 'WEEKLY' ? 'weekly on Mondays' : frequency;
+      const successMessage = `Your ${scanTypeLabel} scan has been scheduled for ${scheduleTimeLabel}!`;
+
+      setModalSuccess(successMessage);
+      setActionSuccess(successMessage);
       await fetchMonitoringData();
+
+      // Auto-close after 1.8 seconds so user can read the confirmation
+      setTimeout(() => {
+        setShowCreateModal(false);
+        setScheduleName('');
+        setModalSuccess(null);
+      }, 1800);
+      setTimeout(() => setActionSuccess(null), 4000);
     } catch (err) {
-      setError((err as Error).message);
+      const msg = (err as Error).message;
+      setModalError(msg);
+      setError(msg);
     } finally {
       setSubmitting(false);
     }
@@ -659,15 +676,99 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
               backgroundColor: 'var(--bg-card)',
               borderRadius: 'var(--radius-lg)',
               border: '1px solid var(--border-color)',
-              maxWidth: '500px',
+              maxWidth: '520px',
               width: '100%',
               padding: '1.75rem',
               boxShadow: 'var(--shadow-lg)',
+              position: 'relative',
             }}
           >
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>
-              Configure Automated Scan Schedule
-            </h3>
+            {/* Modal Header with Close Button */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '1.25rem',
+                borderBottom: '1px solid var(--border-color)',
+                paddingBottom: '0.85rem',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <span style={{ fontSize: '1.25rem' }}>⏱️</span>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+                  Configure Automated Scan Schedule
+                </h3>
+              </div>
+              <button
+                type="button"
+                id="close-schedule-modal-btn"
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setModalSuccess(null);
+                  setModalError(null);
+                }}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '0.4rem',
+                  width: '2rem',
+                  height: '2rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  lineHeight: 1,
+                  transition: 'all 0.15s ease',
+                }}
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Inline Notifications within modal container */}
+            {modalSuccess && (
+              <div
+                style={{
+                  padding: '0.85rem 1rem',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                  color: '#34d399',
+                  fontSize: '0.875rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.6rem',
+                  marginBottom: '1.25rem',
+                }}
+              >
+                <span style={{ fontSize: '1.1rem' }}>✓</span>
+                <span style={{ fontWeight: 600 }}>{modalSuccess}</span>
+              </div>
+            )}
+
+            {modalError && (
+              <div
+                style={{
+                  padding: '0.85rem 1rem',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                  color: '#f87171',
+                  fontSize: '0.875rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.6rem',
+                  marginBottom: '1.25rem',
+                }}
+              >
+                <span>⚠</span>
+                <span>{modalError}</span>
+              </div>
+            )}
 
             <form onSubmit={handleCreateSchedule} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>
@@ -798,7 +899,11 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.75rem' }}>
                 <button
                   type="button"
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setModalSuccess(null);
+                    setModalError(null);
+                  }}
                   style={{
                     padding: '0.6rem 1rem',
                     borderRadius: 'var(--radius-md)',
@@ -813,18 +918,29 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || !!modalSuccess}
+                  id="submit-schedule-btn"
                   style={{
-                    padding: '0.6rem 1.25rem',
+                    padding: '0.65rem 1.4rem',
                     borderRadius: 'var(--radius-md)',
                     border: 'none',
-                    backgroundColor: 'var(--accent-primary)',
+                    backgroundColor: modalSuccess ? '#10b981' : 'var(--accent-primary)',
                     color: '#fff',
                     fontWeight: 600,
-                    cursor: submitting ? 'not-allowed' : 'pointer',
+                    cursor: submitting || !!modalSuccess ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.2s ease',
                   }}
                 >
-                  {submitting ? 'Saving...' : 'Save Schedule'}
+                  {submitting ? (
+                    'Saving Schedule...'
+                  ) : modalSuccess ? (
+                    '✓ Scheduled!'
+                  ) : (
+                    'Save Schedule'
+                  )}
                 </button>
               </div>
             </form>

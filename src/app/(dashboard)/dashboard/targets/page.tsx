@@ -2,12 +2,15 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Target, VerificationMethod, VerificationScope } from '@/core/targets/target-service';
 
 export default function TargetsPage() {
+  const router = useRouter();
   const [targets, setTargets] = useState<Target[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [scanningTargetId, setScanningTargetId] = useState<string | null>(null);
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -83,6 +86,35 @@ export default function TargetsPage() {
       await fetchTargets();
     } catch (err) {
       alert((err as Error).message);
+    }
+  };
+
+  const handleRunScan = async (targetId: string, isVerified: boolean) => {
+    try {
+      setScanningTargetId(targetId);
+      setError(null);
+      const res = await fetch('/api/scans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetId,
+          scanMode: isVerified ? 'VERIFIED_ACTIVE' : 'PUBLIC_PASSIVE',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to trigger scan');
+      }
+      const newScanId = data.data?.scanJob?.id;
+      if (newScanId) {
+        router.push(`/dashboard/scans/${newScanId}`);
+      } else {
+        router.push('/dashboard/scans');
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setScanningTargetId(null);
     }
   };
 
@@ -287,7 +319,38 @@ export default function TargetsPage() {
                     {new Date(t.createdAt).toLocaleDateString()}
                   </td>
                   <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
-                    <div style={{ display: 'inline-flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <div style={{ display: 'inline-flex', gap: '0.65rem', alignItems: 'center' }}>
+                      <button
+                        onClick={() => handleRunScan(t.id, t.verificationStatus === 'VERIFIED')}
+                        disabled={scanningTargetId === t.id}
+                        style={{
+                          padding: '0.35rem 0.75rem',
+                          borderRadius: 'var(--radius-md)',
+                          border: '1px solid rgba(59, 130, 246, 0.4)',
+                          backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                          color: '#60a5fa',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          cursor: scanningTargetId === t.id ? 'not-allowed' : 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          transition: 'all 0.15s ease',
+                        }}
+                        title="Trigger immediate security scan against target"
+                      >
+                        {scanningTargetId === t.id ? (
+                          <>
+                            <span style={{ display: 'inline-block', width: '10px', height: '10px', border: '2px solid #60a5fa', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                            Scanning...
+                          </>
+                        ) : (
+                          <>
+                            <span>⚡</span> Run Scan
+                          </>
+                        )}
+                      </button>
+
                       <Link
                         href={`/dashboard/targets/${t.id}`}
                         style={{

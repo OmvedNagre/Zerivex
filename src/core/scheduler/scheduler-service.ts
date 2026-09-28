@@ -22,7 +22,7 @@ import { createMonitoringAlert } from '@/core/monitoring/monitoring-repository';
 
 export interface CreateScheduleInput {
   organizationId: string;
-  projectId: string;
+  projectId?: string;
   targetId: string;
   name: string;
   frequency: ScheduleFrequency;
@@ -58,10 +58,12 @@ export async function createScanScheduleWithValidation(
   // 4. Calculate initial next_run_at
   const nextRunAt = getNextRunDate(cronExpr);
 
-  // 5. Persist to DB
+  // 5. Persist to DB with verified project ID fallback
+  const effectiveProjectId = input.projectId || target.projectId;
+
   const schedule = await createScanSchedule({
     organizationId: input.organizationId,
-    projectId: input.projectId,
+    projectId: effectiveProjectId,
     targetId: input.targetId,
     name: input.name,
     frequency: input.frequency,

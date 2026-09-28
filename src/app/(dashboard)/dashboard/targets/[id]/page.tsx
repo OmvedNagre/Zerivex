@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Target, VerificationMethod } from '@/core/targets/target-service';
 
 interface Instructions {
@@ -22,11 +23,14 @@ interface Instructions {
 
 export default function TargetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
 
   const [target, setTarget] = useState<Target | null>(null);
   const [instructions, setInstructions] = useState<Instructions | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [latestScan, setLatestScan] = useState<{ id: string; score: number | null; createdAt: string } | null>(null);
+  const [scanning, setScanning] = useState(false);
 
   // Verification execution state
   const [selectedMethod, setSelectedMethod] = useState<VerificationMethod | 'HTTP_FILE'>('DNS_TXT');
@@ -49,6 +53,20 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
       setInstructions(data.data.instructions);
       setSelectedMethod(data.data.target.verificationMethod || 'DNS_TXT');
       setError(null);
+
+      // Fetch latest scan for this target
+      try {
+        const scansRes = await fetch(`/api/scans?targetId=${id}`);
+        if (scansRes.ok) {
+          const scansData = await scansRes.json();
+          const scanList = scansData.data?.scans || [];
+          if (scanList.length > 0) {
+            setLatestScan(scanList[0]);
+          }
+        }
+      } catch {
+        // Silently ignore scan fetch error
+      }
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -91,6 +109,35 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
       });
     } finally {
       setVerifying(false);
+    }
+  };
+
+  const handleRunScan = async () => {
+    if (!target) return;
+    try {
+      setScanning(true);
+      const res = await fetch('/api/scans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetId: target.id,
+          scanMode: target.verificationStatus === 'VERIFIED' ? 'VERIFIED_ACTIVE' : 'PUBLIC_PASSIVE',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to trigger scan');
+      }
+      const newScanId = data.data?.scanJob?.id;
+      if (newScanId) {
+        router.push(`/dashboard/scans/${newScanId}`);
+      } else {
+        router.push('/dashboard/scans');
+      }
+    } catch (err) {
+      alert((err as Error).message);
+    } finally {
+      setScanning(false);
     }
   };
 
@@ -141,7 +188,7 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
         >
           ← Back to Targets
         </Link>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h1 style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
               {target.targetUrl}
@@ -151,7 +198,60 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
             </p>
           </div>
 
-          <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {latestScan && (
+              <Link
+                href={`/dashboard/scans/${latestScan.id}`}
+                style={{
+                  padding: '0.45rem 0.85rem',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-primary)',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                }}
+              >
+                <span>📊</span>
+                <span>Latest Report ({latestScan.score !== null ? `${latestScan.score}/100` : 'Pending'})</span>
+              </Link>
+            )}
+
+            <button
+              onClick={handleRunScan}
+              disabled={scanning}
+              style={{
+                padding: '0.45rem 1rem',
+                borderRadius: 'var(--radius-md)',
+                border: 'none',
+                backgroundColor: 'var(--accent-primary)',
+                color: '#fff',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                cursor: scanning ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+              }}
+              title="Launch instant security scan against target"
+            >
+              {scanning ? (
+                <>
+                  <span style={{ display: 'inline-block', width: '12px', height: '12px', border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                  <span>Scanning...</span>
+                </>
+              ) : (
+                <>
+                  <span>⚡</span>
+                  <span>Run Security Scan</span>
+                </>
+              )}
+            </button>
+
             {isVerified ? (
               <span
                 style={{

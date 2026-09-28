@@ -2,16 +2,20 @@
 
 import { useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ScanJobRecord, FindingRecord } from '@/core/scanner/scan-runner';
 import { getRemediationForRule, RuleRemediation } from '@/core/remediation/remediation-catalog';
 
 export default function ScanReportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
 
   const [scan, setScan] = useState<ScanJobRecord | null>(null);
   const [findings, setFindings] = useState<FindingRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [rescanning, setRescanning] = useState(false);
+  const [rescanError, setRescanError] = useState<string | null>(null);
 
   // Filters & search
   const [severityFilter, setSeverityFilter] = useState<string>('ALL');
@@ -157,6 +161,34 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
     }
   };
 
+  const handleRescanTarget = async () => {
+    if (!scan) return;
+    try {
+      setRescanning(true);
+      setRescanError(null);
+      const res = await fetch('/api/scans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetId: scan.targetId,
+          scanMode: scan.scanMode,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to re-scan target');
+      }
+      const newScanId = data.data?.scanJob?.id;
+      if (newScanId) {
+        router.push(`/dashboard/scans/${newScanId}`);
+      }
+    } catch (err) {
+      setRescanError((err as Error).message);
+    } finally {
+      setRescanning(false);
+    }
+  };
+
   const filteredFindings = findings.filter((f) => {
     if (severityFilter !== 'ALL' && f.severity !== severityFilter) return false;
     if (searchQuery.trim()) {
@@ -256,7 +288,34 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
         </div>
 
         {/* Action Buttons: Export Report & New Scan */}
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <button
+            onClick={handleRescanTarget}
+            disabled={rescanning}
+            className="btn btn-primary"
+            style={{
+              fontSize: '0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              cursor: rescanning ? 'not-allowed' : 'pointer',
+              backgroundColor: 'var(--accent-primary)',
+            }}
+            title="Re-run security scan against this target with latest engine"
+          >
+            {rescanning ? (
+              <>
+                <span style={{ display: 'inline-block', width: '12px', height: '12px', border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                <span>Re-Scanning Target...</span>
+              </>
+            ) : (
+              <>
+                <span>🔄</span>
+                <span>Re-Scan Target Now</span>
+              </>
+            )}
+          </button>
+
           <a
             href={`/api/scans/${scan.id}/report?format=html`}
             target="_blank"
@@ -278,11 +337,27 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
             <span>Technical JSON</span>
           </a>
 
-          <Link href="/dashboard/scans" className="btn btn-primary" style={{ fontSize: '0.85rem' }}>
-            New Scan
+          <Link href="/dashboard/scans" className="btn btn-secondary" style={{ fontSize: '0.85rem' }}>
+            All Scans
           </Link>
         </div>
       </div>
+
+      {rescanError && (
+        <div
+          style={{
+            padding: '1rem',
+            backgroundColor: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: 'var(--radius-md)',
+            color: '#f87171',
+            fontSize: '0.9rem',
+            marginBottom: '1.5rem',
+          }}
+        >
+          ⚠️ {rescanError}
+        </div>
+      )}
 
       {/* Hero Summary Card */}
       <div

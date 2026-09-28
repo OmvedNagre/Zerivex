@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
 
     const schedule = await createScanScheduleWithValidation({
       organizationId: orgCtx.organizationId,
-      projectId: projectId || orgCtx.organizationId, // Fallback to orgCtx if omitted
+      projectId: projectId || orgCtx.defaultProjectId,
       targetId,
       name,
       frequency,
