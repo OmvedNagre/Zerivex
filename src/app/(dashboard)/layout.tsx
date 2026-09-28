@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { AuthProvider, useAuth } from '@/components/auth/AuthProvider';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 function DashboardHeader() {
   const { user, isOwner, logout } = useAuth();
@@ -15,12 +16,13 @@ function DashboardHeader() {
     <header
       style={{
         borderBottom: '1px solid var(--border-subtle)',
-        backgroundColor: 'rgba(10, 14, 23, 0.85)',
+        backgroundColor: 'var(--bg-header)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         position: 'sticky',
         top: 0,
         zIndex: 100,
+        transition: 'background-color 0.25s ease, border-color 0.25s ease',
       }}
     >
       <div className="container" style={{ padding: '0.75rem 1.5rem' }}>
@@ -55,7 +57,7 @@ function DashboardHeader() {
                     fontWeight: 800,
                     fontSize: '1.15rem',
                     letterSpacing: '-0.02em',
-                    color: '#ffffff',
+                    color: 'var(--text-primary)',
                     lineHeight: 1.1,
                   }}
                 >
@@ -64,7 +66,7 @@ function DashboardHeader() {
                 <span
                   style={{
                     fontSize: '0.65rem',
-                    color: '#10b981',
+                    color: 'var(--emerald)',
                     fontWeight: 700,
                     display: 'flex',
                     alignItems: 'center',
@@ -85,10 +87,11 @@ function DashboardHeader() {
                 style={{
                   padding: '0.45rem 0.85rem',
                   borderRadius: '6px',
-                  color: '#f8fafc',
+                  color: 'var(--text-primary)',
                   fontSize: '0.88rem',
                   fontWeight: 600,
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  backgroundColor: 'var(--bg-card-hover)',
+                  border: '1px solid var(--border-subtle)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.4rem',
@@ -102,7 +105,7 @@ function DashboardHeader() {
                 style={{
                   padding: '0.45rem 0.85rem',
                   borderRadius: '6px',
-                  color: '#94a3b8',
+                  color: 'var(--text-secondary)',
                   fontSize: '0.88rem',
                   fontWeight: 500,
                   display: 'flex',
@@ -118,7 +121,7 @@ function DashboardHeader() {
                 style={{
                   padding: '0.45rem 0.85rem',
                   borderRadius: '6px',
-                  color: '#94a3b8',
+                  color: 'var(--text-secondary)',
                   fontSize: '0.88rem',
                   fontWeight: 500,
                   display: 'flex',
@@ -134,7 +137,7 @@ function DashboardHeader() {
                 style={{
                   padding: '0.45rem 0.85rem',
                   borderRadius: '6px',
-                  color: '#94a3b8',
+                  color: 'var(--text-secondary)',
                   fontSize: '0.88rem',
                   fontWeight: 500,
                   display: 'flex',
@@ -151,10 +154,10 @@ function DashboardHeader() {
                 style={{
                   padding: '0.45rem 0.85rem',
                   borderRadius: '6px',
-                  color: '#34d399',
+                  color: 'var(--emerald)',
                   fontSize: '0.88rem',
                   fontWeight: 600,
-                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                  backgroundColor: 'var(--emerald-subtle)',
                   border: '1px solid rgba(16, 185, 129, 0.3)',
                   display: 'flex',
                   alignItems: 'center',
@@ -169,7 +172,7 @@ function DashboardHeader() {
                     fontWeight: 800,
                     padding: '0.1rem 0.4rem',
                     borderRadius: '4px',
-                    color: '#34d399',
+                    color: 'var(--emerald)',
                   }}
                 >
                   100%
@@ -183,8 +186,8 @@ function DashboardHeader() {
                   style={{
                     padding: '0.45rem 0.85rem',
                     borderRadius: '6px',
-                    color: showMoreMenu ? '#60a5fa' : '#94a3b8',
-                    backgroundColor: showMoreMenu ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                    color: showMoreMenu ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                    backgroundColor: showMoreMenu ? 'var(--accent-subtle)' : 'transparent',
                     border: 'none',
                     fontSize: '0.88rem',
                     fontWeight: 500,
@@ -205,10 +208,10 @@ function DashboardHeader() {
                       top: '120%',
                       left: 0,
                       width: '220px',
-                      backgroundColor: '#0f172a',
-                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      backgroundColor: 'var(--bg-dropdown)',
+                      border: '1px solid var(--border-color)',
                       borderRadius: '10px',
-                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.7)',
+                      boxShadow: 'var(--shadow-lg)',
                       padding: '0.5rem',
                       zIndex: 200,
                       display: 'flex',
@@ -223,7 +226,7 @@ function DashboardHeader() {
                         padding: '0.5rem 0.75rem',
                         borderRadius: '6px',
                         fontSize: '0.85rem',
-                        color: '#f8fafc',
+                        color: 'var(--text-primary)',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.5rem',
@@ -238,7 +241,7 @@ function DashboardHeader() {
                         padding: '0.5rem 0.75rem',
                         borderRadius: '6px',
                         fontSize: '0.85rem',
-                        color: '#f8fafc',
+                        color: 'var(--text-primary)',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.5rem',
@@ -253,7 +256,7 @@ function DashboardHeader() {
                         padding: '0.5rem 0.75rem',
                         borderRadius: '6px',
                         fontSize: '0.85rem',
-                        color: '#f8fafc',
+                        color: 'var(--text-primary)',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.5rem',
@@ -268,7 +271,7 @@ function DashboardHeader() {
                         padding: '0.5rem 0.75rem',
                         borderRadius: '6px',
                         fontSize: '0.85rem',
-                        color: '#f8fafc',
+                        color: 'var(--text-primary)',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.5rem',
@@ -283,7 +286,7 @@ function DashboardHeader() {
                         padding: '0.5rem 0.75rem',
                         borderRadius: '6px',
                         fontSize: '0.85rem',
-                        color: '#f8fafc',
+                        color: 'var(--text-primary)',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.5rem',
@@ -298,7 +301,7 @@ function DashboardHeader() {
                         padding: '0.5rem 0.75rem',
                         borderRadius: '6px',
                         fontSize: '0.85rem',
-                        color: '#f8fafc',
+                        color: 'var(--text-primary)',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.5rem',
@@ -319,7 +322,7 @@ function DashboardHeader() {
                     borderRadius: '6px',
                     backgroundColor: 'rgba(37, 99, 235, 0.15)',
                     border: '1px solid rgba(59, 130, 246, 0.35)',
-                    color: '#60a5fa',
+                    color: 'var(--accent-primary)',
                     fontSize: '0.82rem',
                     fontWeight: 700,
                     display: 'flex',
@@ -333,17 +336,21 @@ function DashboardHeader() {
             </nav>
           </div>
 
-          {/* Right: User Profile & Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {/* Right: Theme Toggle, User Profile & Actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {/* Theme Toggle Button */}
+            <ThemeToggle />
+
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
-                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                backgroundColor: 'var(--bg-card)',
                 padding: '0.35rem 0.75rem',
                 borderRadius: '8px',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                border: '1px solid var(--border-color)',
+                boxShadow: 'var(--shadow-sm)',
               }}
             >
               <div
@@ -363,10 +370,10 @@ function DashboardHeader() {
                 {userInitial}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#f8fafc' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                   {user?.displayName || user?.email?.split('@')[0] || 'User'}
                 </span>
-                <span style={{ fontSize: '0.68rem', color: isOwner ? '#60a5fa' : '#94a3b8', fontWeight: 600 }}>
+                <span style={{ fontSize: '0.68rem', color: isOwner ? 'var(--accent-primary)' : 'var(--text-muted)', fontWeight: 600 }}>
                   {user?.role || 'MEMBER'}
                 </span>
               </div>
@@ -375,23 +382,24 @@ function DashboardHeader() {
             <button
               onClick={() => logout()}
               style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: '#94a3b8',
+                backgroundColor: 'var(--bg-card)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-secondary)',
                 padding: '0.45rem 0.85rem',
                 borderRadius: '6px',
                 fontSize: '0.82rem',
                 fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'all 0.2s',
+                boxShadow: 'var(--shadow-sm)',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = '#ef4444';
-                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.35)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#94a3b8';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+                e.currentTarget.style.borderColor = 'var(--border-color)';
               }}
             >
               Sign Out

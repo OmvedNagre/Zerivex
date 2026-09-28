@@ -364,8 +364,9 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
         className="card"
         style={{
           marginBottom: '2rem',
-          background: 'linear-gradient(180deg, var(--bg-card) 0%, rgba(20, 24, 33, 0.6) 100%)',
-          border: '1px solid var(--border-subtle)',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
+          boxShadow: 'var(--shadow-card)',
           padding: '2rem',
         }}
       >

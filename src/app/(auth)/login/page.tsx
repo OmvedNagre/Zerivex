@@ -2,6 +2,7 @@
 
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -27,10 +28,13 @@ function LoginForm() {
         width: '100%',
         maxWidth: '420px',
         backgroundColor: 'var(--bg-card)',
-        border: '1px solid var(--border-subtle)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: '1px solid var(--border-color)',
         borderRadius: 'var(--radius-lg)',
         padding: '2.5rem',
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)',
+        boxShadow: 'var(--shadow-card)',
+        transition: 'background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
       }}
     >
       <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
@@ -39,19 +43,20 @@ function LoginForm() {
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: '40px',
-            height: '40px',
+            width: '44px',
+            height: '44px',
             borderRadius: 'var(--radius-sm)',
             backgroundColor: 'var(--accent-primary)',
             color: '#ffffff',
             fontWeight: 800,
             fontSize: '1.25rem',
             marginBottom: '1rem',
+            boxShadow: '0 4px 14px var(--accent-glow)',
           }}
         >
           Z
         </div>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
           Sign In to Zerivex
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
@@ -63,19 +68,19 @@ function LoginForm() {
         <div
           style={{
             backgroundColor: 'var(--sev-critical-bg)',
-            border: '1px solid var(--sev-critical)',
-            color: '#fca5a5',
+            border: '1px solid var(--sev-critical-border)',
+            color: 'var(--sev-critical)',
             padding: '0.75rem 1rem',
             borderRadius: 'var(--radius-sm)',
             fontSize: '0.85rem',
             marginBottom: '1.5rem',
           }}
         >
-          {errorMessageMap[error] || 'An unexpected authentication error occurred.'}
+          {errorMessageMap[error] || 'An unexpected error occurred during authentication.'}
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
         <a
           href={getLoginUrl('google')}
           style={{
@@ -90,7 +95,9 @@ function LoginForm() {
             fontWeight: 600,
             fontSize: '0.95rem',
             textDecoration: 'none',
-            transition: 'background-color 0.2s',
+            border: '1px solid #e5e7eb',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+            transition: 'transform 0.15s ease',
           }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24">
@@ -123,12 +130,14 @@ function LoginForm() {
             gap: '0.75rem',
             backgroundColor: '#24292f',
             color: '#ffffff',
-            border: '1px solid var(--border-subtle)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
             padding: '0.75rem 1rem',
             borderRadius: 'var(--radius-sm)',
             fontWeight: 600,
             fontSize: '0.95rem',
             textDecoration: 'none',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            transition: 'transform 0.15s ease',
           }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -150,14 +159,15 @@ function LoginForm() {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.75rem',
-            backgroundColor: 'rgba(37, 99, 235, 0.12)',
-            color: '#60a5fa',
-            border: '1px solid rgba(59, 130, 246, 0.35)',
+            backgroundColor: 'var(--accent-subtle)',
+            color: 'var(--accent-primary)',
+            border: '1px solid var(--border-accent)',
             padding: '0.75rem 1rem',
             borderRadius: 'var(--radius-sm)',
             fontWeight: 700,
             fontSize: '0.95rem',
             textDecoration: 'none',
+            transition: 'all 0.15s ease',
           }}
         >
           <span>⚡</span> One-Click Local Sign-In (Owner / Admin)
@@ -190,8 +200,15 @@ export default function LoginPage() {
         justifyContent: 'center',
         backgroundColor: 'var(--bg-primary)',
         padding: '1.5rem',
+        position: 'relative',
+        transition: 'background-color 0.25s ease',
       }}
     >
+      {/* Floating Theme Toggle in top-right */}
+      <div style={{ position: 'fixed', top: '1.25rem', right: '1.5rem', zIndex: 50 }}>
+        <ThemeToggle />
+      </div>
+
       <Suspense fallback={<div style={{ color: 'var(--text-secondary)' }}>Loading...</div>}>
         <LoginForm />
       </Suspense>

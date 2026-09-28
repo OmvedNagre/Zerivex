@@ -3,6 +3,7 @@
 import { useState, use } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { getArticleBySlug } from '@/core/academy/academy-service';
 import { SupportedFramework } from '@/core/academy/types';
 
@@ -56,16 +57,19 @@ export default function ArticleReaderPage({
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-app)', color: 'var(--text-primary)' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
       {/* Top Header */}
       <header
         style={{
           borderBottom: '1px solid var(--border-subtle)',
-          backgroundColor: 'var(--bg-card)',
+          backgroundColor: 'var(--bg-header)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
           padding: '0.85rem 1.5rem',
           position: 'sticky',
           top: 0,
           zIndex: 100,
+          transition: 'background-color 0.25s ease, border-color 0.25s ease',
         }}
       >
         <div
@@ -88,7 +92,8 @@ export default function ArticleReaderPage({
             </span>
           </div>
 
-          <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <ThemeToggle size="sm" />
             <Link
               href="/dashboard"
               style={{
@@ -99,6 +104,7 @@ export default function ArticleReaderPage({
                 fontSize: '0.85rem',
                 fontWeight: 600,
                 textDecoration: 'none',
+                boxShadow: 'var(--shadow-sm)',
               }}
             >
               Scan Your Target &rarr;

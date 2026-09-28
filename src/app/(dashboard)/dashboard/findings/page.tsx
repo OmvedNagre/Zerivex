@@ -591,7 +591,8 @@ export default function FindingsPage() {
                           fontFamily: 'monospace',
                           fontSize: '0.8rem',
                           color: 'var(--text-secondary)',
-                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          backgroundColor: 'var(--bg-secondary)',
+                          border: '1px solid var(--border-subtle)',
                           padding: '0.1rem 0.4rem',
                           borderRadius: '4px',
                         }}
@@ -1173,7 +1174,7 @@ export default function FindingsPage() {
             <div
               style={{
                 padding: '0.85rem 1.5rem',
-                backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                backgroundColor: 'var(--bg-secondary)',
                 borderBottom: '1px solid var(--border-subtle)',
                 display: 'flex',
                 alignItems: 'center',

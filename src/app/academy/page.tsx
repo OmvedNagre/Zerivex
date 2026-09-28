@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { ACADEMY_ARTICLES, LEARNING_TRACKS } from '@/core/academy/academy-catalog';
 import { AcademyCategory, DifficultyLevel, LearningTrackId } from '@/core/academy/types';
 
@@ -60,13 +61,19 @@ export default function AcademyPage() {
   }, [searchQuery, selectedCategory, selectedTrack, selectedDifficulty]);
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-app)', color: 'var(--text-primary)' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
       {/* Navigation Header */}
       <header
         style={{
           borderBottom: '1px solid var(--border-subtle)',
-          backgroundColor: 'var(--bg-card)',
+          backgroundColor: 'var(--bg-header)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
           padding: '0.85rem 1.5rem',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          transition: 'background-color 0.25s ease, border-color 0.25s ease',
         }}
       >
         <div
@@ -111,7 +118,8 @@ export default function AcademyPage() {
             </nav>
           </div>
 
-          <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <ThemeToggle size="sm" />
             <Link
               href="/dashboard"
               style={{
@@ -122,6 +130,7 @@ export default function AcademyPage() {
                 fontSize: '0.85rem',
                 fontWeight: 600,
                 textDecoration: 'none',
+                boxShadow: 'var(--shadow-sm)',
               }}
             >
               Launch Console →

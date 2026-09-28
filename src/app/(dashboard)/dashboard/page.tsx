@@ -137,8 +137,8 @@ export default function DashboardPage() {
         className="glass-panel"
         style={{
           padding: '2rem',
-          background: 'linear-gradient(135deg, rgba(16, 23, 38, 0.8) 0%, rgba(10, 16, 30, 0.95) 100%)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -264,10 +264,11 @@ export default function DashboardPage() {
         className="glass-panel"
         style={{
           padding: '1.25rem 1.5rem',
-          backgroundColor: 'rgba(16, 23, 38, 0.65)',
+          backgroundColor: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
         }}
       >
-        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f8fafc', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span>⚡</span> Quick Vulnerability Scan Launcher
         </div>
         <form onSubmit={handleQuickScan} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -280,11 +281,11 @@ export default function DashboardPage() {
             style={{
               flex: 1,
               minWidth: '280px',
-              backgroundColor: 'rgba(0, 0, 0, 0.4)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
+              backgroundColor: 'var(--input-bg)',
+              border: '1px solid var(--input-border)',
               borderRadius: '8px',
               padding: '0.65rem 1rem',
-              color: '#ffffff',
+              color: 'var(--text-primary)',
               fontSize: '0.95rem',
               outline: 'none',
               fontFamily: 'var(--font-mono)',
@@ -422,38 +423,39 @@ export default function DashboardPage() {
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
           gap: '1rem',
-          backgroundColor: 'rgba(10, 14, 23, 0.7)',
+          backgroundColor: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          <span style={{ color: '#10b981', fontSize: '1.1rem' }}>✓</span>
+          <span style={{ color: 'var(--emerald)', fontSize: '1.1rem' }}>✓</span>
           <div>
-            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#f8fafc' }}>SSRF Egress Firewall</div>
-            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Multi-A/AAAA Pinning Active</div>
+            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>SSRF Egress Firewall</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Multi-A/AAAA Pinning Active</div>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          <span style={{ color: '#10b981', fontSize: '1.1rem' }}>✓</span>
+          <span style={{ color: 'var(--emerald)', fontSize: '1.1rem' }}>✓</span>
           <div>
-            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#f8fafc' }}>Edge Rate Limiter</div>
-            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Sliding Window Protection</div>
+            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>Edge Rate Limiter</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Sliding Window Protection</div>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          <span style={{ color: '#10b981', fontSize: '1.1rem' }}>✓</span>
+          <span style={{ color: 'var(--emerald)', fontSize: '1.1rem' }}>✓</span>
           <div>
-            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#f8fafc' }}>Compliance Audit Vault</div>
-            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Tamper-Evident SHA-256 Logs</div>
+            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>Compliance Audit Vault</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Tamper-Evident SHA-256 Logs</div>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          <span style={{ color: '#10b981', fontSize: '1.1rem' }}>✓</span>
+          <span style={{ color: 'var(--emerald)', fontSize: '1.1rem' }}>✓</span>
           <div>
-            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#f8fafc' }}>Scan Worker Pool</div>
-            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Concurrency 4 • Watchdog Armed</div>
+            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>Scan Worker Pool</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Concurrency 4 • Watchdog Armed</div>
           </div>
         </div>
       </div>

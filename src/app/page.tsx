@@ -1,18 +1,21 @@
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 export default function HomePage() {
   return (
-    <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-primary)' }}>
       {/* Top Header */}
       <header
         style={{
           borderBottom: '1px solid var(--border-subtle)',
           padding: '1rem 0',
-          backgroundColor: 'rgba(7, 9, 14, 0.85)',
+          backgroundColor: 'var(--bg-header)',
           backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
           position: 'sticky',
           top: 0,
           zIndex: 100,
+          transition: 'background-color 0.25s ease, border-color 0.25s ease',
         }}
       >
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -35,32 +38,36 @@ export default function HomePage() {
               Z
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.02em', color: '#ffffff', lineHeight: 1.1 }}>
+              <span style={{ fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.02em', color: 'var(--text-primary)', lineHeight: 1.1 }}>
                 ZERIVEX
               </span>
-              <span style={{ fontSize: '0.68rem', color: '#94a3b8', letterSpacing: '0.06em' }}>
+              <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', letterSpacing: '0.06em' }}>
                 SECURITY FOR SOFTWARE BUILT WITH AI
               </span>
             </div>
           </div>
 
-          <nav style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-            <Link href="/academy" style={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: 500 }}>
+          <nav style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <Link href="/academy" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 500 }}>
               Academy
             </Link>
-            <a href="/.well-known/security.txt" style={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: 500 }}>
+            <a href="/.well-known/security.txt" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 500 }}>
               Security.txt
             </a>
+            
+            <ThemeToggle size="sm" />
+
             <Link
               href="/login"
               style={{
-                color: '#f8fafc',
+                color: 'var(--text-primary)',
                 fontSize: '0.9rem',
                 fontWeight: 600,
                 padding: '0.45rem 0.9rem',
                 borderRadius: '6px',
-                backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
+                backgroundColor: 'var(--bg-card)',
+                border: '1px solid var(--border-color)',
+                boxShadow: 'var(--shadow-sm)',
               }}
             >
               Sign In
@@ -99,7 +106,7 @@ export default function HomePage() {
             }}
           >
             <span className="pulse-indicator" />
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#60a5fa', letterSpacing: '0.04em' }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-primary)', letterSpacing: '0.04em' }}>
               PHASE 15 VERIFIED • 100/100 SECURITY CERTIFICATION
             </span>
           </div>
@@ -111,6 +118,7 @@ export default function HomePage() {
               letterSpacing: '-0.04em',
               lineHeight: 1.15,
               marginBottom: '1.5rem',
+              color: 'var(--text-primary)',
             }}
           >
             Autonomous Security Testing for Software{' '}
@@ -120,7 +128,7 @@ export default function HomePage() {
           <p
             style={{
               fontSize: '1.15rem',
-              color: '#94a3b8',
+              color: 'var(--text-secondary)',
               lineHeight: 1.6,
               maxWidth: '740px',
               margin: '0 auto 2.25rem',
@@ -133,7 +141,7 @@ export default function HomePage() {
             <a
               href="/login"
               style={{
-                backgroundColor: '#2563eb',
+                backgroundColor: 'var(--accent-primary)',
                 color: '#ffffff',
                 padding: '0.85rem 2rem',
                 borderRadius: '8px',
@@ -151,9 +159,9 @@ export default function HomePage() {
             <a
               href="/academy"
               style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                color: '#f8fafc',
+                backgroundColor: 'var(--bg-card)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-primary)',
                 padding: '0.85rem 1.75rem',
                 borderRadius: '8px',
                 fontSize: '1.05rem',
@@ -161,6 +169,7 @@ export default function HomePage() {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.5rem',
+                boxShadow: 'var(--shadow-sm)',
               }}
             >
               <span>🎓</span> Explore Security Academy
@@ -236,10 +245,10 @@ export default function HomePage() {
       <section style={{ padding: '3rem 0', borderTop: '1px solid var(--border-subtle)' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-            <h2 style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>
+            <h2 style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
               Why AI-Generated Code Needs Zerivex
             </h2>
-            <p style={{ color: '#94a3b8', fontSize: '1rem', maxWidth: '600px', margin: '0 auto' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', maxWidth: '600px', margin: '0 auto' }}>
               LLMs move fast, but they often leave dangerous security blind spots. Zerivex detects and fixes them automatically.
             </p>
           </div>
@@ -253,30 +262,30 @@ export default function HomePage() {
           >
             <div className="glass-panel" style={{ padding: '2rem' }}>
               <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🛡️</div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: '#ffffff' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
                 SSRF & Metadata Egress Shield
               </h3>
-              <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                Prevents outbound request exploitation by blocking private IPv4/IPv6 ranges, loopbacks, and AWS/GCP cloud metadata endpoints (`169.254.169.254`) with socket-level DNS pinning.
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                Prevents outbound request exploitation by blocking private IPv4/IPv6 ranges, loopbacks, and AWS/GCP cloud metadata endpoints (<code>169.254.169.254</code>) with socket-level DNS pinning.
               </p>
             </div>
 
             <div className="glass-panel" style={{ padding: '2rem' }}>
               <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⚡</div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: '#ffffff' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
                 Zero-Leakage Observability
               </h3>
-              <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6 }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                 Recursive PII and secret redactor automatically strips passwords, bearer tokens, AWS credentials, and JWTs from application logs, error reports, and scan evidence.
               </p>
             </div>
 
             <div className="glass-panel" style={{ padding: '2rem' }}>
               <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🚀</div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: '#ffffff' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
                 CI/CD Build-Breaker Gates
               </h3>
-              <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6 }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                 Enforce Zero Critical / Zero High policies directly in GitHub Actions and GitLab CI. Generates OASIS SARIF v2.1.0 reports for native GitHub Security tab integration.
               </p>
             </div>
@@ -290,22 +299,23 @@ export default function HomePage() {
           marginTop: 'auto',
           borderTop: '1px solid var(--border-subtle)',
           padding: '2.5rem 0',
-          backgroundColor: 'rgba(7, 9, 14, 0.95)',
+          backgroundColor: 'var(--bg-card)',
+          transition: 'background-color 0.25s ease',
         }}
       >
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
           <div>
-            <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#ffffff' }}>ZERIVEX</div>
-            <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem' }}>
+            <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)' }}>ZERIVEX</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
               Security for software built with AI. Verify. Detect. Defend.
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.85rem', color: '#94a3b8' }}>
-            <a href="/login" style={{ color: '#94a3b8' }}>Sign In</a>
-            <a href="/academy" style={{ color: '#94a3b8' }}>Security Academy</a>
-            <a href="/.well-known/security.txt" style={{ color: '#94a3b8' }}>security.txt</a>
-            <a href="/dashboard/launch-readiness" style={{ color: '#34d399' }}>Launch Readiness (100%)</a>
+          <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            <a href="/login" style={{ color: 'var(--text-secondary)' }}>Sign In</a>
+            <a href="/academy" style={{ color: 'var(--text-secondary)' }}>Security Academy</a>
+            <a href="/.well-known/security.txt" style={{ color: 'var(--text-secondary)' }}>security.txt</a>
+            <a href="/dashboard/launch-readiness" style={{ color: 'var(--emerald)', fontWeight: 600 }}>Launch Readiness (100%)</a>
           </div>
         </div>
       </footer>
