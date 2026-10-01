@@ -1,0 +1,446 @@
+/* ==========================================================================
+   QUICK SCAN LAUNCHER / TARGET INTAKE COMPONENT STYLES
+   ZERIVEX Cybersecurity Platform — Component 4
+   ========================================================================== */
+
+.zql-launcher {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  padding: 1.5rem 1.75rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color var(--transition-normal),
+              box-shadow var(--transition-normal);
+  overflow: hidden;
+}
+
+.zql-launcher:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Subtle corner accent indicator (non-distracting, technical framing) */
+.zql-launcher::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 44px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-primary), transparent);
+  pointer-events: none;
+}
+
+/* Header Section */
+.zql-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.zql-title-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.zql-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background-color: var(--accent-subtle);
+  border: 1px solid var(--border-accent);
+  color: var(--accent-primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.zql-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.zql-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.015em;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.zql-description {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Telemetry Operational Status Tag */
+.zql-telemetry-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.24rem 0.6rem;
+  background-color: var(--emerald-subtle);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: var(--radius-sm);
+  color: var(--emerald);
+  flex-shrink: 0;
+}
+
+.zql-telemetry-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--emerald);
+  box-shadow: 0 0 6px var(--emerald-glow);
+  flex-shrink: 0;
+}
+
+.zql-telemetry-text {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Form Layout */
+.zql-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.zql-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.zql-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.zql-label-format-hint {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+
+/* Controls Cluster (Row on desktop, Stack on mobile) */
+.zql-controls-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.zql-input-cluster {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  padding: 0 0.85rem;
+  gap: 0.65rem;
+  transition: border-color var(--transition-fast),
+              box-shadow var(--transition-fast),
+              background-color var(--transition-fast);
+}
+
+.zql-input-cluster:hover {
+  border-color: var(--border-medium);
+}
+
+.zql-input-cluster:focus-within {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-subtle), 0 0 16px var(--accent-glow);
+  background-color: var(--input-bg-focus);
+}
+
+.zql-input-cluster.zql-input-cluster-error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-bg);
+}
+
+.zql-input-cluster.zql-input-cluster-valid {
+  border-color: rgba(16, 185, 129, 0.45);
+}
+
+.zql-cluster-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: color var(--transition-fast);
+}
+
+.zql-input-cluster:focus-within .zql-cluster-icon {
+  color: var(--accent-primary);
+}
+
+.zql-input-cluster.zql-input-cluster-valid .zql-cluster-icon {
+  color: var(--emerald);
+}
+
+.zql-input-cluster.zql-input-cluster-error .zql-cluster-icon {
+  color: var(--danger);
+}
+
+.zql-input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.9rem !important;
+  color: var(--text-primary) !important;
+  caret-color: var(--accent-primary);
+}
+
+.zql-input::placeholder {
+  color: var(--text-dim) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.875rem !important;
+  opacity: 0.75;
+}
+
+.zql-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Primary Action Button */
+.zql-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 44px;
+  padding: 0 1.5rem;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.zql-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45);
+  transform: translateY(-1px);
+}
+
+.zql-submit-btn:focus-visible {
+  outline: none;
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4), 0 4px 14px rgba(37, 99, 235, 0.45);
+}
+
+.zql-submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.zql-submit-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.zql-btn-arrow {
+  transition: transform var(--transition-fast);
+}
+
+.zql-submit-btn:hover:not(:disabled) .zql-btn-arrow {
+  transform: translateX(3px);
+}
+
+.zql-spin {
+  animation: zqlSpin 0.9s linear infinite;
+}
+
+@keyframes zqlSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Helper and Feedback Meta Area */
+.zql-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.2rem;
+  min-height: 24px;
+}
+
+.zql-helper-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.775rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.zql-helper-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* Accessible Status / Feedback Live Region */
+.zql-feedback {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.zql-feedback-error {
+  color: var(--danger);
+  background-color: var(--danger-bg);
+  border: 1px solid var(--sev-critical-border);
+  padding: 0.28rem 0.65rem;
+}
+
+.zql-feedback-success {
+  color: var(--success);
+  background-color: var(--success-bg);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  padding: 0.28rem 0.65rem;
+}
+
+.zql-feedback-icon {
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   RESPONSIVE BREAKPOINTS
+   ========================================================================== */
+
+/* Tablet & Smaller ( < 768px ) */
+@media (max-width: 767px) {
+  .zql-launcher {
+    padding: 1.25rem 1.25rem;
+    gap: 1rem;
+  }
+
+  .zql-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .zql-telemetry-badge {
+    align-self: flex-start;
+  }
+
+  .zql-controls-row {
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .zql-submit-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .zql-meta-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
+
+/* Small Mobile ( < 480px ) */
+@media (max-width: 479px) {
+  .zql-launcher {
+    padding: 1rem 1rem;
+  }
+
+  .zql-title {
+    font-size: 0.95rem;
+  }
+
+  .zql-description {
+    font-size: 0.775rem;
+  }
+
+  .zql-input {
+    font-size: 0.85rem !important;
+  }
+
+  .zql-input::placeholder {
+    font-size: 0.8125rem !important;
+  }
+
+  .zql-helper-text {
+    font-size: 0.73rem;
+  }
+
+  .zql-feedback {
+    font-size: 0.76rem;
+    width: 100%;
+  }
+}
+
+/* ==========================================================================
+   PREFERS-REDUCED-MOTION
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .zql-launcher,
+  .zql-launcher:hover,
+  .zql-input-cluster,
+  .zql-submit-btn,
+  .zql-feedback,
+  .zql-spin,
+  .zql-btn-arrow {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Target, VerificationMethod, VerificationScope } from '@/core/targets/target-service';
+import { TargetsTable } from '@/components/dashboard/TargetsTable';
 
 export default function TargetsPage() {
   const router = useRouter();
@@ -118,59 +119,6 @@ export default function TargetsPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'VERIFIED':
-        return (
-          <span
-            style={{
-              padding: '0.2rem 0.6rem',
-              borderRadius: '9999px',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              backgroundColor: 'rgba(16, 185, 129, 0.15)',
-              color: '#34d399',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
-            }}
-          >
-            ✓ VERIFIED
-          </span>
-        );
-      case 'PENDING':
-        return (
-          <span
-            style={{
-              padding: '0.2rem 0.6rem',
-              borderRadius: '9999px',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              backgroundColor: 'rgba(56, 189, 248, 0.15)',
-              color: '#38bdf8',
-              border: '1px solid rgba(56, 189, 248, 0.3)',
-            }}
-          >
-            ⏳ PENDING
-          </span>
-        );
-      default:
-        return (
-          <span
-            style={{
-              padding: '0.2rem 0.6rem',
-              borderRadius: '9999px',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              backgroundColor: 'rgba(245, 158, 11, 0.15)',
-              color: '#fbbf24',
-              border: '1px solid rgba(245, 158, 11, 0.3)',
-            }}
-          >
-            ⚠️ UNVERIFIED
-          </span>
-        );
-    }
-  };
-
   const verifiedCount = targets.filter((t) => t.verificationStatus === 'VERIFIED').length;
   const pendingCount = targets.filter((t) => t.verificationStatus === 'PENDING').length;
   const unverifiedCount = targets.filter((t) => t.verificationStatus !== 'VERIFIED' && t.verificationStatus !== 'PENDING').length;
@@ -242,148 +190,17 @@ export default function TargetsPage() {
         </div>
       </div>
 
-      {error && (
-        <div
-          style={{
-            padding: '1rem',
-            backgroundColor: 'rgba(239, 68, 68, 0.12)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: 'var(--radius-md)',
-            color: '#f87171',
-            fontSize: '0.9rem',
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      {/* Target Table */}
-      <div
-        className="glass-panel"
-        style={{
-          borderRadius: 'var(--radius-lg)',
-          overflow: 'hidden',
-        }}
-      >
-        {loading ? (
-          <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            <div style={{ display: 'inline-block', width: '28px', height: '28px', border: '3px solid rgba(59, 130, 246, 0.2)', borderTopColor: 'var(--accent-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: '1rem' }} />
-            <div>Synchronizing registered targets...</div>
-          </div>
-        ) : targets.length === 0 ? (
-          <div style={{ padding: '4rem 2rem', textAlign: 'center' }}>
-            <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', margin: '0 auto 1.25rem' }}>
-              🎯
-            </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>No targets registered yet</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '440px', margin: '0 auto 1.5rem' }}>
-              Add your web applications, APIs, or domains to begin automated verification and vulnerability assessments.
-            </p>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="btn-cyber-primary"
-            >
-              + Register First Target
-            </button>
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-secondary)' }}>
-                  <th style={{ padding: '1rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Target Endpoint</th>
-                  <th style={{ padding: '1rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Verification Status</th>
-                  <th style={{ padding: '1rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Scope</th>
-                  <th style={{ padding: '1rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Method</th>
-                  <th style={{ padding: '1rem 1.25rem', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Registered</th>
-                  <th style={{ padding: '1rem 1.25rem', textAlign: 'right', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-              {targets.map((t) => (
-                <tr
-                  key={t.id}
-                  style={{
-                    borderBottom: '1px solid var(--border-color)',
-                    transition: 'background-color var(--transition-fast)',
-                  }}
-                >
-                  <td style={{ padding: '1rem 1.25rem' }}>
-                    <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t.targetUrl}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t.hostname}</div>
-                  </td>
-                  <td style={{ padding: '1rem 1.25rem' }}>{getStatusBadge(t.verificationStatus)}</td>
-                  <td style={{ padding: '1rem 1.25rem', fontFamily: 'monospace', fontSize: '0.8rem' }}>{t.verificationScope}</td>
-                  <td style={{ padding: '1rem 1.25rem', fontFamily: 'monospace', fontSize: '0.8rem' }}>{t.verificationMethod}</td>
-                  <td style={{ padding: '1rem 1.25rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                    {new Date(t.createdAt).toLocaleDateString()}
-                  </td>
-                  <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
-                    <div style={{ display: 'inline-flex', gap: '0.65rem', alignItems: 'center' }}>
-                      <button
-                        onClick={() => handleRunScan(t.id, t.verificationStatus === 'VERIFIED')}
-                        disabled={scanningTargetId === t.id}
-                        style={{
-                          padding: '0.35rem 0.75rem',
-                          borderRadius: 'var(--radius-md)',
-                          border: '1px solid rgba(59, 130, 246, 0.4)',
-                          backgroundColor: 'rgba(59, 130, 246, 0.12)',
-                          color: '#60a5fa',
-                          fontSize: '0.8rem',
-                          fontWeight: 600,
-                          cursor: scanningTargetId === t.id ? 'not-allowed' : 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.35rem',
-                          transition: 'all 0.15s ease',
-                        }}
-                        title="Trigger immediate security scan against target"
-                      >
-                        {scanningTargetId === t.id ? (
-                          <>
-                            <span style={{ display: 'inline-block', width: '10px', height: '10px', border: '2px solid #60a5fa', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                            Scanning...
-                          </>
-                        ) : (
-                          <>
-                            <span>⚡</span> Run Scan
-                          </>
-                        )}
-                      </button>
-
-                      <Link
-                        href={`/dashboard/targets/${t.id}`}
-                        style={{
-                          fontSize: '0.85rem',
-                          fontWeight: 600,
-                          color: 'var(--accent-primary)',
-                          textDecoration: 'none',
-                        }}
-                      >
-                        {t.verificationStatus === 'VERIFIED' ? 'View Details' : 'Verify Domain →'}
-                      </Link>
-                      <button
-                        onClick={() => handleDeleteTarget(t.id, t.targetUrl)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#f87171',
-                          cursor: 'pointer',
-                          fontSize: '0.85rem',
-                        }}
-                        title="Delete target"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          </div>
-        )}
-      </div>
+      {/* Target Asset Registry Table */}
+      <TargetsTable
+        targets={targets}
+        loading={loading}
+        error={error}
+        scanningTargetId={scanningTargetId}
+        onRunScan={handleRunScan}
+        onDeleteTarget={handleDeleteTarget}
+        onOpenRegisterModal={() => setIsModalOpen(true)}
+        onRetry={fetchTargets}
+      />
 
       {/* Register Target Modal */}
       {isModalOpen && (

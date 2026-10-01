@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { getRemediationForRule, RuleRemediation } from '@/core/remediation/remediation-catalog';
+import { FindingsAccordionCard } from '@/components/dashboard/FindingsAccordionCard';
 
 interface FindingItem {
   id: string;
@@ -59,7 +60,9 @@ export default function FindingsPage() {
   const [remediationData, setRemediationData] = useState<RuleRemediation | null>(null);
   const [activeFramework, setActiveFramework] = useState<'nextjs' | 'express' | 'nginx'>('nextjs');
   const [verifyingFix, setVerifyingFix] = useState(false);
+  const [verifyingFindingId, setVerifyingFindingId] = useState<string | null>(null);
   const [fixResult, setFixResult] = useState<{ fixed: boolean; diagnostic: string } | null>(null);
+  const [fixResults, setFixResults] = useState<Record<string, { fixed: boolean; diagnostic: string }>>({});
   const [copiedCli, setCopiedCli] = useState(false);
 
   const fetchFindings = useCallback(async () => {
@@ -219,6 +222,7 @@ export default function FindingsPage() {
 
   const handleVerifyFix = async (findingId: string) => {
     setVerifyingFix(true);
+    setVerifyingFindingId(findingId);
     setFixResult(null);
 
     try {
@@ -230,22 +234,27 @@ export default function FindingsPage() {
         throw new Error(data.error || 'Failed to verify fix');
       }
 
-      setFixResult({
+      const resObj = {
         fixed: data.data.fixed,
         diagnostic: data.data.diagnostic,
-      });
+      };
+      setFixResult(resObj);
+      setFixResults((prev) => ({ ...prev, [findingId]: resObj }));
 
       const updatedStatus = data.data.fixed ? 'FIXED' : data.data.newStatus;
       setFindings((prev) =>
         prev.map((f) => (f.id === findingId ? { ...f, status: updatedStatus } : f))
       );
     } catch (err) {
-      setFixResult({
+      const errObj = {
         fixed: false,
         diagnostic: (err as Error).message,
-      });
+      };
+      setFixResult(errObj);
+      setFixResults((prev) => ({ ...prev, [findingId]: errObj }));
     } finally {
       setVerifyingFix(false);
+      setVerifyingFindingId(null);
     }
   };
 
@@ -301,40 +310,6 @@ export default function FindingsPage() {
       (f.resourceEndpoint || '').toLowerCase().includes(q)
     );
   });
-
-  const getSeverityBadge = (sev: string) => {
-    switch (sev) {
-      case 'CRITICAL':
-        return { label: 'CRITICAL', color: '#f87171', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.3)' };
-      case 'HIGH':
-        return { label: 'HIGH', color: '#fb923c', bg: 'rgba(249, 115, 22, 0.15)', border: 'rgba(249, 115, 22, 0.3)' };
-      case 'MEDIUM':
-        return { label: 'MEDIUM', color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)' };
-      case 'LOW':
-        return { label: 'LOW', color: '#60a5fa', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.3)' };
-      default:
-        return { label: 'INFO', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.15)', border: 'rgba(148, 163, 184, 0.3)' };
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'OPEN':
-        return { label: 'OPEN', color: '#f87171', bg: 'rgba(239, 68, 68, 0.1)' };
-      case 'CONFIRMED':
-        return { label: 'CONFIRMED', color: '#fb923c', bg: 'rgba(249, 115, 22, 0.1)' };
-      case 'FIXED':
-        return { label: 'FIXED', color: '#34d399', bg: 'rgba(16, 185, 129, 0.1)' };
-      case 'REOPENED':
-        return { label: 'REOPENED', color: '#f87171', bg: 'rgba(239, 68, 68, 0.15)' };
-      case 'ACCEPTED_RISK':
-        return { label: 'ACCEPTED RISK', color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.1)' };
-      case 'FALSE_POSITIVE':
-        return { label: 'FALSE POSITIVE', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.1)' };
-      default:
-        return { label: status, color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.1)' };
-    }
-  };
 
   const totalCount = findings.length;
   const criticalHighOpenCount = findings.filter(
@@ -554,201 +529,23 @@ export default function FindingsPage() {
           </p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {filteredFindings.map((finding) => {
-            const sev = getSeverityBadge(finding.severity);
-            const stat = getStatusBadge(finding.status);
-            const isExpanded = !!expandedFindings[finding.id];
-
-            return (
-              <div
-                key={finding.id}
-                className="glass-panel"
-                style={{
-                  border: `1px solid ${isExpanded ? sev.border : 'var(--border-subtle)'}`,
-                  padding: '1.5rem',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-                      <span
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          padding: '0.15rem 0.5rem',
-                          borderRadius: '4px',
-                          backgroundColor: sev.bg,
-                          color: sev.color,
-                          border: `1px solid ${sev.border}`,
-                        }}
-                      >
-                        {sev.label}
-                      </span>
-
-                      <span
-                        style={{
-                          fontFamily: 'monospace',
-                          fontSize: '0.8rem',
-                          color: 'var(--text-secondary)',
-                          backgroundColor: 'var(--bg-secondary)',
-                          border: '1px solid var(--border-subtle)',
-                          padding: '0.1rem 0.4rem',
-                          borderRadius: '4px',
-                        }}
-                      >
-                        {finding.ruleId}
-                      </span>
-
-                      <span
-                        style={{
-                          fontSize: '0.7rem',
-                          fontWeight: 600,
-                          padding: '0.1rem 0.45rem',
-                          borderRadius: '4px',
-                          backgroundColor: stat.bg,
-                          color: stat.color,
-                        }}
-                      >
-                        {stat.label}
-                      </span>
-
-                      {finding.cweId && (
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                          {finding.cweId}
-                        </span>
-                      )}
-                    </div>
-
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
-                      {finding.title}
-                    </h3>
-
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                      <div>
-                        Target:{' '}
-                        <Link href={`/dashboard/targets/${finding.targetId}`} style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>
-                          {finding.targetUrl}
-                        </Link>
-                      </div>
-                      {finding.resourceEndpoint && (
-                        <div>
-                          Endpoint: <span style={{ color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{finding.resourceEndpoint}</span>
-                        </div>
-                      )}
-                      <div>
-                        Detected:{' '}
-                        <span style={{ color: 'var(--text-secondary)' }}>
-                          {new Date(finding.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      {finding.assignedUserEmail && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                          <span style={{ color: '#60a5fa' }}>👤</span>
-                          <span style={{ color: '#60a5fa', fontWeight: 500, fontSize: '0.8rem' }}>
-                            {finding.assignedUserName || finding.assignedUserEmail}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                    <button
-                      onClick={() => handleOpenRemediationModal(finding)}
-                      className="btn-cyber-primary"
-                      style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem' }}
-                    >
-                      ⚡ Fix Guide & Verify
-                    </button>
-
-                    <button
-                      onClick={() => handleOpenCollabModal(finding)}
-                      className="btn-cyber-secondary"
-                      style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
-                    >
-                      <span>💬</span>
-                      <span>Discuss & Assign</span>
-                    </button>
-
-                    <Link
-                      href={`/dashboard/scans/${finding.scanId}`}
-                      className="btn-cyber-secondary"
-                      style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem', textDecoration: 'none' }}
-                    >
-                      Scan Details
-                    </Link>
-
-                    <button
-                      onClick={() => handleOpenStatusModal(finding)}
-                      className="btn-cyber-secondary"
-                      style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem' }}
-                    >
-                      Triage
-                    </button>
-
-                    <button
-                      onClick={() => toggleExpand(finding.id)}
-                      className="btn-cyber-secondary"
-                      style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem' }}
-                    >
-                      {isExpanded ? 'Hide Evidence ▲' : 'Evidence ▼'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Evidence Drawer */}
-                {isExpanded && (
-                  <div
-                    style={{
-                      marginTop: '1rem',
-                      padding: '1.25rem',
-                      backgroundColor: '#0a0d14',
-                      borderRadius: 'var(--radius-sm)',
-                      border: '1px solid var(--border-subtle)',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                      <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                        Deterministic Evidence (Redacted per ADR-0007)
-                      </span>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(JSON.stringify(finding.evidenceJson, null, 2));
-                        }}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'var(--text-muted)',
-                          fontSize: '0.75rem',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Copy JSON
-                      </button>
-                    </div>
-
-                    <pre
-                      style={{
-                        margin: 0,
-                        padding: '1rem',
-                        backgroundColor: '#05070a',
-                        borderRadius: '4px',
-                        overflowX: 'auto',
-                        fontFamily: 'monospace',
-                        fontSize: '0.8rem',
-                        color: '#a5f3fc',
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      {JSON.stringify(finding.evidenceJson, null, 2)}
-                    </pre>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {filteredFindings.map((finding) => (
+            <FindingsAccordionCard
+              key={finding.id}
+              finding={finding}
+              isExpanded={!!expandedFindings[finding.id]}
+              onToggleExpand={toggleExpand}
+              onOpenRemediation={handleOpenRemediationModal}
+              onOpenStatusModal={handleOpenStatusModal}
+              onVerifyFix={handleVerifyFix}
+              isVerifying={verifyingFindingId === finding.id}
+              verificationResult={fixResults[finding.id] || null}
+              onOpenCollabModal={handleOpenCollabModal}
+              showCollab={true}
+              showScanLink={true}
+            />
+          ))}
         </div>
       )}
 

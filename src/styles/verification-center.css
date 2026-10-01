@@ -1,0 +1,803 @@
+/* ==========================================================================
+   ZERIVEX VERIFICATION CENTER & TOKEN CLIPBOARD
+   Enterprise Security Ownership Verification Interface
+   WCAG 2.1 AA Compliant • Dual-Theme Token Driven • WAI-ARIA Tabs
+   ========================================================================== */
+
+.zvc-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 960px;
+  width: 100%;
+}
+
+/* Header & Breadcrumb */
+.zvc-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.zvc-breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+  width: fit-content;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+  margin-left: -0.65rem;
+}
+
+.zvc-breadcrumb:hover {
+  color: var(--text-primary);
+  background-color: var(--accent-subtle);
+}
+
+.zvc-breadcrumb:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Target Identity Row */
+.zvc-target-identity-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.zvc-target-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
+  flex: 1 1 340px;
+}
+
+.zvc-target-url-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.zvc-target-url {
+  font-family: var(--font-sans);
+  font-size: 1.625rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  margin: 0;
+  word-break: break-all;
+  line-height: 1.25;
+}
+
+.zvc-target-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+}
+
+.zvc-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.zvc-meta-code {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.zvc-scope-tag {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent-primary);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  letter-spacing: 0.04em;
+}
+
+/* Target Header Actions */
+.zvc-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.zvc-scan-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.5rem 1.2rem;
+  border-radius: var(--radius-md);
+  border: none;
+  background-color: var(--accent-primary);
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  transition: all var(--transition-fast);
+}
+
+.zvc-scan-btn:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.zvc-scan-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.zvc-scan-btn:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.zvc-report-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  font-weight: 600;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.zvc-report-link:hover {
+  background-color: var(--bg-card-hover);
+  border-color: var(--border-hover);
+}
+
+.zvc-report-link:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Status Badge in Header */
+.zvc-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 9999px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  min-height: 34px;
+  white-space: nowrap;
+}
+
+.zvc-status-badge.verified {
+  background-color: var(--emerald-subtle);
+  color: var(--emerald);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.zvc-status-badge.unverified {
+  background-color: var(--warning-bg);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* Navigation Sub-Tabs (Target Pages) */
+.zvc-nav-strip {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.zvc-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.zvc-nav-link:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+}
+
+.zvc-nav-link.active {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.zvc-nav-link:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Verification State Banner */
+.zvc-status-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.15rem;
+  padding: 1.25rem 1.45rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid;
+  transition: all var(--transition-normal);
+}
+
+.zvc-status-banner.verified {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.zvc-status-banner.unverified {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.zvc-banner-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.zvc-status-banner.verified .zvc-banner-icon-container {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--emerald);
+}
+
+.zvc-status-banner.unverified .zvc-banner-icon-container {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--warning);
+}
+
+.zvc-banner-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.zvc-banner-title {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.zvc-status-banner.verified .zvc-banner-title {
+  color: var(--emerald);
+}
+
+.zvc-status-banner.unverified .zvc-banner-title {
+  color: var(--warning);
+}
+
+.zvc-banner-description {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+/* Main Verification Card */
+.zvc-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.zvc-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.zvc-card-title {
+  font-family: var(--font-sans);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* WAI-ARIA Tablist */
+.zvc-tablist-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1.75rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.65rem;
+  scrollbar-width: thin;
+}
+
+.zvc-tablist {
+  display: flex;
+  gap: 0.4rem;
+  min-width: max-content;
+}
+
+.zvc-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  user-select: none;
+}
+
+.zvc-tab:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+}
+
+.zvc-tab[aria-selected="true"] {
+  color: var(--text-primary);
+  background-color: var(--bg-card-solid);
+  border-color: var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.zvc-tab:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.zvc-tab-badge {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.zvc-tab-badge.recommended {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--emerald);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.zvc-tab-badge.admin {
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--cyan);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+/* Method Tab Panels */
+.zvc-tabpanel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.zvc-tabpanel:focus-visible {
+  outline: none;
+}
+
+.zvc-method-desc {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.zvc-method-desc strong {
+  color: var(--text-primary);
+}
+
+/* Provider Tip Callout */
+.zvc-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.95rem 1.15rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  background-color: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: var(--text-primary);
+}
+
+.zvc-callout-icon {
+  color: var(--cyan);
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+}
+
+.zvc-callout strong {
+  color: var(--cyan);
+}
+
+.zvc-callout code {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  background: var(--bg-card);
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+/* Technical Value / Token Boxes */
+.zvc-token-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.zvc-token-box {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.zvc-token-box:hover {
+  border-color: var(--border-hover);
+}
+
+.zvc-token-box:focus-within {
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+
+.zvc-token-box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.95rem;
+  background: rgba(0, 0, 0, 0.12);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+[data-theme="light"] .zvc-token-box-header,
+.light .zvc-token-box-header {
+  background: rgba(0, 0, 0, 0.035);
+}
+
+.zvc-token-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.zvc-token-badge {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  background: var(--bg-card);
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.zvc-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 36px;
+  min-width: 44px;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.zvc-copy-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-card-hover);
+  border-color: var(--border-hover);
+}
+
+.zvc-copy-btn.copied {
+  color: var(--emerald);
+  border-color: rgba(16, 185, 129, 0.3);
+  background: var(--emerald-subtle);
+}
+
+.zvc-copy-btn.error {
+  color: var(--danger);
+  border-color: rgba(239, 68, 68, 0.3);
+  background: var(--danger-bg);
+}
+
+.zvc-copy-btn:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 1px;
+}
+
+.zvc-token-value-container {
+  padding: 0.95rem 1.15rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--text-primary);
+  background: transparent;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  white-space: pre-wrap;
+  word-break: break-all;
+  user-select: text;
+}
+
+/* Verification Actions Section */
+.zvc-action-area {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1.75rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.zvc-action-buttons {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.zvc-primary-verify-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 46px;
+  padding: 0.65rem 1.65rem;
+  border-radius: var(--radius-md);
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+}
+
+.zvc-primary-verify-btn.primary {
+  background-color: var(--accent-primary);
+  color: #ffffff;
+}
+
+.zvc-primary-verify-btn.primary:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.zvc-primary-verify-btn.secondary {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.zvc-primary-verify-btn.secondary:hover:not(:disabled) {
+  background-color: var(--bg-card-hover);
+  border-color: var(--border-hover);
+}
+
+.zvc-primary-verify-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.zvc-primary-verify-btn:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.zvc-bypass-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 46px;
+  padding: 0.65rem 1.25rem;
+  border-radius: var(--radius-md);
+  background-color: rgba(56, 189, 248, 0.08);
+  color: var(--cyan);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.zvc-bypass-btn:hover:not(:disabled) {
+  background-color: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.zvc-bypass-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.zvc-bypass-btn:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+/* Diagnostics Result Panel */
+.zvc-diagnostic-panel {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.95rem;
+  padding: 1.15rem 1.35rem;
+  border-radius: var(--radius-md);
+  border: 1px solid;
+  transition: all var(--transition-fast);
+}
+
+.zvc-diagnostic-panel.success {
+  background-color: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.28);
+}
+
+.zvc-diagnostic-panel.failure {
+  background-color: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.28);
+}
+
+.zvc-diagnostic-icon {
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.zvc-diagnostic-panel.success .zvc-diagnostic-icon {
+  color: var(--emerald);
+}
+
+.zvc-diagnostic-panel.failure .zvc-diagnostic-icon {
+  color: var(--danger);
+}
+
+.zvc-diagnostic-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.zvc-diagnostic-headline {
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.zvc-diagnostic-panel.success .zvc-diagnostic-headline {
+  color: var(--emerald);
+}
+
+.zvc-diagnostic-panel.failure .zvc-diagnostic-headline {
+  color: var(--danger);
+}
+
+.zvc-diagnostic-text {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.zvc-diagnostic-remediation {
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 640px) {
+  .zvc-card {
+    padding: 1.25rem;
+  }
+
+  .zvc-target-url {
+    font-size: 1.35rem;
+  }
+
+  .zvc-header-actions {
+    width: 100%;
+  }
+
+  .zvc-scan-btn,
+  .zvc-report-link {
+    flex: 1;
+  }
+
+  .zvc-action-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .zvc-primary-verify-btn,
+  .zvc-bypass-btn {
+    width: 100%;
+  }
+}

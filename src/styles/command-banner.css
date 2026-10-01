@@ -1,0 +1,510 @@
+/* ==========================================================================
+   COMMAND BANNER & POSTURE SUMMARY COMPONENT STYLES
+   ZERIVEX Cybersecurity Platform — Component 3
+   ========================================================================== */
+
+.zb-command-banner {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2rem;
+  align-items: center;
+  padding: 2rem 2.25rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color var(--transition-normal),
+              box-shadow var(--transition-normal);
+  overflow: hidden;
+}
+
+.zb-command-banner:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Subtle corner accent indicator (non-distracting, cybersecurity framing) */
+.zb-command-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-primary), transparent);
+  pointer-events: none;
+}
+
+/* Content Column */
+.zb-command-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 720px;
+}
+
+/* 1. Status Chip */
+.zb-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.28rem 0.65rem;
+  background-color: var(--emerald-subtle);
+  border: 1px solid var(--emerald-glow);
+  border-radius: var(--radius-sm);
+  color: var(--emerald);
+  width: fit-content;
+  margin-bottom: 0.85rem;
+}
+
+.zb-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--emerald);
+  box-shadow: 0 0 8px var(--emerald-glow);
+  animation: zbPulseGlow 2.5s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+@keyframes zbPulseGlow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 8px var(--emerald-glow);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.15);
+    box-shadow: 0 0 14px var(--emerald);
+  }
+}
+
+.zb-status-text {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.zb-status-divider {
+  opacity: 0.5;
+  font-size: 0.65rem;
+}
+
+.zb-status-sub {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+
+/* 2. Heading */
+.zb-title {
+  font-family: var(--font-sans);
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: var(--text-primary);
+  margin: 0 0 0.65rem 0;
+}
+
+/* 3. Subtitle / User Greeting */
+.zb-subtitle {
+  font-family: var(--font-sans);
+  font-size: 0.94rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 660px;
+}
+
+.zb-username {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.zb-mono-stat {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  font-weight: 600;
+  background-color: var(--bg-secondary);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+  font-size: 0.85em;
+}
+
+/* 4. Action Buttons (CTA Hierarchy) */
+.zb-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.35rem;
+  flex-wrap: wrap;
+}
+
+.zb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 1.15rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.zb-btn:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.zb-btn:active {
+  transform: scale(0.97);
+}
+
+/* Primary CTA: Launch Readiness Cockpit */
+.zb-btn-primary {
+  background-color: var(--accent-primary);
+  border: 1px solid var(--accent-hover);
+  color: #ffffff;
+  box-shadow: 0 2px 10px var(--accent-glow);
+}
+
+.zb-btn-primary:hover {
+  background-color: var(--accent-hover);
+  border-color: var(--accent-hover);
+  box-shadow: 0 4px 16px var(--accent-glow);
+  transform: translateY(-1px);
+}
+
+.zb-btn-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.4rem;
+  background-color: rgba(255, 255, 255, 0.22);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+/* Secondary CTA: Manage Targets */
+.zb-btn-secondary {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.zb-btn-secondary:hover {
+  background-color: var(--bg-card-hover);
+  border-color: var(--border-hover);
+  color: var(--accent-primary);
+  transform: translateY(-1px);
+}
+
+/* Tertiary CTA: Security Academy */
+.zb-btn-ghost {
+  background-color: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+}
+
+.zb-btn-ghost:hover {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+/* 5. Posture Score Card */
+.zb-score-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 250px;
+  max-width: 300px;
+  padding: 1.35rem 1.6rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-fast),
+              box-shadow var(--transition-fast);
+}
+
+.zb-score-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.zb-score-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.zb-score-kicker {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.zb-posture-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.18rem 0.5rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.zb-posture-pill.tone-emerald {
+  background-color: var(--emerald-subtle);
+  border: 1px solid var(--emerald-glow);
+  color: var(--emerald);
+}
+
+.zb-posture-pill.tone-warning {
+  background-color: var(--warning-bg);
+  border: 1px solid var(--warning);
+  color: var(--warning);
+}
+
+.zb-posture-pill.tone-danger {
+  background-color: var(--danger-bg);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
+
+/* Numerical Score Row */
+.zb-score-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  line-height: 1;
+  margin: 0.35rem 0 0.65rem 0;
+}
+
+.zb-score-number {
+  font-family: var(--font-sans);
+  font-size: 3.25rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.zb-score-number.tone-emerald {
+  color: var(--emerald);
+}
+
+.zb-score-number.tone-warning {
+  color: var(--warning);
+}
+
+.zb-score-number.tone-danger {
+  color: var(--danger);
+}
+
+.zb-score-denom {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* Posture Progress Meter */
+.zb-score-meter {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  background-color: var(--border-subtle);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.zb-meter-fill {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  transform-origin: left center;
+  transition: transform 0.3s ease;
+}
+
+.zb-meter-fill.tone-emerald {
+  background: linear-gradient(90deg, var(--cyan), var(--emerald));
+}
+
+.zb-meter-fill.tone-warning {
+  background: var(--warning);
+}
+
+.zb-meter-fill.tone-danger {
+  background: var(--danger);
+}
+
+/* Score Footer Status */
+.zb-score-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.73rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.zb-defect-clean {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--emerald);
+}
+
+.zb-defect-active {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--warning);
+}
+
+.zb-defect-critical {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--danger);
+}
+
+.zb-score-timestamp {
+  color: var(--text-dim);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   RESPONSIVE LAYOUTS
+   ========================================================================== */
+
+/* Tablet & Intermediate (768px - 1079px) */
+@media (max-width: 1079px) {
+  .zb-command-banner {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding: 1.75rem;
+  }
+
+  .zb-score-card {
+    max-width: 100%;
+  }
+
+  .zb-title {
+    font-size: 1.75rem;
+  }
+}
+
+/* Mobile (< 768px) */
+@media (max-width: 767px) {
+  .zb-command-banner {
+    padding: 1.35rem 1.15rem;
+    gap: 1.35rem;
+    border-radius: var(--radius-md);
+  }
+
+  .zb-title {
+    font-size: 1.45rem;
+    line-height: 1.25;
+  }
+
+  .zb-subtitle {
+    font-size: 0.88rem;
+  }
+
+  .zb-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+  }
+
+  .zb-btn {
+    width: 100%;
+  }
+
+  .zb-score-card {
+    min-width: 100%;
+    padding: 1.15rem 1.25rem;
+  }
+
+  .zb-score-number {
+    font-size: 2.75rem;
+  }
+}
+
+/* Narrow Mobile (< 420px) */
+@media (max-width: 419px) {
+  .zb-command-banner {
+    padding: 1.15rem 0.95rem;
+  }
+
+  .zb-status-sub {
+    display: none;
+  }
+
+  .zb-status-divider {
+    display: none;
+  }
+
+  .zb-title {
+    font-size: 1.3rem;
+  }
+
+  .zb-score-number {
+    font-size: 2.4rem;
+  }
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  .zb-status-dot {
+    animation: none !important;
+  }
+
+  .zb-command-banner,
+  .zb-btn,
+  .zb-score-card,
+  .zb-meter-fill {
+    transition: none !important;
+    transform: none !important;
+  }
+}

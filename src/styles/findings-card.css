@@ -1,0 +1,838 @@
+/* ==========================================================================
+   ZERIVEX FINDINGS ACCORDION CARD & TECHNICAL EVIDENCE VIEWER
+   Component 9 — Production Security Investigation Surface
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. FINDING CARD CONTAINER
+   -------------------------------------------------------------------------- */
+.zfc-card {
+  position: relative;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.zfc-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] .zfc-card,
+.light .zfc-card {
+  background-color: #ffffff;
+  border-color: var(--border-subtle);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+[data-theme="light"] .zfc-card:hover,
+.light .zfc-card:hover {
+  border-color: var(--border-medium);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+/* Highlight border when expanded */
+.zfc-card.is-expanded {
+  border-color: var(--border-medium);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="light"] .zfc-card.is-expanded,
+.light .zfc-card.is-expanded {
+  border-color: var(--border-medium);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+}
+
+/* --------------------------------------------------------------------------
+   2. ACCORDION HEADER TRIGGER (Native Button)
+   -------------------------------------------------------------------------- */
+.zfc-trigger {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 1.15rem 1.25rem;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  min-height: 48px;
+  outline: none;
+  transition: background-color var(--transition-fast);
+}
+
+.zfc-trigger:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+[data-theme="light"] .zfc-trigger:hover,
+.light .zfc-trigger:hover {
+  background-color: rgba(15, 23, 42, 0.02);
+}
+
+.zfc-trigger:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: -2px;
+  background-color: var(--accent-subtle);
+}
+
+.zfc-header-main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Metadata Row: Badges & Taxonomy */
+.zfc-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Title */
+.zfc-title {
+  margin: 0 0 0.45rem 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+/* Sub-metadata Row: Endpoint, Target & Details */
+.zfc-sub-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.zfc-endpoint-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-sm);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-theme="light"] .zfc-endpoint-badge,
+.light .zfc-endpoint-badge {
+  background-color: var(--bg-secondary);
+}
+
+.zfc-endpoint-val {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Expand Indicator / Chevron */
+.zfc-chevron-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  transition: color var(--transition-fast), background-color var(--transition-fast), transform 0.25s ease;
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.zfc-trigger:hover .zfc-chevron-wrapper {
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="light"] .zfc-chevron-wrapper,
+.light .zfc-chevron-wrapper {
+  background-color: rgba(15, 23, 42, 0.03);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .zfc-trigger:hover .zfc-chevron-wrapper,
+.light .zfc-trigger:hover .zfc-chevron-wrapper {
+  background-color: rgba(15, 23, 42, 0.06);
+  border-color: rgba(15, 23, 42, 0.15);
+}
+
+.zfc-chevron-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: center;
+}
+
+.zfc-card.is-expanded .zfc-chevron-icon {
+  transform: rotate(180deg);
+}
+
+/* --------------------------------------------------------------------------
+   3. SEVERITY BADGE COMPONENT
+   -------------------------------------------------------------------------- */
+.zfc-sev-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  line-height: 1;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  user-select: none;
+}
+
+.zfc-sev-icon {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+}
+
+/* Critical */
+.zfc-sev-critical {
+  color: #f87171;
+  background-color: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+[data-theme="light"] .zfc-sev-critical,
+.light .zfc-sev-critical {
+  color: #b91c1c;
+  background-color: rgba(220, 38, 38, 0.1);
+  border-color: rgba(220, 38, 38, 0.25);
+}
+
+/* High */
+.zfc-sev-high {
+  color: #fb923c;
+  background-color: rgba(249, 115, 22, 0.14);
+  border-color: rgba(249, 115, 22, 0.35);
+}
+
+[data-theme="light"] .zfc-sev-high,
+.light .zfc-sev-high {
+  color: #c2410c;
+  background-color: rgba(234, 88, 12, 0.1);
+  border-color: rgba(234, 88, 12, 0.25);
+}
+
+/* Medium */
+.zfc-sev-medium {
+  color: #fbbf24;
+  background-color: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+[data-theme="light"] .zfc-sev-medium,
+.light .zfc-sev-medium {
+  color: #a16207;
+  background-color: rgba(202, 138, 4, 0.1);
+  border-color: rgba(202, 138, 4, 0.25);
+}
+
+/* Low */
+.zfc-sev-low {
+  color: #60a5fa;
+  background-color: rgba(59, 130, 246, 0.14);
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+[data-theme="light"] .zfc-sev-low,
+.light .zfc-sev-low {
+  color: #1d4ed8;
+  background-color: rgba(37, 99, 235, 0.1);
+  border-color: rgba(37, 99, 235, 0.25);
+}
+
+/* Info */
+.zfc-sev-info {
+  color: #94a3b8;
+  background-color: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+[data-theme="light"] .zfc-sev-info,
+.light .zfc-sev-info {
+  color: #475569;
+  background-color: rgba(71, 85, 105, 0.1);
+  border-color: rgba(71, 85, 105, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   4. METADATA TAGS (Rule ID, CWE, OWASP, Status)
+   -------------------------------------------------------------------------- */
+.zfc-tag-rule {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+[data-theme="light"] .zfc-tag-rule,
+.light .zfc-tag-rule {
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+.zfc-tag-taxonomy {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+[data-theme="light"] .zfc-tag-taxonomy,
+.light .zfc-tag-taxonomy {
+  background-color: rgba(15, 23, 42, 0.03);
+}
+
+.zfc-tag-status {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.zfc-tag-status.status-open {
+  color: #f87171;
+  background-color: rgba(239, 68, 68, 0.12);
+}
+[data-theme="light"] .zfc-tag-status.status-open {
+  color: #dc2626;
+  background-color: rgba(220, 38, 38, 0.08);
+}
+
+.zfc-tag-status.status-confirmed {
+  color: #fb923c;
+  background-color: rgba(249, 115, 22, 0.12);
+}
+[data-theme="light"] .zfc-tag-status.status-confirmed {
+  color: #ea580c;
+  background-color: rgba(234, 88, 12, 0.08);
+}
+
+.zfc-tag-status.status-fixed {
+  color: #34d399;
+  background-color: rgba(16, 185, 129, 0.12);
+}
+[data-theme="light"] .zfc-tag-status.status-fixed {
+  color: #059669;
+  background-color: rgba(5, 150, 105, 0.08);
+}
+
+.zfc-tag-status.status-reopened {
+  color: #f87171;
+  background-color: rgba(239, 68, 68, 0.15);
+}
+
+.zfc-tag-status.status-accepted-risk {
+  color: #fbbf24;
+  background-color: rgba(245, 158, 11, 0.12);
+}
+[data-theme="light"] .zfc-tag-status.status-accepted-risk {
+  color: #d97706;
+  background-color: rgba(217, 119, 6, 0.08);
+}
+
+.zfc-tag-status.status-false-positive {
+  color: #94a3b8;
+  background-color: rgba(148, 163, 184, 0.12);
+}
+[data-theme="light"] .zfc-tag-status.status-false-positive {
+  color: #475569;
+  background-color: rgba(71, 85, 105, 0.08);
+}
+
+/* --------------------------------------------------------------------------
+   5. EXPANDED CONTENT PANEL
+   -------------------------------------------------------------------------- */
+.zfc-panel {
+  border-top: 1px solid var(--border-color);
+  padding: 1.25rem 1.25rem 1.5rem 1.25rem;
+  background-color: var(--bg-surface);
+}
+
+[data-theme="light"] .zfc-panel,
+.light .zfc-panel {
+  background-color: #fafbfc;
+  border-top-color: var(--border-subtle);
+}
+
+/* Section Row */
+.zfc-section {
+  margin-bottom: 1.25rem;
+}
+
+.zfc-section:last-child {
+  margin-bottom: 0;
+}
+
+.zfc-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+/* Description & Impact Box */
+.zfc-prose {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.zfc-impact-box {
+  background-color: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm);
+  margin-top: 0.65rem;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+[data-theme="light"] .zfc-impact-box,
+.light .zfc-impact-box {
+  background-color: rgba(245, 158, 11, 0.05);
+  border-color: rgba(217, 119, 6, 0.25);
+}
+
+.zfc-impact-label {
+  font-weight: 700;
+  color: var(--warning);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+/* --------------------------------------------------------------------------
+   6. TECHNICAL EVIDENCE VIEWER (Theme-Aware, Crisp, Selectable)
+   -------------------------------------------------------------------------- */
+.zfc-evidence-container {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+[data-theme="light"] .zfc-evidence-container,
+.light .zfc-evidence-container {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-subtle);
+}
+
+.zfc-evidence-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.85rem;
+  background-color: rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.78rem;
+}
+
+[data-theme="light"] .zfc-evidence-header,
+.light .zfc-evidence-header {
+  background-color: rgba(15, 23, 42, 0.04);
+  border-bottom-color: rgba(15, 23, 42, 0.08);
+}
+
+.zfc-evidence-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.zfc-evidence-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: var(--font-sans);
+}
+
+.zfc-evidence-copy-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+[data-theme="light"] .zfc-evidence-copy-btn:hover,
+.light .zfc-evidence-copy-btn:hover {
+  background-color: rgba(15, 23, 42, 0.06);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+.zfc-evidence-copy-btn:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 1px;
+}
+
+.zfc-evidence-pre {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  overflow-x: auto;
+  max-height: 320px;
+  overflow-y: auto;
+  user-select: text;
+  -webkit-user-select: text;
+  white-space: pre;
+  tab-size: 2;
+}
+
+[data-theme="light"] .zfc-evidence-pre,
+.light .zfc-evidence-pre {
+  background-color: #ffffff;
+  color: #1e293b;
+}
+
+.zfc-evidence-empty {
+  padding: 1.25rem;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* --------------------------------------------------------------------------
+   7. REPRODUCTION STEPS / OBSERVATION COMMAND
+   -------------------------------------------------------------------------- */
+.zfc-repro-box {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+}
+
+[data-theme="light"] .zfc-repro-box,
+.light .zfc-repro-box {
+  background-color: var(--bg-secondary);
+}
+
+.zfc-repro-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.zfc-repro-step:last-child {
+  margin-bottom: 0;
+}
+
+.zfc-repro-num {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  background-color: var(--accent-subtle);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.zfc-repro-cmd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 0.4rem 0.65rem;
+  margin-top: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  overflow-x: auto;
+}
+
+[data-theme="light"] .zfc-repro-cmd,
+.light .zfc-repro-cmd {
+  background-color: #ffffff;
+  color: #334155;
+}
+
+/* --------------------------------------------------------------------------
+   8. ACTION STRIP (Remediation, Verification, Triage)
+   -------------------------------------------------------------------------- */
+.zfc-action-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Primary Remediation Button */
+.zfc-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.95rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  background-color: var(--accent-primary);
+  color: #ffffff;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-height: 36px;
+  font-family: var(--font-sans);
+}
+
+.zfc-btn-primary:hover {
+  background-color: var(--accent-hover);
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+
+.zfc-btn-primary:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Verify Fix Button (Operational) */
+.zfc-btn-verify {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-surface);
+  color: var(--emerald);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-height: 36px;
+  font-family: var(--font-sans);
+}
+
+.zfc-btn-verify:hover:not(:disabled) {
+  background-color: var(--emerald-subtle);
+  border-color: var(--emerald);
+  box-shadow: 0 2px 8px var(--emerald-glow);
+}
+
+.zfc-btn-verify:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.zfc-btn-verify:focus-visible {
+  outline: 2px solid var(--emerald);
+  outline-offset: 2px;
+}
+
+/* Verified state */
+.zfc-btn-verify.state-verified {
+  background-color: var(--emerald-subtle);
+  border-color: var(--emerald);
+  color: var(--emerald);
+}
+
+/* Failed state */
+.zfc-btn-verify.state-failed {
+  background-color: var(--danger-bg);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* Secondary Button (Triage / Collab) */
+.zfc-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-surface);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-height: 36px;
+  font-family: var(--font-sans);
+  text-decoration: none;
+}
+
+.zfc-btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+[data-theme="light"] .zfc-btn-secondary:hover,
+.light .zfc-btn-secondary:hover {
+  background-color: rgba(15, 23, 42, 0.05);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+.zfc-btn-secondary:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Verification Live Diagnostic Banner */
+.zfc-verify-result {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.zfc-verify-result.result-success {
+  background-color: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34d399;
+}
+
+[data-theme="light"] .zfc-verify-result.result-success {
+  background-color: rgba(5, 150, 105, 0.08);
+  border-color: rgba(5, 150, 105, 0.25);
+  color: #065f46;
+}
+
+.zfc-verify-result.result-failure {
+  background-color: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+[data-theme="light"] .zfc-verify-result.result-failure {
+  background-color: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.25);
+  color: #991b1b;
+}
+
+/* Spinner */
+.zfc-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: zfc-spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes zfc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   9. RESPONSIVE BREAKPOINTS & ACCESSIBILITY
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .zfc-trigger {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+
+  .zfc-panel {
+    padding: 1rem;
+  }
+
+  .zfc-action-strip {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .zfc-btn-primary,
+  .zfc-btn-verify,
+  .zfc-btn-secondary {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .zfc-meta-row {
+    gap: 0.35rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zfc-card,
+  .zfc-trigger,
+  .zfc-chevron-wrapper,
+  .zfc-chevron-icon,
+  .zfc-btn-primary,
+  .zfc-btn-verify,
+  .zfc-btn-secondary {
+    transition: none !important;
+  }
+
+  .zfc-spinner {
+    animation-duration: 1.5s;
+  }
+}

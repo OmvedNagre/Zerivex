@@ -1,4 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import './dashboard-header.css';
+@import './command-banner.css';
+@import './quick-scan-launcher.css';
+@import './targets-table.css';
+@import './verification-center.css';
+@import './scans-execution.css';
+@import './launch-scan-modal.css';
+@import './findings-card.css';
+@import './framework-remediation.css';
 
 /* ==========================================================================
    THEME DESIGN TOKENS (Dark & White/Light Mode)
@@ -268,6 +277,7 @@ code, pre {
 .gradient-text {
   background: linear-gradient(135deg, #ffffff 30%, #93c5fd 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -275,12 +285,14 @@ code, pre {
 .light .gradient-text {
   background: linear-gradient(135deg, #0f172a 30%, #2563eb 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .gradient-text-emerald {
   background: linear-gradient(135deg, #34d399 20%, #60a5fa 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -288,6 +300,7 @@ code, pre {
 .light .gradient-text-emerald {
   background: linear-gradient(135deg, #059669 20%, #2563eb 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
