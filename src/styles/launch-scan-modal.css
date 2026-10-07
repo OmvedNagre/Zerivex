@@ -32,14 +32,14 @@
   position: relative;
   width: 100%;
   max-width: 540px;
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
+  background-color: var(--surface);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius-lg);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border-subtle);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--hairline-soft);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  color: var(--text-primary);
+  color: var(--ink);
   font-family: var(--font-sans);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
@@ -67,12 +67,12 @@
    -------------------------------------------------------------------------- */
 .zlsm-header {
   padding: 1.5rem 1.75rem 1rem;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--hairline-soft);
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  background: var(--bg-secondary);
+  background: var(--surface-elevated);
 }
 
 [data-theme="light"] .zlsm-header,
@@ -111,21 +111,21 @@
   font-size: 1.25rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: var(--text-primary);
+  color: var(--ink);
   line-height: 1.25;
 }
 
 .zlsm-desc {
   margin: 0;
   font-size: 0.82rem;
-  color: var(--text-secondary);
+  color: var(--body-text);
   line-height: 1.45;
 }
 
 .zlsm-close-btn {
   background: none;
   border: 1px solid transparent;
-  color: var(--text-muted);
+  color: var(--mute);
   width: 36px;
   height: 36px;
   min-width: 36px;
@@ -138,9 +138,9 @@
 }
 
 .zlsm-close-btn:hover {
-  color: var(--text-primary);
-  background-color: var(--bg-surface);
-  border-color: var(--border-subtle);
+  color: var(--ink);
+  background-color: var(--surface-elevated);
+  border-color: var(--hairline-soft);
 }
 
 .zlsm-close-btn:focus-visible {
@@ -176,7 +176,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--text-secondary);
+  color: var(--body-text);
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -189,7 +189,7 @@
 .zlsm-target-count {
   font-size: 0.72rem;
   font-family: var(--font-mono);
-  color: var(--text-muted);
+  color: var(--mute);
 }
 
 /* Target Selector Box */
@@ -202,10 +202,10 @@
   width: 100%;
   min-height: 44px;
   padding: 0.65rem 2.5rem 0.65rem 1rem;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius-md);
-  color: var(--text-primary);
+  color: var(--ink);
   font-size: 0.88rem;
   font-family: var(--font-sans);
   appearance: none;
@@ -232,7 +232,7 @@
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
-  color: var(--text-muted);
+  color: var(--mute);
 }
 
 /* Target Status Context Banner */
@@ -289,8 +289,8 @@
   align-items: flex-start;
   gap: 0.85rem;
   padding: 1rem 1.15rem;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -304,8 +304,8 @@
 }
 
 .zlsm-mode-tile:hover:not(.disabled) {
-  background-color: var(--bg-card-hover);
-  border-color: var(--border-hover);
+  background-color: var(--surface-elevated);
+  border-color: var(--hairline-strong);
 }
 
 [data-theme="light"] .zlsm-mode-tile:hover:not(.disabled),
@@ -316,7 +316,7 @@
 
 /* Selected State */
 .zlsm-mode-tile.selected {
-  background-color: var(--bg-card-hover);
+  background-color: var(--surface-elevated);
   border-color: var(--accent-primary);
   box-shadow: 0 0 0 1px var(--accent-primary), 0 4px 16px var(--accent-subtle);
 }
@@ -346,7 +346,7 @@
   height: 18px;
   min-width: 18px;
   border-radius: 50%;
-  border: 2px solid var(--border-strong);
+  border: 2px solid var(--hairline-strong);
   margin-top: 0.15rem;
   display: flex;
   align-items: center;
@@ -393,13 +393,13 @@
 }
 
 .zlsm-mode-tile.disabled .zlsm-mode-icon {
-  color: var(--text-muted);
+  color: var(--mute);
 }
 
 .zlsm-mode-name {
   font-weight: 700;
   font-size: 0.92rem;
-  color: var(--text-primary);
+  color: var(--ink);
 }
 
 .zlsm-mode-badge {
@@ -444,7 +444,7 @@
 
 .zlsm-mode-desc {
   font-size: 0.8rem;
-  color: var(--text-secondary);
+  color: var(--body-text);
   line-height: 1.45;
   margin: 0;
 }
@@ -473,9 +473,9 @@
 .zlsm-scope-tag {
   font-size: 0.68rem;
   font-family: var(--font-mono);
-  color: var(--text-muted);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  color: var(--mute);
+  background: var(--surface-elevated);
+  border: 1px solid var(--hairline-soft);
   padding: 0.1rem 0.4rem;
   border-radius: 3px;
 }
@@ -507,8 +507,8 @@
    -------------------------------------------------------------------------- */
 .zlsm-footer {
   padding: 1.15rem 1.75rem;
-  border-top: 1px solid var(--border-subtle);
-  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--hairline-soft);
+  background-color: var(--surface-elevated);
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -524,9 +524,9 @@
   min-height: 42px;
   padding: 0.55rem 1.15rem;
   background-color: transparent;
-  border: 1px solid var(--border-medium);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius-md);
-  color: var(--text-secondary);
+  color: var(--body-text);
   font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
@@ -534,9 +534,9 @@
 }
 
 .zlsm-btn-cancel:hover:not(:disabled) {
-  color: var(--text-primary);
-  background-color: var(--bg-surface);
-  border-color: var(--border-strong);
+  color: var(--ink);
+  background-color: var(--surface-elevated);
+  border-color: var(--hairline-strong);
 }
 
 .zlsm-btn-cancel:focus-visible {

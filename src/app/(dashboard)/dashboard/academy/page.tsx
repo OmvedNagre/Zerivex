@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { ACADEMY_ARTICLES, LEARNING_TRACKS } from '@/core/academy/academy-catalog';
 import { AcademyCategory, DifficultyLevel, LearningTrackId } from '@/core/academy/types';
+import { Clock } from 'lucide-react';
 
 const CATEGORY_LABELS: Record<AcademyCategory, string> = {
   AI_CODE_SMELLS: 'AI Code Smells',
@@ -261,8 +262,8 @@ export default function DashboardAcademyPage() {
                   >
                     {article.difficulty}
                   </span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                    ⏱️ {article.estimatedReadMinutes} min
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Clock size={12} /> {article.estimatedReadMinutes} min
                   </span>
                 </div>
 

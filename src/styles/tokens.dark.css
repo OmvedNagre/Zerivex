@@ -1,0 +1,43 @@
+/* ==========================================================================
+   ZERIVEX — Parked Dark Theme Tokens (Un-imported)
+   Parked per ZERIVEX_UI_MASTER_PROMPT.md Section 2 #2 & Section 4.1
+   Preserved so dark mode can be reintroduced cleanly in the future.
+   ========================================================================== */
+
+:root[data-theme="dark"],
+[data-theme="dark"],
+.dark {
+  color-scheme: dark;
+
+  --ds-bg-page:            #111317;
+  --ds-bg-subtle:          #181a22;
+  --ds-bg-card:            #191b24;
+  --ds-bg-card-hover:      #212430;
+  --ds-bg-ink:             #07080a;
+  --ds-bg-ink-raised:      #12141a;
+
+  --ds-text-primary:       #f4f5f9;
+  --ds-text-secondary:     #a9abb6;
+  --ds-text-muted:         #6c6e79;
+  --ds-text-on-ink:        #ffffff;
+  --ds-text-on-ink-dim:    #a9abb6;
+
+  --ds-border-subtle:      #232632;
+  --ds-border-default:     #303444;
+  --ds-border-strong:      #484e64;
+
+  --ds-action-brand:       #ff642d;
+  --ds-action-brand-hover: #ff8c43;
+  --ds-action-brand-press: #c33909;
+  --ds-on-brand:           #191b23;
+  --ds-action-link:        #2bb3ff;
+
+  --ds-mint:   #00c192;  --ds-mint-bg:   rgba(0, 193, 146, 0.14);
+  --ds-butter: #fdc23c;  --ds-butter-bg: rgba(253, 194, 60, 0.14);
+  --ds-lilac:  #c695ff;  --ds-lilac-bg:  rgba(198, 149, 255, 0.14);
+
+  --ds-success: #00c192;
+  --ds-warning: #fdc23c;
+  --ds-danger:  #ff4953;
+  --ds-info:    #2bb3ff;
+}

@@ -1,33 +1,39 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import gsap from 'gsap';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import {
   CheckCircle2,
   Clock,
   AlertTriangle,
   ShieldAlert,
   Play,
-  Trash2,
   ExternalLink,
   Copy,
   Check,
   Loader2,
+  MoreHorizontal,
+  Trash2,
+  Crosshair,
   ShieldCheck,
-  Globe,
-  RefreshCw,
+  Eye,
+  CalendarClock,
+  Lock,
 } from 'lucide-react';
-import { Target, VerificationStatus, VerificationMethod, VerificationScope } from '@/core/targets/target-service';
-import { StaggeredText } from '@/components/ui/StaggeredText';
+import { VerificationStatus } from '@/core/targets/target-service';
+import { EnrichedTargetRow } from '@/adapters/dashboard-adapters';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import '@/styles/targets-table.css';
 
 export interface TargetsTableProps {
-  targets: Target[];
+  rows: EnrichedTargetRow[];
   loading: boolean;
   error?: string | null;
   scanningTargetId?: string | null;
   onRunScan: (targetId: string, isVerified: boolean) => void;
-  onDeleteTarget: (targetId: string, targetUrl: string) => void;
+  onDeleteTarget: (targetId: string, hostname: string) => Promise<void> | void;
   onOpenRegisterModal?: () => void;
   onRetry?: () => void;
 }
@@ -82,50 +88,25 @@ export function StatusBadge({ status }: { status: VerificationStatus | string })
   }
 }
 
-function formatScope(scope?: VerificationScope | string): string {
-  switch (scope) {
-    case 'EXACT_HOST':
-      return 'Exact Host';
-    case 'DOMAIN':
-      return 'Apex Domain';
-    case 'SUBDOMAIN_WILDCARD':
-      return 'Wildcard (*)';
-    case 'URL_PATH':
-      return 'Path Prefix';
-    default:
-      return scope || 'Exact Host';
-  }
-}
-
-function formatMethod(method?: VerificationMethod | string): string {
-  switch (method) {
-    case 'DNS_TXT':
-      return 'DNS TXT';
-    case 'HTML_META':
-      return 'HTML Meta';
-    case 'HTTP_HEADER':
-      return 'HTTP Header';
-    default:
-      return method || 'DNS TXT';
-  }
-}
-
-function formatDate(dateInput: Date | string | number): string {
+function formatRelativeTime(dateInput: string | null): string {
+  if (!dateInput) return 'Never';
   try {
-    const d = new Date(dateInput);
-    if (isNaN(d.getTime())) return '—';
-    return new Intl.DateTimeFormat('en-US', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    }).format(d);
+    const diffMs = Date.now() - new Date(dateInput).getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(dateInput));
   } catch {
     return '—';
   }
 }
 
 export function TargetsTable({
-  targets,
+  rows,
   loading,
   error,
   scanningTargetId,
@@ -134,433 +115,578 @@ export function TargetsTable({
   onOpenRegisterModal,
   onRetry,
 }: TargetsTableProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  // GSAP subtle entrance animation
-  useEffect(() => {
-    if (!containerRef.current) return;
+  // Type-to-confirm delete modal state
+  const [targetToDelete, setTargetToDelete] = useState<{ id: string; hostname: string } | null>(null);
+  const [confirmInput, setConfirmInput] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
-    const mm = gsap.matchMedia();
-    mm.add(
-      {
-        reduceMotion: '(prefers-reduced-motion: reduce)',
-        allowMotion: '(prefers-reduced-motion: no-preference)',
-      },
-      (context) => {
-        const { reduceMotion } = context.conditions as { reduceMotion?: boolean };
-        if (!reduceMotion && containerRef.current) {
-          gsap.fromTo(
-            containerRef.current,
-            { opacity: 0, y: 6 },
-            { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' }
-          );
-        }
-      }
-    );
-
-    return () => mm.revert();
-  }, []);
-
-  const handleCopyUrl = (id: string, url: string) => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(url).then(() => {
-        setCopiedId(id);
-        setTimeout(() => setCopiedId(null), 1800);
-      });
+  const handleCopyUrl = async (id: string, url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      // Fallback
     }
   };
 
-  const handleTriggerDelete = (id: string) => {
-    setConfirmDeleteId(id);
+  const handleExecuteDelete = async () => {
+    if (!targetToDelete) return;
+    try {
+      setIsDeleting(true);
+      await onDeleteTarget(targetToDelete.id, targetToDelete.hostname);
+      setTargetToDelete(null);
+      setConfirmInput('');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
-  const handleConfirmDelete = (id: string, url: string) => {
-    setConfirmDeleteId(null);
-    onDeleteTarget(id, url);
-  };
+  // 1. Loading Skeleton
+  if (loading && rows.length === 0) {
+    return (
+      <div
+        style={{
+          padding: '64px',
+          textAlign: 'center',
+          backgroundColor: 'var(--ds-bg-card)',
+          borderRadius: 'var(--ds-radius-lg)',
+          border: '1px solid var(--ds-border-subtle)',
+          color: 'var(--ds-text-muted)',
+          boxShadow: 'var(--ds-shadow-1)',
+        }}
+      >
+        <Loader2 size={24} className="zse-spin" style={{ margin: '0 auto 12px' }} />
+        <span>Loading registered sites...</span>
+      </div>
+    );
+  }
 
-  const handleCancelDelete = () => {
-    setConfirmDeleteId(null);
-  };
+  // 2. Error State
+  if (error) {
+    return (
+      <div
+        style={{
+          padding: '36px',
+          textAlign: 'center',
+          backgroundColor: 'var(--ds-danger-bg)',
+          borderRadius: 'var(--ds-radius-lg)',
+          border: '1px solid rgba(209, 0, 47, 0.2)',
+          color: 'var(--ds-danger)',
+        }}
+      >
+        <AlertTriangle size={28} style={{ margin: '0 auto 12px' }} />
+        <div style={{ fontSize: '15px', fontWeight: 700, marginBottom: '6px' }}>
+          Couldn&apos;t load sites
+        </div>
+        <p style={{ fontSize: '13px', margin: '0 0 16px', color: 'var(--ds-text-secondary)' }}>{error}</p>
+        {onRetry && (
+          <Button variant="secondary" size="sm" onClick={onRetry}>
+            Retry
+          </Button>
+        )}
+      </div>
+    );
+  }
 
-  // Close delete confirmation on outside click or escape
-  useEffect(() => {
-    if (!confirmDeleteId) return;
+  // 3. Empty State
+  if (rows.length === 0) {
+    return (
+      <div
+        style={{
+          padding: '72px 24px',
+          textAlign: 'center',
+          backgroundColor: 'var(--ds-bg-card)',
+          borderRadius: 'var(--ds-radius-lg)',
+          border: '1px solid var(--ds-border-subtle)',
+          boxShadow: 'var(--ds-shadow-1)',
+        }}
+      >
+        <Crosshair size={40} style={{ color: 'var(--ds-action-brand)', margin: '0 auto 16px' }} />
+        <h3
+          style={{
+            fontSize: '18px',
+            fontWeight: 800,
+            color: 'var(--ds-text-primary)',
+            margin: '0 0 8px',
+            fontFamily: 'var(--font-display)',
+          }}
+        >
+          No sites added yet
+        </h3>
+        <p
+          style={{
+            fontSize: '13.5px',
+            color: 'var(--ds-text-secondary)',
+            maxWidth: '440px',
+            margin: '0 auto 24px',
+            lineHeight: 1.5,
+          }}
+        >
+          Add your site, prove it&apos;s yours with a DNS TXT record or HTML meta tag, then run deterministic vulnerability checks.
+        </p>
+        {onOpenRegisterModal && (
+          <Button variant="brand" onClick={onOpenRegisterModal}>
+            Register your first site
+          </Button>
+        )}
+      </div>
+    );
+  }
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setConfirmDeleteId(null);
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [confirmDeleteId]);
-
+  // 4. Enriched Targets Table
   return (
-    <div ref={containerRef} className="ztt-container" aria-label="Target Asset Registry">
-      {/* Error Banner */}
-      {error && (
-        <div className="ztt-error-banner" role="alert">
-          <div className="ztt-error-msg-wrap">
-            <AlertTriangle size={16} aria-hidden="true" />
-            <span>Failed to load targets: {error}</span>
-          </div>
-          {onRetry && (
-            <button
-              onClick={onRetry}
-              className="ztt-error-retry-btn"
-              type="button"
-              aria-label="Retry loading targets"
-            >
-              <RefreshCw size={13} aria-hidden="true" />
-              <span>Retry</span>
-            </button>
-          )}
-        </div>
-      )}
+    <>
+      <div
+        style={{
+          backgroundColor: 'var(--ds-bg-card)',
+          borderRadius: 'var(--ds-radius-lg)',
+          border: '1px solid var(--ds-border-subtle)',
+          overflow: 'hidden',
+          boxShadow: 'var(--ds-shadow-1)',
+        }}
+      >
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
+            <thead>
+              <tr style={{ backgroundColor: 'var(--ds-bg-subtle)', borderBottom: '1px solid var(--ds-border-subtle)' }}>
+                <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 700, color: 'var(--ds-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Site
+                </th>
+                <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 700, color: 'var(--ds-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Status
+                </th>
+                <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 700, color: 'var(--ds-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Score
+                </th>
+                <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 700, color: 'var(--ds-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Open Issues
+                </th>
+                <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 700, color: 'var(--ds-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Last Scan
+                </th>
+                <th style={{ padding: '14px 20px', textAlign: 'right', fontSize: '11px', fontWeight: 700, color: 'var(--ds-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => {
+                const isScanning = scanningTargetId === row.targetId;
+                const isVerified = row.verificationStatus === 'VERIFIED';
 
-      {/* Loading Skeleton */}
-      {loading ? (
-        <div className="ztt-skeleton-container" aria-busy="true" aria-label="Loading registered targets">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="ztt-skeleton-row">
-              <div className="ztt-skeleton-box" style={{ width: '220px', height: '22px' }} />
-              <div className="ztt-skeleton-box" style={{ width: '90px', height: '22px' }} />
-              <div className="ztt-skeleton-box" style={{ width: '80px', height: '22px' }} />
-              <div className="ztt-skeleton-box" style={{ width: '70px', height: '22px' }} />
-              <div className="ztt-skeleton-box" style={{ width: '85px', height: '22px' }} />
-              <div className="ztt-skeleton-box" style={{ width: '140px', height: '32px', marginLeft: 'auto' }} />
-            </div>
-          ))}
-        </div>
-      ) : targets.length === 0 ? (
-        /* Empty State */
-        <div className="ztt-empty-state">
-          <div className="ztt-empty-icon-wrap" aria-hidden="true">
-            <ShieldCheck size={28} />
-          </div>
-          <h3 className="ztt-empty-title">
-            <StaggeredText text="No Targets Registered Yet" />
-          </h3>
-          <p className="ztt-empty-desc">
-            Register your production web applications, APIs, or domains to initiate cryptographic ownership verification and automated vulnerability assessments.
-          </p>
-          {onOpenRegisterModal && (
-            <button
-              onClick={onOpenRegisterModal}
-              className="ztt-empty-cta"
-              type="button"
-            >
-              <span>+</span>
-              <span>Register First Target</span>
-            </button>
-          )}
-        </div>
-      ) : (
-        <>
-          {/* Desktop & Tablet Table */}
-          <div className="ztt-table-wrap">
-            <table className="ztt-table">
-              <thead className="ztt-thead">
-                <tr>
-                  <th scope="col" className="ztt-th ztt-endpoint-col">Target Endpoint</th>
-                  <th scope="col" className="ztt-th ztt-status-col">Verification Status</th>
-                  <th scope="col" className="ztt-th ztt-scope-col">Scope</th>
-                  <th scope="col" className="ztt-th ztt-method-col">Method</th>
-                  <th scope="col" className="ztt-th ztt-date-col">Registered</th>
-                  <th scope="col" className="ztt-th ztt-th-actions ztt-actions-col">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="ztt-tbody">
-                {targets.map((t) => {
-                  const isScanning = scanningTargetId === t.id;
-                  const isVerified = t.verificationStatus === 'VERIFIED';
-                  const isConfirmingDelete = confirmDeleteId === t.id;
-                  const displayHostname = t.hostname || t.targetUrl.replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
-
-                  return (
-                    <tr key={t.id} className="ztt-row">
-                      {/* 1. Target Identity */}
-                      <td className="ztt-td ztt-endpoint-col">
-                        <div className="ztt-endpoint-main">
-                          <Globe size={14} className="ztt-endpoint-icon" aria-hidden="true" />
-                          <span className="ztt-hostname" title={displayHostname}>{displayHostname}</span>
-                        </div>
-                        <div className="ztt-endpoint-sub">
-                          <span className="ztt-url-text" title={t.targetUrl}>
-                            {t.targetUrl}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleCopyUrl(t.id, t.targetUrl)}
-                            className="ztt-quick-btn"
-                            title="Copy full target URL"
-                            aria-label={`Copy URL for ${displayHostname}`}
+                return (
+                  <tr
+                    key={row.targetId}
+                    style={{
+                      borderBottom: '1px solid var(--ds-border-subtle)',
+                      transition: 'background-color 120ms ease',
+                    }}
+                  >
+                    {/* Column 1: Site */}
+                    <td style={{ padding: '16px 20px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Link
+                            href={`/dashboard/targets/${row.targetId}`}
+                            style={{
+                              fontSize: '14px',
+                              fontWeight: 700,
+                              color: 'var(--ds-text-primary)',
+                              textDecoration: 'none',
+                            }}
                           >
-                            {copiedId === t.id ? (
-                              <Check size={12} className="ztt-copied-indicator" aria-hidden="true" />
-                            ) : (
-                              <Copy size={12} aria-hidden="true" />
-                            )}
-                          </button>
+                            {row.hostname}
+                          </Link>
                           <a
-                            href={t.targetUrl}
+                            href={row.targetUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="ztt-quick-btn"
-                            title="Open URL in new tab"
-                            aria-label={`Open ${displayHostname} in new tab`}
+                            style={{ color: 'var(--ds-text-muted)', display: 'inline-flex' }}
+                            title="Open site in new tab"
+                            aria-label={`Open ${row.hostname} in new tab`}
                           >
-                            <ExternalLink size={12} aria-hidden="true" />
+                            <ExternalLink size={12} />
                           </a>
-                        </div>
-                      </td>
-
-                      {/* 2. Verification Status */}
-                      <td className="ztt-td ztt-status-col">
-                        <StatusBadge status={t.verificationStatus} />
-                      </td>
-
-                      {/* 3. Scope */}
-                      <td className="ztt-td ztt-scope-col">
-                        <span className="ztt-scope-tag">{formatScope(t.verificationScope)}</span>
-                      </td>
-
-                      {/* 4. Method */}
-                      <td className="ztt-td ztt-method-col">
-                        <span className="ztt-method-text">{formatMethod(t.verificationMethod)}</span>
-                      </td>
-
-                      {/* 5. Registered Date */}
-                      <td className="ztt-td ztt-date-col">
-                        <time dateTime={new Date(t.createdAt).toISOString()} className="ztt-date-text">
-                          {formatDate(t.createdAt)}
-                        </time>
-                      </td>
-
-                      {/* 6. Row Actions */}
-                      <td className="ztt-td ztt-actions-col">
-                        <div className="ztt-actions-group">
-                          {/* Primary Action: Run Scan */}
                           <button
                             type="button"
-                            onClick={() => onRunScan(t.id, isVerified)}
-                            disabled={isScanning}
-                            className="ztt-btn-scan"
-                            title={isVerified ? 'Launch verified active security scan' : 'Launch public passive security scan'}
-                            aria-label={`Run security scan on ${displayHostname}`}
+                            onClick={() => handleCopyUrl(row.targetId, row.targetUrl)}
+                            style={{
+                              border: 'none',
+                              background: 'none',
+                              color: copiedId === row.targetId ? 'var(--ds-success)' : 'var(--ds-text-muted)',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              padding: 0,
+                            }}
+                            title="Copy URL"
+                            aria-label="Copy URL"
                           >
-                            {isScanning ? (
-                              <>
-                                <Loader2 size={12} className="ztt-spin" aria-hidden="true" />
-                                <span>Scanning...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Play size={11} fill="currentColor" aria-hidden="true" />
-                                <span>Run Scan</span>
-                              </>
-                            )}
+                            {copiedId === row.targetId ? <Check size={12} /> : <Copy size={12} />}
                           </button>
+                        </div>
+                        <span style={{ fontSize: '11.5px', color: 'var(--ds-text-muted)', fontFamily: 'var(--font-mono)' }}>
+                          {row.targetUrl}
+                        </span>
+                      </div>
+                    </td>
 
-                          {/* Secondary Action: Details or Verify Domain */}
-                          <Link
-                            href={`/dashboard/targets/${t.id}`}
-                            className={`ztt-link-details ${!isVerified ? 'ztt-link-verify' : ''}`}
-                            aria-label={isVerified ? `View target details for ${displayHostname}` : `Verify domain ownership for ${displayHostname}`}
-                          >
-                            <span>{isVerified ? 'Details' : 'Verify Domain'}</span>
-                            <span aria-hidden="true">→</span>
-                          </Link>
+                    {/* Column 2: Status Pill */}
+                    <td style={{ padding: '16px 20px' }}>
+                      <StatusBadge status={row.verificationStatus} />
+                    </td>
 
-                          {/* Destructive Action: Delete */}
-                          <div style={{ position: 'relative', display: 'inline-flex' }}>
+                    {/* Column 3: Score */}
+                    <td style={{ padding: '16px 20px' }}>
+                      {row.score !== null ? (
+                        <span
+                          style={{
+                            fontSize: '14px',
+                            fontWeight: 800,
+                            fontFamily: 'var(--font-mono)',
+                            color:
+                              row.score >= 90
+                                ? 'var(--ds-success)'
+                                : row.score >= 70
+                                ? 'var(--ds-warning)'
+                                : 'var(--ds-danger)',
+                          }}
+                        >
+                          {row.score} / 100
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '12.5px', color: 'var(--ds-text-muted)' }}>n/a</span>
+                      )}
+                    </td>
+
+                    {/* Column 4: Open Issues */}
+                    <td style={{ padding: '16px 20px' }}>
+                      {row.openIssues.total > 0 ? (
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          {row.openIssues.critical > 0 && (
+                            <span
+                              style={{
+                                padding: '1px 6px',
+                                borderRadius: '4px',
+                                backgroundColor: 'var(--ds-danger-bg)',
+                                color: 'var(--ds-danger)',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                fontFamily: 'var(--font-mono)',
+                              }}
+                            >
+                              {row.openIssues.critical}C
+                            </span>
+                          )}
+                          {row.openIssues.high > 0 && (
+                            <span
+                              style={{
+                                padding: '1px 6px',
+                                borderRadius: '4px',
+                                backgroundColor: 'var(--ds-warning-bg)',
+                                color: 'var(--ds-warning)',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                fontFamily: 'var(--font-mono)',
+                              }}
+                            >
+                              {row.openIssues.high}H
+                            </span>
+                          )}
+                          {row.openIssues.medium > 0 && (
+                            <span
+                              style={{
+                                padding: '1px 6px',
+                                borderRadius: '4px',
+                                backgroundColor: 'var(--ds-info-bg)',
+                                color: 'var(--ds-info)',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                fontFamily: 'var(--font-mono)',
+                              }}
+                            >
+                              {row.openIssues.medium}M
+                            </span>
+                          )}
+                          {row.openIssues.low > 0 && (
+                            <span
+                              style={{
+                                padding: '1px 6px',
+                                borderRadius: '4px',
+                                backgroundColor: 'var(--ds-bg-subtle)',
+                                color: 'var(--ds-text-secondary)',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                fontFamily: 'var(--font-mono)',
+                              }}
+                            >
+                              {row.openIssues.low}L
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: '12px', color: 'var(--ds-success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <CheckCircle2 size={13} />
+                          <span>0 issues</span>
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Column 5: Last Scan */}
+                    <td style={{ padding: '16px 20px', color: 'var(--ds-text-secondary)', fontSize: '13px' }}>
+                      {formatRelativeTime(row.lastScanTimestamp)}
+                    </td>
+
+                    {/* Column 6: Actions */}
+                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                        {/* Primary per-row action: Run scan (secondary button) */}
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={isScanning}
+                          onClick={() => onRunScan(row.targetId, isVerified)}
+                          icon={
+                            isScanning ? (
+                              <Loader2 size={13} className="zse-spin" />
+                            ) : (
+                              <Play size={11} fill="currentColor" />
+                            )
+                          }
+                        >
+                          {isScanning ? 'Scanning...' : isVerified ? 'Run scan' : 'Scan (passive)'}
+                        </Button>
+
+                        {/* `⋯` Action Menu */}
+                        <DropdownMenu.Root>
+                          <DropdownMenu.Trigger asChild>
                             <button
                               type="button"
-                              onClick={() => handleTriggerDelete(t.id)}
-                              className="ztt-btn-delete"
-                              title="Delete target asset"
-                              aria-label={`Delete target ${displayHostname}`}
+                              className="zx-row-more-btn"
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: 'var(--ds-radius-md)',
+                                border: '1px solid var(--ds-border-subtle)',
+                                backgroundColor: 'var(--ds-bg-card)',
+                                color: 'var(--ds-text-secondary)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                              }}
+                              aria-label={`Actions for ${row.hostname}`}
                             >
-                              <Trash2 size={14} aria-hidden="true" />
+                              <MoreHorizontal size={15} />
                             </button>
+                          </DropdownMenu.Trigger>
 
-                            {/* Safe Inline Delete Confirmation */}
-                            {isConfirmingDelete && (
-                              <div className="ztt-delete-confirm-popover" role="dialog" aria-label="Confirm Target Deletion">
-                                <span className="ztt-confirm-text">Delete target?</span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleConfirmDelete(t.id, t.targetUrl)}
-                                  className="ztt-confirm-btn-yes"
+                          <DropdownMenu.Portal>
+                            <DropdownMenu.Content
+                              side="bottom"
+                              align="end"
+                              sideOffset={6}
+                              style={{
+                                width: '200px',
+                                backgroundColor: 'var(--ds-bg-card)',
+                                borderRadius: 'var(--ds-radius-md)',
+                                border: '1px solid var(--ds-border-subtle)',
+                                boxShadow: 'var(--ds-shadow-2)',
+                                padding: '6px',
+                                zIndex: 100,
+                              }}
+                            >
+                              <DropdownMenu.Item asChild>
+                                <Link
+                                  href={`/dashboard/targets/${row.targetId}`}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '8px 10px',
+                                    fontSize: '13px',
+                                    color: 'var(--ds-text-primary)',
+                                    textDecoration: 'none',
+                                    borderRadius: 'var(--ds-radius-sm)',
+                                    cursor: 'pointer',
+                                  }}
                                 >
-                                  Delete
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={handleCancelDelete}
-                                  className="ztt-confirm-btn-cancel"
+                                  <Eye size={14} />
+                                  <span>Details</span>
+                                </Link>
+                              </DropdownMenu.Item>
+
+                              <DropdownMenu.Item asChild>
+                                <Link
+                                  href={`/dashboard/targets/${row.targetId}/surface`}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '8px 10px',
+                                    fontSize: '13px',
+                                    color: 'var(--ds-text-primary)',
+                                    textDecoration: 'none',
+                                    borderRadius: 'var(--ds-radius-sm)',
+                                    cursor: 'pointer',
+                                  }}
                                 >
-                                  Cancel
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                                  <ShieldCheck size={14} />
+                                  <span>Attack Surface &amp; Verify</span>
+                                </Link>
+                              </DropdownMenu.Item>
 
-          {/* Mobile Card Transformation (< 640px) */}
-          <div className="ztt-mobile-cards" role="region" aria-label="Target Asset Cards">
-            {targets.map((t) => {
-              const isScanning = scanningTargetId === t.id;
-              const isVerified = t.verificationStatus === 'VERIFIED';
-              const isConfirmingDelete = confirmDeleteId === t.id;
-              const displayHostname = t.hostname || t.targetUrl.replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
+                              <DropdownMenu.Item asChild>
+                                <Link
+                                  href={`/dashboard/targets/${row.targetId}/monitoring`}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '8px 10px',
+                                    fontSize: '13px',
+                                    color: 'var(--ds-text-primary)',
+                                    textDecoration: 'none',
+                                    borderRadius: 'var(--ds-radius-sm)',
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  <CalendarClock size={14} />
+                                  <span>Monitoring &amp; Schedules</span>
+                                </Link>
+                              </DropdownMenu.Item>
 
-              return (
-                <article key={t.id} className="ztt-card" aria-labelledby={`mobile-card-title-${t.id}`}>
-                  {/* Card Header: Identity & Status */}
-                  <div className="ztt-card-header">
-                    <div className="ztt-card-identity">
-                      <h4 id={`mobile-card-title-${t.id}`} className="ztt-card-hostname">
-                        {displayHostname}
-                      </h4>
-                      <div className="ztt-card-url" title={t.targetUrl}>
-                        {t.targetUrl}
+                              <DropdownMenu.Item asChild>
+                                <Link
+                                  href={`/dashboard/targets/${row.targetId}/ci-cd`}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '8px 10px',
+                                    fontSize: '13px',
+                                    color: 'var(--ds-text-primary)',
+                                    textDecoration: 'none',
+                                    borderRadius: 'var(--ds-radius-sm)',
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  <Lock size={14} />
+                                  <span>CI/CD Quality Gates</span>
+                                </Link>
+                              </DropdownMenu.Item>
+
+                              <DropdownMenu.Separator style={{ height: '1px', backgroundColor: 'var(--ds-border-subtle)', margin: '4px 0' }} />
+
+                              <DropdownMenu.Item
+                                onSelect={() => {
+                                  setTargetToDelete({ id: row.targetId, hostname: row.hostname });
+                                  setConfirmInput('');
+                                }}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  padding: '8px 10px',
+                                  fontSize: '13px',
+                                  color: 'var(--ds-danger)',
+                                  borderRadius: 'var(--ds-radius-sm)',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                <Trash2 size={14} />
+                                <span>Delete Site...</span>
+                              </DropdownMenu.Item>
+                            </DropdownMenu.Content>
+                          </DropdownMenu.Portal>
+                        </DropdownMenu.Root>
                       </div>
-                    </div>
-                    <StatusBadge status={t.verificationStatus} />
-                  </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-                  {/* Card Metadata Grid */}
-                  <div className="ztt-card-meta-grid">
-                    <div className="ztt-card-meta-item">
-                      <span className="ztt-card-meta-label">Scope</span>
-                      <span className="ztt-card-meta-value">{formatScope(t.verificationScope)}</span>
-                    </div>
-                    <div className="ztt-card-meta-item">
-                      <span className="ztt-card-meta-label">Method</span>
-                      <span className="ztt-card-meta-value">{formatMethod(t.verificationMethod)}</span>
-                    </div>
-                    <div className="ztt-card-meta-item">
-                      <span className="ztt-card-meta-label">Registered</span>
-                      <time dateTime={new Date(t.createdAt).toISOString()} className="ztt-card-meta-value">
-                        {formatDate(t.createdAt)}
-                      </time>
-                    </div>
-                    <div className="ztt-card-meta-item">
-                      <span className="ztt-card-meta-label">Quick Copy</span>
-                      <button
-                        type="button"
-                        onClick={() => handleCopyUrl(t.id, t.targetUrl)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          padding: 0,
-                          color: copiedId === t.id ? 'var(--emerald)' : 'var(--accent-primary)',
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: '0.75rem',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.3rem',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {copiedId === t.id ? (
-                          <>
-                            <Check size={12} aria-hidden="true" />
-                            <span>Copied!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={12} aria-hidden="true" />
-                            <span>Copy URL</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
+      {/* Type-To-Confirm Delete Dialog */}
+      {targetToDelete && (
+        <Modal
+          isOpen={Boolean(targetToDelete)}
+          onClose={() => {
+            if (!isDeleting) {
+              setTargetToDelete(null);
+              setConfirmInput('');
+            }
+          }}
+          title="Delete Target Site"
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <p style={{ fontSize: '13.5px', color: 'var(--ds-text-secondary)', margin: 0, lineHeight: 1.5 }}>
+              This action cannot be undone. All recorded vulnerabilities, historical scan reports, and verification tokens for{' '}
+              <strong style={{ color: 'var(--ds-text-primary)' }}>{targetToDelete.hostname}</strong> will be permanently purged.
+            </p>
 
-                  {/* Card Actions Bar */}
-                  <div className="ztt-card-actions">
-                    <button
-                      type="button"
-                      onClick={() => onRunScan(t.id, isVerified)}
-                      disabled={isScanning}
-                      className="ztt-card-btn-scan"
-                      aria-label={`Run scan on ${displayHostname}`}
-                    >
-                      {isScanning ? (
-                        <>
-                          <Loader2 size={13} className="ztt-spin" aria-hidden="true" />
-                          <span>Scanning...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Play size={12} fill="currentColor" aria-hidden="true" />
-                          <span>Run Scan</span>
-                        </>
-                      )}
-                    </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ds-text-primary)' }}>
+                Type <code style={{ color: 'var(--ds-danger)', fontFamily: 'var(--font-mono)' }}>{targetToDelete.hostname}</code> to confirm:
+              </label>
+              <input
+                type="text"
+                value={confirmInput}
+                onChange={(e) => setConfirmInput(e.target.value)}
+                placeholder={targetToDelete.hostname}
+                autoFocus
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: 'var(--ds-radius-md)',
+                  border: '1px solid var(--ds-border-default)',
+                  backgroundColor: 'var(--ds-bg-card)',
+                  color: 'var(--ds-text-primary)',
+                  fontSize: '13.5px',
+                  outline: 'none',
+                  fontFamily: 'var(--font-mono)',
+                }}
+              />
+            </div>
 
-                    <Link
-                      href={`/dashboard/targets/${t.id}`}
-                      className="ztt-card-link-details"
-                      aria-label={isVerified ? `View details for ${displayHostname}` : `Verify domain ownership for ${displayHostname}`}
-                    >
-                      <span>{isVerified ? 'Details' : 'Verify'}</span>
-                      <span aria-hidden="true">→</span>
-                    </Link>
-
-                    <div style={{ position: 'relative' }}>
-                      <button
-                        type="button"
-                        onClick={() => handleTriggerDelete(t.id)}
-                        className="ztt-card-btn-delete"
-                        aria-label={`Delete target ${displayHostname}`}
-                      >
-                        <Trash2 size={15} aria-hidden="true" />
-                      </button>
-
-                      {isConfirmingDelete && (
-                        <div
-                          className="ztt-delete-confirm-popover"
-                          style={{ right: 0, bottom: '48px' }}
-                          role="dialog"
-                          aria-label="Confirm Target Deletion"
-                        >
-                          <span className="ztt-confirm-text">Delete?</span>
-                          <button
-                            type="button"
-                            onClick={() => handleConfirmDelete(t.id, t.targetUrl)}
-                            className="ztt-confirm-btn-yes"
-                          >
-                            Delete
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleCancelDelete}
-                            className="ztt-confirm-btn-cancel"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+              <Button
+                variant="secondary"
+                disabled={isDeleting}
+                onClick={() => {
+                  setTargetToDelete(null);
+                  setConfirmInput('');
+                }}
+              >
+                Cancel
+              </Button>
+              <button
+                type="button"
+                disabled={confirmInput !== targetToDelete.hostname || isDeleting}
+                onClick={handleExecuteDelete}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: 'var(--ds-radius-md)',
+                  border: 'none',
+                  backgroundColor: 'var(--ds-danger)',
+                  color: '#FFFFFF',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: confirmInput === targetToDelete.hostname && !isDeleting ? 'pointer' : 'not-allowed',
+                  opacity: confirmInput === targetToDelete.hostname && !isDeleting ? 1 : 0.5,
+                }}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete permanently'}
+              </button>
+            </div>
           </div>
-        </>
+        </Modal>
       )}
-    </div>
+    </>
   );
 }

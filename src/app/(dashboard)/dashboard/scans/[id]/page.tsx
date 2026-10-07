@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { ScanJobRecord, FindingRecord } from '@/core/scanner/scan-runner';
 import { getRemediationForRule, RuleRemediation } from '@/core/remediation/remediation-catalog';
 import { FindingsAccordionCard } from '@/components/dashboard/FindingsAccordionCard';
+import { FrameworkRemediationModal } from '@/components/dashboard/FrameworkRemediationModal';
+import { ArrowLeft, RotateCw, Printer, AlertTriangle, Zap, Search, Shield } from 'lucide-react';
 
 export default function ScanReportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -33,12 +35,10 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
   // Remediation & Fix Verification Modal
   const [remediationFinding, setRemediationFinding] = useState<FindingRecord | null>(null);
   const [remediationData, setRemediationData] = useState<RuleRemediation | null>(null);
-  const [activeFramework, setActiveFramework] = useState<'nextjs' | 'express' | 'nginx'>('nextjs');
   const [verifyingFix, setVerifyingFix] = useState(false);
   const [verifyingFindingId, setVerifyingFindingId] = useState<string | null>(null);
   const [fixResult, setFixResult] = useState<{ fixed: boolean; diagnostic: string } | null>(null);
   const [fixResults, setFixResults] = useState<Record<string, { fixed: boolean; diagnostic: string }>>({});
-  const [copiedCli, setCopiedCli] = useState(false);
 
   const fetchScanReport = useCallback(async () => {
     try {
@@ -81,12 +81,6 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
     setRemediationFinding(finding);
     setRemediationData(data);
     setFixResult(null);
-    setCopiedCli(false);
-
-    // Pick first available framework if current doesn't exist
-    if (data.frameworks.nextjs) setActiveFramework('nextjs');
-    else if (data.frameworks.express) setActiveFramework('express');
-    else if (data.frameworks.nginx) setActiveFramework('nginx');
   };
 
   const handleVerifyFix = async (findingId: string) => {
@@ -234,8 +228,8 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
             {error || 'Unable to retrieve scan report.'}
           </p>
-          <Link href="/dashboard/scans" className="btn btn-secondary">
-            ← Return to Scans
+          <Link href="/dashboard/scans" className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+            <ArrowLeft size={14} /> Return to Scans
           </Link>
         </div>
       </div>
@@ -253,8 +247,8 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
       {/* Breadcrumb & Navigation */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
-          <Link href="/dashboard/scans" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>
-            ← All Scans
+          <Link href="/dashboard/scans" style={{ color: 'var(--text-secondary)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+            <ArrowLeft size={14} /> All Scans
           </Link>
           <span style={{ color: 'var(--text-muted)' }}>/</span>
           <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>
@@ -267,14 +261,13 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
           <button
             onClick={handleRescanTarget}
             disabled={rescanning}
-            className="btn btn-primary"
+            className="zx-btn zx-btn--brand zx-btn--sm"
             style={{
               fontSize: '0.85rem',
               display: 'flex',
               alignItems: 'center',
               gap: '0.4rem',
               cursor: rescanning ? 'not-allowed' : 'pointer',
-              backgroundColor: 'var(--accent-primary)',
             }}
             title="Re-run security scan against this target with latest engine"
           >
@@ -285,7 +278,7 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
               </>
             ) : (
               <>
-                <span>🔄</span>
+                <RotateCw size={14} />
                 <span>Re-Scan Target Now</span>
               </>
             )}
@@ -298,7 +291,7 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
             className="btn btn-secondary"
             style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
           >
-            <span>🖨️</span>
+            <Printer size={14} />
             <span>Executive PDF / Print</span>
           </a>
 
@@ -330,7 +323,9 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
             marginBottom: '1.5rem',
           }}
         >
-          ⚠️ {rescanError}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <AlertTriangle size={14} /> {rescanError}
+          </div>
         </div>
       )}
 
@@ -394,7 +389,15 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
                   border: '1px solid var(--border-subtle)',
                 }}
               >
-                {scan.scanMode === 'VERIFIED_ACTIVE' ? '⚡ Verified Active' : '🔍 Public Passive'}
+                {scan.scanMode === 'VERIFIED_ACTIVE' ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Zap size={12} /> Verified Active
+                  </span>
+                ) : (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Search size={12} /> Public Passive
+                  </span>
+                )}
               </span>
             </div>
 
@@ -550,7 +553,9 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
             border: '1px solid var(--border-subtle)',
           }}
         >
-          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🛡️</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem', color: 'var(--text-muted)' }}>
+            <Shield size={36} />
+          </div>
           <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
             {findings.length === 0 ? 'No Security Vulnerabilities Detected' : 'No findings match current filter'}
           </h3>
@@ -581,219 +586,15 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
 
       {/* Remediation & Fix Verification Modal */}
       {remediationFinding && remediationData && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '1.5rem',
-          }}
-        >
-          <div
-            className="card"
-            style={{
-              width: '100%',
-              maxWidth: '720px',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
-              padding: '2rem',
-            }}
-          >
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
-                  <span
-                    style={{
-                      fontFamily: 'monospace',
-                      fontSize: '0.8rem',
-                      fontWeight: 700,
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      padding: '0.15rem 0.4rem',
-                      borderRadius: '4px',
-                    }}
-                  >
-                    {remediationData.ruleId}
-                  </span>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    {remediationData.cwe}
-                  </span>
-                </div>
-                <h3 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  {remediationData.title}
-                </h3>
-              </div>
-
-              <button
-                onClick={() => setRemediationFinding(null)}
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.5rem', cursor: 'pointer', lineHeight: 1 }}
-              >
-                &times;
-              </button>
-            </div>
-
-            {/* Verification Result Banner */}
-            {fixResult && (
-              <div
-                style={{
-                  padding: '1rem',
-                  borderRadius: 'var(--radius-sm)',
-                  marginBottom: '1.25rem',
-                  backgroundColor: fixResult.fixed ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                  border: `1px solid ${fixResult.fixed ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-                  color: fixResult.fixed ? '#34d399' : '#f87171',
-                  fontSize: '0.9rem',
-                }}
-              >
-                <div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>
-                  {fixResult.fixed ? '✓ Remediation Verified!' : '✗ Vulnerability Still Present'}
-                </div>
-                <div>{fixResult.diagnostic}</div>
-              </div>
-            )}
-
-            {/* Impact Explanation */}
-            <div style={{ marginBottom: '1.25rem' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                Vulnerability Impact
-              </div>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                {remediationData.impact}
-              </p>
-            </div>
-
-            {/* Framework Tabs & Code Diff */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                  Code Remediation Diff
-                </div>
-
-                {/* Framework Selector */}
-                <div style={{ display: 'flex', gap: '0.35rem' }}>
-                  {(['nextjs', 'express', 'nginx'] as const).map((fw) => {
-                    const available = !!remediationData.frameworks[fw];
-                    if (!available) return null;
-                    const isActive = activeFramework === fw;
-
-                    return (
-                      <button
-                        key={fw}
-                        onClick={() => setActiveFramework(fw)}
-                        style={{
-                          padding: '0.2rem 0.6rem',
-                          borderRadius: '4px',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          backgroundColor: isActive ? 'var(--accent-primary)' : 'rgba(255, 255, 255, 0.05)',
-                          color: isActive ? '#ffffff' : 'var(--text-secondary)',
-                          border: 'none',
-                        }}
-                      >
-                        {fw === 'nextjs' ? 'Next.js' : fw === 'express' ? 'Express' : 'Nginx'}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Code Diff Box */}
-              {remediationData.frameworks[activeFramework] ? (
-                <div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                    {remediationData.frameworks[activeFramework]?.explanation}
-                  </div>
-                  <pre
-                    style={{
-                      margin: 0,
-                      padding: '1rem',
-                      backgroundColor: '#0a0d14',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-sm)',
-                      overflowX: 'auto',
-                      fontFamily: 'monospace',
-                      fontSize: '0.85rem',
-                      color: '#e2e8f0',
-                      lineHeight: 1.45,
-                    }}
-                  >
-                    {remediationData.frameworks[activeFramework]?.diff}
-                  </pre>
-                </div>
-              ) : (
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  {remediationData.summary}
-                </div>
-              )}
-            </div>
-
-            {/* CLI Verification Command */}
-            {remediationData.cliVerification && (
-              <div style={{ marginBottom: '1.5rem', backgroundColor: 'rgba(0, 0, 0, 0.2)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-                    Local CLI Verification (curl)
-                  </span>
-                  <button
-                    onClick={() => {
-                      const cmd = remediationData.cliVerification.replace('YOUR_TARGET_URL', scan?.targetUrl || '');
-                      navigator.clipboard.writeText(cmd);
-                      setCopiedCli(true);
-                      setTimeout(() => setCopiedCli(false), 2000);
-                    }}
-                    style={{ background: 'transparent', border: 'none', color: copiedCli ? '#34d399' : 'var(--text-secondary)', fontSize: '0.75rem', cursor: 'pointer' }}
-                  >
-                    {copiedCli ? '✓ Copied' : 'Copy command'}
-                  </button>
-                </div>
-                <code style={{ fontSize: '0.8rem', color: '#67e8f9', wordBreak: 'break-all' }}>
-                  {remediationData.cliVerification.replace('YOUR_TARGET_URL', scan?.targetUrl || '')}
-                </code>
-              </div>
-            )}
-
-            {/* Modal Actions */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)' }}>
-              <button
-                type="button"
-                onClick={() => setRemediationFinding(null)}
-                className="btn btn-secondary"
-              >
-                Close Guide
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleVerifyFix(remediationFinding.id)}
-                disabled={verifyingFix}
-                className="btn btn-primary"
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-              >
-                {verifyingFix ? (
-                  <>
-                    <span>⚡</span>
-                    <span>Re-testing Endpoint...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>✓</span>
-                    <span>Verify Fix Now</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+        <FrameworkRemediationModal
+          finding={remediationFinding}
+          remediationData={remediationData}
+          targetUrl={scan?.targetUrl || ''}
+          onClose={() => setRemediationFinding(null)}
+          onVerifyFix={handleVerifyFix}
+          isVerifying={verifyingFix}
+          verificationResult={fixResult}
+        />
       )}
 
       {/* Status Update Modal */}
@@ -901,14 +702,14 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
                 <button
                   type="button"
                   onClick={() => setSelectedFinding(null)}
-                  className="btn btn-secondary"
+                  className="zx-btn zx-btn--secondary zx-btn--sm"
                   disabled={updatingStatus}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary"
+                  className="zx-btn zx-btn--brand zx-btn--sm"
                   disabled={updatingStatus}
                 >
                   {updatingStatus ? 'Updating...' : 'Save Status'}

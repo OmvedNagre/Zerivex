@@ -3,7 +3,7 @@
 import React from 'react';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { ArrowLeft } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -61,7 +61,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <ThemeToggle size="sm" />
                 <a
                   href="/dashboard"
                   style={{
@@ -73,9 +72,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     fontSize: '0.85rem',
                     textDecoration: 'none',
                     boxShadow: 'var(--shadow-sm)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
                   }}
                 >
-                  ← Switch to Product View
+                  <ArrowLeft size={14} /> Switch to Product View
                 </a>
               </div>
             </div>

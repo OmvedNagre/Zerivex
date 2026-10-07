@@ -1,0 +1,212 @@
+/* ==========================================================================
+   ZERIVEX — Authentication Login (Raycast-inspired DESIGN.md system)
+   BEM Namespace: .zal-
+   ========================================================================== */
+
+.zal-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--canvas);
+  padding: 24px;
+  position: relative;
+  font-family: var(--font-sans);
+}
+
+/* Floating Theme Toggle */
+.zal-theme-wrapper {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+}
+
+/* Auth Card */
+.zal-card {
+  width: 100%;
+  max-width: 400px;
+  background-color: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-xl);
+  padding: 40px;
+}
+
+@media (max-width: 480px) {
+  .zal-card { padding: 32px 24px; border-radius: var(--radius-lg); }
+}
+@media (max-width: 360px) {
+  .zal-card { padding: 24px 16px; }
+}
+
+/* Brand */
+.zal-brand {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.zal-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background-color: var(--primary);
+  color: var(--on-primary);
+  font-weight: 800;
+  font-size: 20px;
+  margin-bottom: 16px;
+  user-select: none;
+}
+
+.zal-title {
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  margin: 0 0 8px;
+  color: var(--ink);
+  line-height: 1.6;
+  font-feature-settings: "calt", "kern", "liga", "ss03";
+}
+
+.zal-subtitle {
+  color: var(--body-text);
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Error */
+.zal-error-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background-color: var(--sev-critical-bg);
+  border: 1px solid var(--sev-critical-border);
+  color: var(--sev-critical);
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  line-height: 1.4;
+  margin-bottom: 24px;
+}
+
+.zal-error-icon { flex-shrink: 0; margin-top: 1px; }
+.zal-error-content { flex: 1; }
+.zal-error-title { font-weight: 600; margin-bottom: 2px; color: var(--sev-critical); }
+.zal-error-msg { color: var(--ink); margin-bottom: 3px; }
+.zal-error-hint { font-size: 12px; color: var(--body-text); }
+
+/* Providers */
+.zal-providers {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* OAuth button base */
+.zal-btn-oauth {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast), transform var(--transition-fast);
+  width: 100%;
+  box-sizing: border-box;
+}
+.zal-btn-oauth:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* Google */
+.zal-btn-google {
+  background-color: var(--surface-elevated);
+  color: var(--on-dark);
+  border: 1px solid var(--hairline);
+}
+.zal-btn-google:hover { border-color: var(--hairline-strong); background-color: var(--surface-card); transform: translateY(-1px); }
+.zal-btn-google:active { transform: translateY(0); }
+
+/* GitHub */
+.zal-btn-github {
+  background-color: var(--surface-elevated);
+  color: var(--on-dark);
+  border: 1px solid var(--hairline);
+}
+.zal-btn-github:hover { border-color: var(--hairline-strong); background-color: var(--surface-card); transform: translateY(-1px); }
+.zal-btn-github:active { transform: translateY(0); }
+
+/* Provider icon */
+.zal-provider-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
+
+/* Divider */
+.zal-divider { display: flex; align-items: center; gap: 10px; margin: 4px 0; }
+.zal-divider-line { flex: 1; height: 1px; background-color: var(--hairline); }
+.zal-divider-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mute);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+/* Dev button */
+.zal-btn-dev {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  background-color: var(--surface-elevated);
+  border: 1px dashed var(--hairline);
+  color: var(--mute);
+  text-decoration: none;
+  min-height: 48px;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+  cursor: pointer;
+  width: 100%;
+}
+.zal-btn-dev:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.zal-btn-dev:hover { background-color: var(--surface-card); border-color: var(--hairline-strong); color: var(--body-text); }
+
+.zal-dev-main { display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 13px; }
+.zal-dev-sub  { font-size: 11px; color: var(--mute); margin-top: 2px; }
+
+/* Footer */
+.zal-footer {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--hairline);
+  text-align: center;
+  color: var(--mute);
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: 0.4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zal-card, .zal-btn-oauth, .zal-btn-dev {
+    transition: none !important;
+    transform: none !important;
+  }
+}

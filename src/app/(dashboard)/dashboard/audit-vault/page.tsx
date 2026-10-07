@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { Shield, Check, AlertTriangle, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface AuditVaultEntry {
   id: string;
@@ -177,7 +178,7 @@ export default function AuditVaultPage() {
               gap: '0.4rem',
             }}
           >
-            <span>🛡️</span>
+            <Shield size={15} />
             <span>{checkingIntegrity ? 'Verifying Chain...' : 'Verify Cryptographic Chain'}</span>
           </button>
 
@@ -234,14 +235,22 @@ export default function AuditVaultPage() {
           }}
         >
           <div>
-            <strong>{integrityStatus.verified ? '✓ Vault Integrity Verified' : '⚠ Integrity Discrepancy Detected'}:</strong>{' '}
+            <strong>{integrityStatus.verified ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Check size={14} /> Vault Integrity Verified
+              </span>
+            ) : (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <AlertTriangle size={14} /> Integrity Discrepancy Detected
+              </span>
+            )}:</strong>{' '}
             {integrityStatus.message} ({integrityStatus.totalRecords} records evaluated)
           </div>
           <button
             onClick={() => setIntegrityStatus(null)}
-            style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '1rem' }}
+            style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
       )}
@@ -580,9 +589,12 @@ export default function AuditVaultPage() {
               borderRadius: 'var(--radius-sm)',
               fontSize: '0.85rem',
               cursor: offset === 0 ? 'not-allowed' : 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.25rem',
             }}
           >
-            ← Previous
+            <ChevronLeft size={14} /> Previous
           </button>
 
           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -600,9 +612,12 @@ export default function AuditVaultPage() {
               borderRadius: 'var(--radius-sm)',
               fontSize: '0.85rem',
               cursor: offset + limit >= total ? 'not-allowed' : 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.25rem',
             }}
           >
-            Next →
+            Next <ChevronRight size={14} />
           </button>
         </div>
       </div>
@@ -643,9 +658,9 @@ export default function AuditVaultPage() {
               </div>
               <button
                 onClick={() => setSelectedEntry(null)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '1.25rem', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 

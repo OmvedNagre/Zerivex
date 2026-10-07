@@ -181,7 +181,7 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
         </div>
         <Link href="/dashboard/targets" className="zvc-breadcrumb" style={{ marginTop: '1.25rem' }}>
           <ArrowLeft size={14} aria-hidden="true" />
-          <span>← Back to Targets</span>
+          <span>Back to Targets</span>
         </Link>
       </div>
     );

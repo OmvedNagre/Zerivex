@@ -32,12 +32,12 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
+  background-color: var(--surface);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius-lg);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--border-subtle);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--hairline-soft);
   overflow: hidden;
-  color: var(--text-primary);
+  color: var(--ink);
   font-family: var(--font-sans);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
@@ -45,8 +45,29 @@
 [data-theme="light"] .zrm-dialog,
 .light .zrm-dialog {
   background-color: #ffffff;
-  border-color: var(--border-subtle);
+  border-color: var(--hairline-soft);
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16), 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+.zrm-dialog-header {
+  padding: 1.4rem 1.75rem 1rem 1.75rem;
+  border-bottom: 1px solid var(--hairline-soft);
+  background-color: var(--surface);
+  flex-shrink: 0;
+}
+
+[data-theme="light"] .zrm-dialog-header,
+.light .zrm-dialog-header {
+  background-color: #ffffff;
+}
+
+.zrm-dialog-body {
+  padding: 1.25rem 1.75rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  flex: 1;
 }
 
 .zrm-dialog-content {
@@ -84,24 +105,24 @@
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 700;
-  color: var(--text-secondary);
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  color: var(--body-text);
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--hairline-soft);
   padding: 0.15rem 0.5rem;
   border-radius: 4px;
 }
 
 [data-theme="light"] .zrm-rule-badge,
 .light .zrm-rule-badge {
-  background-color: var(--bg-secondary);
+  background-color: var(--surface-elevated);
 }
 
 .zrm-cwe-tag {
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--mute);
   background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--hairline-soft);
   padding: 0.15rem 0.45rem;
   border-radius: 4px;
 }
@@ -116,7 +137,7 @@
   font-size: 1.25rem;
   font-weight: 700;
   line-height: 1.35;
-  color: var(--text-primary);
+  color: var(--ink);
   word-break: break-word;
 }
 
@@ -128,8 +149,8 @@
   height: 34px;
   border-radius: var(--radius-sm);
   background: transparent;
-  border: 1px solid var(--border-subtle);
-  color: var(--text-muted);
+  border: 1px solid var(--hairline-soft);
+  color: var(--mute);
   cursor: pointer;
   transition: all var(--transition-fast);
   flex-shrink: 0;
@@ -137,14 +158,14 @@
 
 .zrm-close-btn:hover {
   background-color: rgba(255, 255, 255, 0.06);
-  color: var(--text-primary);
-  border-color: var(--border-medium);
+  color: var(--ink);
+  border-color: var(--hairline);
 }
 
 [data-theme="light"] .zrm-close-btn:hover,
 .light .zrm-close-btn:hover {
   background-color: rgba(15, 23, 42, 0.05);
-  color: var(--text-primary);
+  color: var(--ink);
 }
 
 .zrm-close-btn:focus-visible {
@@ -184,7 +205,7 @@
   margin: 0;
   font-size: 0.88rem;
   line-height: 1.5;
-  color: var(--text-secondary);
+  color: var(--body-text);
 }
 
 [data-theme="light"] .zrm-impact-text,
@@ -214,14 +235,14 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--text-muted);
+  color: var(--mute);
 }
 
 .zrm-tablist {
   display: inline-flex;
   align-items: center;
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--hairline-soft);
   border-radius: var(--radius-sm);
   padding: 3px;
   gap: 2px;
@@ -229,8 +250,8 @@
 
 [data-theme="light"] .zrm-tablist,
 .light .zrm-tablist {
-  background-color: var(--bg-secondary);
-  border-color: var(--border-subtle);
+  background-color: var(--surface-elevated);
+  border-color: var(--hairline-soft);
 }
 
 .zrm-tab {
@@ -241,7 +262,7 @@
   font-family: var(--font-sans);
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--mute);
   background: transparent;
   border: none;
   border-radius: 4px;
@@ -252,13 +273,13 @@
 }
 
 .zrm-tab:hover:not(.is-active) {
-  color: var(--text-primary);
+  color: var(--ink);
   background-color: rgba(255, 255, 255, 0.04);
 }
 
 [data-theme="light"] .zrm-tab:hover:not(.is-active),
 .light .zrm-tab:hover:not(.is-active) {
-  color: var(--text-primary);
+  color: var(--ink);
   background-color: rgba(15, 23, 42, 0.04);
 }
 
@@ -290,7 +311,7 @@
 }
 
 .zrm-explanation {
-  color: var(--text-secondary);
+  color: var(--body-text);
   line-height: 1.45;
   flex: 1;
   min-width: 240px;
@@ -303,9 +324,9 @@
   font-family: var(--font-mono);
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--text-primary);
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  color: var(--ink);
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--hairline-soft);
   padding: 0.25rem 0.65rem;
   border-radius: var(--radius-sm);
   white-space: nowrap;
@@ -313,15 +334,15 @@
 
 [data-theme="light"] .zrm-file-badge,
 .light .zrm-file-badge {
-  background-color: var(--bg-secondary);
+  background-color: var(--surface-elevated);
 }
 
 /* --------------------------------------------------------------------------
    5. CODE VIEWER & DIFF SURFACE
    -------------------------------------------------------------------------- */
 .zrm-code-container {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius-sm);
   overflow: hidden;
   display: flex;
@@ -330,8 +351,8 @@
 
 [data-theme="light"] .zrm-code-container,
 .light .zrm-code-container {
-  background-color: var(--bg-secondary);
-  border-color: var(--border-subtle);
+  background-color: var(--surface-elevated);
+  border-color: var(--hairline-soft);
 }
 
 .zrm-code-toolbar {
@@ -340,7 +361,7 @@
   justify-content: space-between;
   padding: 0.55rem 0.85rem;
   background-color: rgba(0, 0, 0, 0.15);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--hairline-soft);
   font-size: 0.78rem;
 }
 
@@ -356,7 +377,7 @@
   gap: 0.45rem;
   font-family: var(--font-mono);
   font-size: 0.78rem;
-  color: var(--text-secondary);
+  color: var(--body-text);
 }
 
 .zrm-diff-pill {
@@ -375,9 +396,9 @@
   align-items: center;
   gap: 0.35rem;
   background: transparent;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--hairline-soft);
   border-radius: 4px;
-  color: var(--text-secondary);
+  color: var(--body-text);
   font-size: 0.75rem;
   font-weight: 500;
   padding: 0.25rem 0.65rem;
@@ -389,15 +410,15 @@
 
 .zrm-copy-btn:hover {
   background-color: rgba(255, 255, 255, 0.08);
-  color: var(--text-primary);
-  border-color: var(--border-medium);
+  color: var(--ink);
+  border-color: var(--hairline);
 }
 
 [data-theme="light"] .zrm-copy-btn:hover,
 .light .zrm-copy-btn:hover {
   background-color: rgba(15, 23, 42, 0.06);
-  color: var(--text-primary);
-  border-color: var(--border-medium);
+  color: var(--ink);
+  border-color: var(--hairline);
 }
 
 .zrm-copy-btn:focus-visible {
@@ -414,8 +435,8 @@
 .zrm-code-pre {
   margin: 0;
   padding: 1rem;
-  background-color: var(--bg-surface);
-  color: var(--text-primary);
+  background-color: var(--surface-elevated);
+  color: var(--ink);
   font-family: var(--font-mono);
   font-size: 0.85rem;
   line-height: 1.6;
@@ -467,7 +488,7 @@
 
 .zrm-line-comment {
   display: block;
-  color: var(--text-muted);
+  color: var(--mute);
   font-style: italic;
 }
 
@@ -475,15 +496,15 @@
    6. TERMINAL VERIFICATION COMMAND
    -------------------------------------------------------------------------- */
 .zrm-cli-box {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--hairline-soft);
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
 [data-theme="light"] .zrm-cli-box,
 .light .zrm-cli-box {
-  background-color: var(--bg-secondary);
+  background-color: var(--surface-elevated);
 }
 
 .zrm-cli-header {
@@ -492,9 +513,9 @@
   justify-content: space-between;
   padding: 0.5rem 0.85rem;
   background-color: rgba(0, 0, 0, 0.12);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--hairline-soft);
   font-size: 0.74rem;
-  color: var(--text-muted);
+  color: var(--mute);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -514,8 +535,8 @@
   gap: 0.5rem;
   font-family: var(--font-mono);
   font-size: 0.82rem;
-  color: var(--text-primary);
-  background-color: var(--bg-surface);
+  color: var(--ink);
+  background-color: var(--surface-elevated);
   overflow-x: auto;
 }
 
@@ -587,9 +608,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 1.1rem;
-  border-top: 1px solid var(--border-subtle);
+  padding: 1.1rem 1.75rem;
+  border-top: 1px solid var(--hairline-soft);
+  background-color: var(--surface);
+  flex-shrink: 0;
   gap: 1rem;
+}
+
+[data-theme="light"] .zrm-footer,
+.light .zrm-footer {
+  background-color: #ffffff;
 }
 
 .zrm-btn-verify {
@@ -632,9 +660,9 @@
   font-size: 0.85rem;
   font-weight: 500;
   border-radius: var(--radius-sm);
-  background-color: var(--bg-surface);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-elevated);
+  color: var(--body-text);
+  border: 1px solid var(--hairline-soft);
   cursor: pointer;
   transition: all var(--transition-fast);
   min-height: 40px;
@@ -643,15 +671,15 @@
 
 .zrm-btn-close:hover {
   background-color: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary);
-  border-color: var(--border-medium);
+  color: var(--ink);
+  border-color: var(--hairline);
 }
 
 [data-theme="light"] .zrm-btn-close:hover,
 .light .zrm-btn-close:hover {
   background-color: rgba(15, 23, 42, 0.05);
-  color: var(--text-primary);
-  border-color: var(--border-medium);
+  color: var(--ink);
+  border-color: var(--hairline);
 }
 
 .zrm-btn-close:focus-visible {
@@ -679,6 +707,15 @@
    9. RESPONSIVE BREAKPOINTS & ACCESSIBILITY
    -------------------------------------------------------------------------- */
 @media (max-width: 640px) {
+  .zrm-dialog-header {
+    padding: 1.15rem 1rem 0.85rem 1rem;
+  }
+
+  .zrm-dialog-body {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
   .zrm-dialog-content {
     padding: 1.25rem 1rem 1.5rem 1rem;
     gap: 1.15rem;
@@ -702,6 +739,7 @@
   }
 
   .zrm-footer {
+    padding: 0.85rem 1rem;
     flex-direction: column-reverse;
     align-items: stretch;
   }

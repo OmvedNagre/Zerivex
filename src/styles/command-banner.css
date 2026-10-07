@@ -10,10 +10,10 @@
   gap: 2rem;
   align-items: center;
   padding: 2rem 2.25rem;
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
+  background-color: var(--surface);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
+  /* shadow removed */;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   transition: border-color var(--transition-normal),
@@ -22,8 +22,8 @@
 }
 
 .zb-command-banner:hover {
-  border-color: var(--border-hover);
-  box-shadow: var(--shadow-card-hover);
+  border-color: var(--hairline-strong);
+  border-color: var(--hairline-strong); /* shadow removed */;
 }
 
 /* Subtle corner accent indicator (non-distracting, cybersecurity framing) */
@@ -112,7 +112,7 @@
   font-weight: 800;
   letter-spacing: -0.03em;
   line-height: 1.2;
-  color: var(--text-primary);
+  color: var(--ink);
   margin: 0 0 0.65rem 0;
 }
 
@@ -121,24 +121,24 @@
   font-family: var(--font-sans);
   font-size: 0.94rem;
   line-height: 1.55;
-  color: var(--text-secondary);
+  color: var(--body-text);
   margin: 0;
   max-width: 660px;
 }
 
 .zb-username {
-  color: var(--text-primary);
+  color: var(--ink);
   font-weight: 700;
 }
 
 .zb-mono-stat {
   font-family: var(--font-mono);
-  color: var(--text-primary);
+  color: var(--ink);
   font-weight: 600;
-  background-color: var(--bg-secondary);
+  background-color: var(--surface-elevated);
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--hairline-soft);
   font-size: 0.85em;
 }
 
@@ -180,18 +180,15 @@
   transform: scale(0.97);
 }
 
-/* Primary CTA: Launch Readiness Cockpit */
+/* Primary CTA: Launch Readiness Cockpit — white pill, black text (DESIGN.md) */
 .zb-btn-primary {
-  background-color: var(--accent-primary);
-  border: 1px solid var(--accent-hover);
-  color: #ffffff;
-  box-shadow: 0 2px 10px var(--accent-glow);
+  background-color: var(--primary);
+  border: 1px solid transparent;
+  color: var(--on-primary);
 }
 
 .zb-btn-primary:hover {
-  background-color: var(--accent-hover);
-  border-color: var(--accent-hover);
-  box-shadow: 0 4px 16px var(--accent-glow);
+  background-color: var(--primary-pressed);
   transform: translateY(-1px);
 }
 
@@ -199,26 +196,27 @@
   display: inline-flex;
   align-items: center;
   padding: 0.1rem 0.4rem;
-  background-color: rgba(255, 255, 255, 0.22);
+  background-color: rgba(0, 0, 0, 0.10);
   border-radius: 4px;
   font-family: var(--font-mono);
   font-size: 0.74rem;
   font-weight: 800;
   letter-spacing: 0.02em;
+  color: var(--on-primary);
 }
 
 /* Secondary CTA: Manage Targets */
 .zb-btn-secondary {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  box-shadow: var(--shadow-sm);
+  background-color: var(--surface);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  /* shadow removed */;
 }
 
 .zb-btn-secondary:hover {
-  background-color: var(--bg-card-hover);
-  border-color: var(--border-hover);
-  color: var(--accent-primary);
+  background-color: var(--surface-elevated);
+  border-color: var(--hairline-strong);
+  color: var(--on-dark);
   transform: translateY(-1px);
 }
 
@@ -226,13 +224,13 @@
 .zb-btn-ghost {
   background-color: transparent;
   border: 1px solid transparent;
-  color: var(--text-muted);
+  color: var(--mute);
 }
 
 .zb-btn-ghost:hover {
-  background-color: var(--bg-secondary);
-  border-color: var(--border-subtle);
-  color: var(--text-primary);
+  background-color: var(--surface-elevated);
+  border-color: var(--hairline-soft);
+  color: var(--ink);
   transform: translateY(-1px);
 }
 
@@ -244,17 +242,17 @@
   min-width: 250px;
   max-width: 300px;
   padding: 1.35rem 1.6rem;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  /* shadow removed */;
   transition: border-color var(--transition-fast),
               box-shadow var(--transition-fast);
 }
 
 .zb-score-card:hover {
-  border-color: var(--border-hover);
-  box-shadow: var(--shadow-md);
+  border-color: var(--hairline-strong);
+  /* shadow removed */;
 }
 
 .zb-score-header {
@@ -270,7 +268,7 @@
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: var(--text-muted);
+  color: var(--mute);
   text-transform: uppercase;
 }
 
@@ -338,7 +336,7 @@
   font-family: var(--font-mono);
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--mute);
 }
 
 /* Posture Progress Meter */
@@ -346,7 +344,7 @@
   position: relative;
   width: 100%;
   height: 6px;
-  background-color: var(--border-subtle);
+  background-color: var(--hairline-soft);
   border-radius: 999px;
   overflow: hidden;
   margin-bottom: 0.75rem;
@@ -383,7 +381,7 @@
   font-weight: 700;
   letter-spacing: 0.03em;
   padding-top: 0.5rem;
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--hairline-soft);
 }
 
 .zb-defect-clean {
@@ -408,7 +406,7 @@
 }
 
 .zb-score-timestamp {
-  color: var(--text-dim);
+  color: var(--ash);
   font-size: 0.68rem;
   font-weight: 600;
 }

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
 import { DiscoveredEndpoint, TechnologyFingerprint } from '@/core/surface/types';
 import { Target } from '@/core/targets/target-service';
+import { ArrowLeft, Zap, Check, AlertTriangle } from 'lucide-react';
 
 export default function TargetAttackSurfacePage({
   params,
@@ -133,8 +134,8 @@ export default function TargetAttackSurfacePage({
         <div style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: 'var(--radius-md)' }}>
           {error}
         </div>
-        <Link href="/dashboard/targets" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 600 }}>
-          ← Back to Targets
+        <Link href="/dashboard/targets" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+          <ArrowLeft size={14} /> Back to Targets
         </Link>
       </div>
     );
@@ -147,9 +148,9 @@ export default function TargetAttackSurfacePage({
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '0.75rem' }}>
           <Link
             href="/dashboard/targets"
-            style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.85rem' }}
+            style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
           >
-            ← Targets
+            <ArrowLeft size={14} /> Targets
           </Link>
           <span style={{ color: 'var(--text-muted)' }}>/</span>
           <Link
@@ -239,7 +240,11 @@ export default function TargetAttackSurfacePage({
                 opacity: crawling ? 0.7 : 1,
               }}
             >
-              {crawling ? 'Crawling Attack Surface...' : '⚡ Run Discovery Crawl'}
+              {crawling ? 'Crawling Attack Surface...' : (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Zap size={14} /> Run Discovery Crawl
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -255,9 +260,12 @@ export default function TargetAttackSurfacePage({
             borderRadius: 'var(--radius-md)',
             color: '#34d399',
             fontSize: '0.9rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
           }}
         >
-          ✓ {crawlMessage}
+          <Check size={16} /> <span>{crawlMessage}</span>
         </div>
       )}
 
@@ -356,7 +364,15 @@ export default function TargetAttackSurfacePage({
             {target?.verificationScope || 'EXACT_HOST'}
           </div>
           <div style={{ fontSize: '0.75rem', color: target?.verificationStatus === 'VERIFIED' ? '#34d399' : '#fbbf24', marginTop: '0.25rem' }}>
-            {target?.verificationStatus === 'VERIFIED' ? '✓ Ownership Confirmed' : '⚠ Unverified Target'}
+            {target?.verificationStatus === 'VERIFIED' ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Check size={12} /> Ownership Confirmed
+              </span>
+            ) : (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <AlertTriangle size={12} /> Unverified Target
+              </span>
+            )}
           </div>
         </div>
       </div>

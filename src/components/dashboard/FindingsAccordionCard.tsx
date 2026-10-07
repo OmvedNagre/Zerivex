@@ -6,6 +6,21 @@ import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { SeverityBadge } from './SeverityBadge';
 import { getRemediationForRule } from '@/core/remediation/remediation-catalog';
+import {
+  MapPin,
+  User,
+  Clipboard,
+  Target,
+  FlaskConical,
+  Check,
+  RotateCcw,
+  Zap,
+  Scale,
+  MessageSquare,
+  CheckCircle2,
+  AlertTriangle,
+  X,
+} from 'lucide-react';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(useGSAP);
@@ -214,7 +229,7 @@ export function FindingsAccordionCard({
 
             {finding.confidence && (
               <span className="zfc-tag-taxonomy" title="Detection Confidence">
-                {finding.confidence}
+                Confidence: {finding.confidence.charAt(0).toUpperCase() + finding.confidence.slice(1).toLowerCase()}
               </span>
             )}
 
@@ -244,7 +259,7 @@ export function FindingsAccordionCard({
           <div className="zfc-sub-row">
             {targetEndpoint && (
               <span className="zfc-endpoint-badge" title="Affected Resource Endpoint">
-                <span>📍</span>
+                <MapPin size={13} aria-hidden="true" />
                 <span className="zfc-endpoint-val">{targetEndpoint}</span>
               </span>
             )}
@@ -260,7 +275,7 @@ export function FindingsAccordionCard({
 
             {finding.assignedUserEmail && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: '#60a5fa' }}>
-                <span>👤</span>
+                <User size={13} aria-hidden="true" />
                 <span>{finding.assignedUserName || finding.assignedUserEmail}</span>
               </span>
             )}
@@ -297,7 +312,7 @@ export function FindingsAccordionCard({
           {/* Section A: Description & Business Impact */}
           <div className="zfc-section">
             <div className="zfc-section-title">
-              <span>📋</span>
+              <Clipboard size={14} aria-hidden="true" />
               <span>Finding Description</span>
             </div>
             <p className="zfc-prose">
@@ -316,7 +331,7 @@ export function FindingsAccordionCard({
           {targetEndpoint && (
             <div className="zfc-section">
               <div className="zfc-section-title">
-                <span>🎯</span>
+                <Target size={14} aria-hidden="true" />
                 <span>Affected Endpoint</span>
               </div>
               <div className="zfc-repro-cmd">
@@ -336,7 +351,7 @@ export function FindingsAccordionCard({
           {/* Section C: Deterministic Technical Evidence */}
           <div className="zfc-section">
             <div className="zfc-section-title">
-              <span>🔬</span>
+              <FlaskConical size={14} aria-hidden="true" />
               <span>Technical Evidence</span>
             </div>
 
@@ -355,7 +370,7 @@ export function FindingsAccordionCard({
                     onClick={handleCopyEvidence}
                     aria-label="Copy technical evidence JSON"
                   >
-                    {copiedEvidence ? '✓ Copied' : 'Copy JSON'}
+                    {copiedEvidence ? 'Copied' : 'Copy JSON'}
                   </button>
                 )}
               </div>
@@ -376,7 +391,7 @@ export function FindingsAccordionCard({
           {remediation.cliVerification && (
             <div className="zfc-section">
               <div className="zfc-section-title">
-                <span>🔄</span>
+                <RotateCcw size={14} aria-hidden="true" />
                 <span>Reproduction Procedure</span>
               </div>
 
@@ -425,7 +440,7 @@ export function FindingsAccordionCard({
               onClick={() => onOpenRemediation(finding)}
               aria-label={`Open remediation guide for ${finding.ruleId}`}
             >
-              <span>⚡</span>
+              <Zap size={14} aria-hidden="true" />
               <span>Fix Guide & Code Diff</span>
             </button>
 
@@ -452,18 +467,18 @@ export function FindingsAccordionCard({
                 ) : verificationResult ? (
                   verificationResult.fixed ? (
                     <>
-                      <span>✓</span>
+                      <Check size={14} aria-hidden="true" />
                       <span>Fix Verified (Closed)</span>
                     </>
                   ) : (
                     <>
-                      <span>✗</span>
+                      <X size={14} aria-hidden="true" />
                       <span>Fix Verification Failed</span>
                     </>
                   )
                 ) : (
                   <>
-                    <span>↻</span>
+                    <RotateCcw size={14} aria-hidden="true" />
                     <span>Verify Fix Now</span>
                   </>
                 )}
@@ -477,7 +492,7 @@ export function FindingsAccordionCard({
               onClick={() => onOpenStatusModal(finding)}
               aria-label={`Triage status for ${finding.title}`}
             >
-              <span>⚖️</span>
+              <Scale size={14} aria-hidden="true" />
               <span>Triage Status</span>
             </button>
 
@@ -489,7 +504,7 @@ export function FindingsAccordionCard({
                 onClick={() => onOpenCollabModal(finding)}
                 aria-label={`Discuss and assign finding ${finding.ruleId}`}
               >
-                <span>💬</span>
+                <MessageSquare size={14} aria-hidden="true" />
                 <span>Discuss & Assign</span>
               </button>
             )}
@@ -516,7 +531,11 @@ export function FindingsAccordionCard({
               aria-live="polite"
             >
               <span style={{ flexShrink: 0 }}>
-                {verificationResult.fixed ? '✅' : '⚠️'}
+                {verificationResult.fixed ? (
+                  <CheckCircle2 size={16} color="var(--ds-success)" />
+                ) : (
+                  <AlertTriangle size={16} color="var(--ds-warning)" />
+                )}
               </span>
               <div>
                 <strong>

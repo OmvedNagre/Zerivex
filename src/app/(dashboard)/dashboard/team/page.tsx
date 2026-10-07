@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { X, Check } from 'lucide-react';
 
 interface Member {
   userId: string;
@@ -645,9 +646,9 @@ export default function TeamManagementPage() {
               </h2>
               <button
                 onClick={() => setIsInviteOpen(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '1.25rem', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
@@ -749,9 +750,12 @@ export default function TeamManagementPage() {
                     borderRadius: 'var(--radius-md)',
                     marginBottom: '1.25rem',
                     fontSize: '0.9rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
                   }}
                 >
-                  ✓ Secure single-use invitation generated! The raw 256-bit token is not stored in our database.
+                  <Check size={16} /> <span>Secure single-use invitation generated! The raw 256-bit token is not stored in our database.</span>
                 </div>
 
                 <div style={{ marginBottom: '1.25rem' }}>

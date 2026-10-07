@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { X, Building2 } from 'lucide-react';
 
 interface AgencyClient {
   id: string;
@@ -348,9 +349,9 @@ export default function AgencyHubPage() {
           <span>{error}</span>
           <button
             onClick={() => setError(null)}
-            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 700 }}
+            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
       )}
@@ -373,9 +374,9 @@ export default function AgencyHubPage() {
           <span>{successMsg}</span>
           <button
             onClick={() => setSuccessMsg(null)}
-            style={{ background: 'none', border: 'none', color: '#10b981', cursor: 'pointer', fontWeight: 700 }}
+            style={{ background: 'none', border: 'none', color: '#10b981', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
       )}
@@ -531,7 +532,9 @@ export default function AgencyHubPage() {
               </div>
             ) : !portfolio?.clients || portfolio.clients.length === 0 ? (
               <div style={{ padding: '3.5rem', textAlign: 'center' }}>
-                <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🏢</div>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem', color: 'var(--text-muted)' }}>
+                  <Building2 size={36} />
+                </div>
                 <h4 style={{ color: 'var(--text-primary)', margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>
                   No Managed Clients Yet
                 </h4>
@@ -954,9 +957,9 @@ export default function AgencyHubPage() {
               </h3>
               <button
                 onClick={() => setIsClientModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.1rem' }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
@@ -1116,9 +1119,9 @@ export default function AgencyHubPage() {
               </h3>
               <button
                 onClick={() => setIsGrantModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.1rem' }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 

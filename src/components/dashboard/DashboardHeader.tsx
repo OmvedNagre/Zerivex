@@ -10,7 +10,6 @@ import {
   Target,
   Zap,
   ShieldAlert,
-  Rocket,
   Layers,
   ChevronDown,
   ShieldCheck,
@@ -26,7 +25,6 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from '@/components/auth/AuthProvider';
-import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { StaggeredText } from '@/components/ui/StaggeredText';
 
 interface NavItem {
@@ -42,7 +40,6 @@ const PRIMARY_NAV: NavItem[] = [
   { name: 'Targets', href: '/dashboard/targets', icon: Target },
   { name: 'Scans', href: '/dashboard/scans', icon: Zap },
   { name: 'Findings', href: '/dashboard/findings', icon: ShieldAlert },
-  { name: 'Launch Readiness', href: '/dashboard/launch-readiness', icon: Rocket, badge: '100%' },
 ];
 
 const MODULE_ITEMS = [
@@ -273,9 +270,9 @@ export function DashboardHeader() {
               ================================================================ */}
           <div className="zh-brand-group">
             <Link
-              href="/dashboard"
+              href="/"
               className="zh-brand-link"
-              aria-label="Zerivex Security Command Center Dashboard"
+              aria-label="Back to Zerivex home"
             >
               <div className="zh-logo-badge" aria-hidden="true">
                 Z
@@ -398,9 +395,6 @@ export function DashboardHeader() {
               ZONE 3: ACCOUNT & ENVIRONMENT CONTROLS (RIGHT)
               ================================================================ */}
           <div className="zh-actions-desktop">
-            {/* Accessible Theme Switcher */}
-            <ThemeToggle size="md" />
-
             {/* Compact User Identity Pill */}
             <div
               className="zh-user-pill"
@@ -441,8 +435,6 @@ export function DashboardHeader() {
               ZONE 4: MOBILE HAMBURGER & THEME TRIGGER (< 960px)
               ================================================================ */}
           <div className="zh-mobile-actions">
-            <ThemeToggle size="md" />
-
             <button
               ref={drawerTriggerRef}
               type="button"
@@ -495,7 +487,6 @@ export function DashboardHeader() {
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <ThemeToggle size="md" />
                 <button
                   ref={drawerCloseBtnRef}
                   type="button"

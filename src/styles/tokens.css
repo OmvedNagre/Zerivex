@@ -1,0 +1,195 @@
+/* ==========================================================================
+   ZERIVEX — "Ember & Paper" Design Tokens (v2)
+   Source: ZERIVEX_UI_MASTER_PROMPT.md Section 4.1
+   Warm paper canvas, dark terminal islands, single ember action color.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* -------------------------------------------------------------------------
+     Surfaces: Warm Paper & Dark Terminal Islands
+     ------------------------------------------------------------------------- */
+  --ds-bg-page:        #FBF8F3;   /* warm paper canvas */
+  --ds-bg-subtle:      #F4EFE7;   /* soft paper panel / nav bar */
+  --ds-bg-card:        #FFFFFF;   /* clean white surface */
+  --ds-bg-card-hover:  #FFFDF9;   /* subtle card hover */
+  --ds-bg-ink:         #14161C;   /* terminal / inverse islands */
+  --ds-bg-ink-raised:  #1C1F27;   /* elevated terminal surface */
+  --ds-bg-inverse:     #14161C;
+  --ds-bg-inverse-raised: #1C1F27;
+
+  /* -------------------------------------------------------------------------
+     Text & Typography
+     ------------------------------------------------------------------------- */
+  --ds-text-primary:    #191B23;  /* high-contrast ink */
+  --ds-text-secondary:  #484A54;  /* body text (gray-600) */
+  --ds-text-muted:      #6C6E79;  /* captions & helpers (gray-500) */
+  --ds-text-on-ink:     #E9EAF0;  /* high-contrast text on dark islands */
+  --ds-text-on-ink-dim: #A9ABB6;  /* secondary text on dark islands */
+  --ds-text-on-inverse: #E9EAF0;
+  --ds-text-link:       #006DCA;
+  --ds-text-link-hover: #00539C;
+
+  /* -------------------------------------------------------------------------
+     Borders: Warm Hairlines
+     ------------------------------------------------------------------------- */
+  --ds-border-subtle:  #ECE5D9;
+  --ds-border-default: #DDD3C2;
+  --ds-border-strong:  #B9AD98;
+
+  /* -------------------------------------------------------------------------
+     Actions: Ember Orange (ONE per viewport rule)
+     ------------------------------------------------------------------------- */
+  --ds-action-brand:        #FF642D;   /* ember: signature hot CTA */
+  --ds-action-brand-hover:  #FF8C43;
+  --ds-action-brand-press:  #C33909;
+  --ds-on-brand:            #191B23;   /* ink text on ember (5.9:1 AA contrast) */
+  --ds-action-link:         #006DCA;
+  --ds-action-primary:      #191B23;
+  --ds-action-primary-hover:#303444;
+  --ds-action-secondary-bg: #F4EFE7;
+
+  /* -------------------------------------------------------------------------
+     Friendly Accents ("Stickers") for chips, badges, and illustrations
+     ------------------------------------------------------------------------- */
+  --ds-mint:      #59DDAA;
+  --ds-mint-bg:   #DBFEE8;
+  --ds-butter:    #FDC23C;
+  --ds-butter-bg: #FDF7C8;
+  --ds-lilac:     #C695FF;
+  --ds-lilac-bg:  #F3E8FF;
+
+  /* -------------------------------------------------------------------------
+     Status & Trends
+     ------------------------------------------------------------------------- */
+  --ds-success:    #009F81;
+  --ds-success-bg: #DBFEE8;
+  --ds-warning:    #D87900;
+  --ds-warning-bg: #FDF7C8;
+  --ds-danger:     #D1002F;
+  --ds-danger-bg:  #FFF0F7;
+  --ds-info:       #008FF8;
+  --ds-info-bg:    #E9F7FF;
+
+  /* -------------------------------------------------------------------------
+     Focus & Accessibility
+     ------------------------------------------------------------------------- */
+  --ds-focus-ring: 0 0 0 3px rgba(0, 143, 248, 0.45);
+
+  /* -------------------------------------------------------------------------
+     Border Radii: Friendlier, softer geometry
+     ------------------------------------------------------------------------- */
+  --ds-radius-sm:   8px;
+  --ds-radius-md:   12px;
+  --ds-radius-lg:   20px;
+  --ds-radius-xl:   28px;
+  --ds-radius-pill: 999px;
+
+  /* -------------------------------------------------------------------------
+     Shadows: Warm soft elevations + tactile sticker shadow
+     ------------------------------------------------------------------------- */
+  --ds-shadow-1: 0 1px 0 rgba(25, 27, 35, 0.04), 0 1px 2px rgba(25, 27, 35, 0.06);
+  --ds-shadow-2: 0 10px 28px -14px rgba(120, 80, 30, 0.28);
+  --ds-shadow-3: 0 24px 56px -20px rgba(25, 27, 35, 0.30);
+  --ds-shadow-sticker: 4px 4px 0 var(--ds-text-primary);
+
+  /* -------------------------------------------------------------------------
+     Spacing (4px scale) & Easing
+     ------------------------------------------------------------------------- */
+  --ds-space-1: 4px;
+  --ds-space-2: 8px;
+  --ds-space-3: 12px;
+  --ds-space-4: 16px;
+  --ds-space-5: 24px;
+  --ds-space-6: 32px;
+  --ds-space-7: 48px;
+  --ds-space-8: 64px;
+  --ds-space-9: 96px;
+  --ds-space-10: 128px;
+
+  --ds-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* -------------------------------------------------------------------------
+     Base Palette (preserved for charts, severity scales, and compatibility)
+     ------------------------------------------------------------------------- */
+  --gray-50:  #f4f5f9;
+  --gray-100: #e0e1e9;
+  --gray-200: #c4c7cf;
+  --gray-300: #a9abb6;
+  --gray-400: #8a8e9b;
+  --gray-500: #6c6e79;
+  --gray-600: #484a54;
+  --gray-700: #2b2e38;
+  --gray-800: #191b23;
+  --gray-white: #ffffff;
+
+  --blue-50:  #e9f7ff;
+  --blue-100: #c4e5fe;
+  --blue-200: #8ecdff;
+  --blue-300: #2bb3ff;
+  --blue-400: #008ff8;
+  --blue-500: #006dca;
+  --blue-600: #044792;
+  --blue-700: #002b5f;
+
+  --green-50:  #dbfee8;
+  --green-100: #9ef2c9;
+  --green-200: #59ddaa;
+  --green-300: #00c192;
+  --green-400: #009f81;
+  --green-500: #007c65;
+
+  --red-50:  #fff0f7;
+  --red-100: #ffd7df;
+  --red-200: #ffaeb5;
+  --red-300: #ff8786;
+  --red-400: #ff4953;
+  --red-500: #d1002f;
+
+  --orange-50:  #fff3d9;
+  --orange-100: #ffdca2;
+  --orange-200: #ffb26e;
+  --orange-300: #ff8c43;
+  --orange-400: #ff642d;
+  --orange-500: #c33909;
+
+  --yellow-50:  #fdf7c8;
+  --yellow-100: #fce081;
+  --yellow-200: #fdc23c;
+  --yellow-300: #ef9800;
+  --yellow-400: #d87900;
+
+  --violet-50:  #f9f2ff;
+  --violet-100: #edd9ff;
+  --violet-200: #dcb8ff;
+  --violet-300: #c695ff;
+  --violet-400: #ab6cfe;
+  --violet-500: #8649e1;
+
+  /* Standard 5-tier Severity Matrix */
+  --sev-critical: #d1002f;
+  --sev-critical-bg: rgba(209, 0, 47, 0.12);
+  --sev-critical-border: rgba(209, 0, 47, 0.28);
+
+  --sev-high: #ff642d;
+  --sev-high-bg: rgba(255, 100, 45, 0.12);
+  --sev-high-border: rgba(255, 100, 45, 0.28);
+
+  --sev-medium: #d87900;
+  --sev-medium-bg: rgba(216, 121, 0, 0.12);
+  --sev-medium-border: rgba(216, 121, 0, 0.28);
+
+  --sev-low: #006dca;
+  --sev-low-bg: rgba(0, 109, 202, 0.12);
+  --sev-low-border: rgba(0, 109, 202, 0.28);
+
+  --sev-info: #6c6e79;
+  --sev-info-bg: rgba(108, 110, 121, 0.12);
+  --sev-info-border: rgba(108, 110, 121, 0.28);
+
+  /* Fonts */
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}

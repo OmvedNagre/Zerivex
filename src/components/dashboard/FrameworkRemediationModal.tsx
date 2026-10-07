@@ -1,10 +1,20 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { RuleRemediation } from '@/core/remediation/remediation-catalog';
-import { StaggeredText } from '@/components/ui/StaggeredText';
+import {
+  FileCode,
+  Check,
+  AlertTriangle,
+  Copy,
+  Terminal,
+  CheckCircle2,
+  Shield,
+  Folder,
+  Zap,
+} from 'lucide-react';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(useGSAP);
@@ -46,13 +56,13 @@ export function FrameworkRemediationTabs({
   const getFrameworkIcon = (fw: SupportedFramework) => {
     switch (fw) {
       case 'nextjs':
-        return '▲';
+        return 'Next.js';
       case 'express':
-        return '⚡';
+        return 'Express';
       case 'nginx':
-        return '⚙';
+        return 'Nginx';
       default:
-        return '◆';
+        return fw;
     }
   };
 
@@ -77,9 +87,11 @@ export function FrameworkRemediationTabs({
 
     if (nextIndex !== -1) {
       const nextFw = frameworks[nextIndex];
-      onSelectFramework(nextFw);
-      const buttons = tablistRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
-      buttons?.[nextIndex]?.focus();
+      if (nextFw) {
+        onSelectFramework(nextFw);
+        const buttons = tablistRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+        buttons?.[nextIndex]?.focus();
+      }
     }
   };
 
@@ -178,7 +190,7 @@ export function CodeViewer({
       {/* Code Toolbar */}
       <div className="zrm-code-toolbar">
         <div className="zrm-code-toolbar-left">
-          <span aria-hidden="true">📄</span>
+          <FileCode size={14} aria-hidden="true" />
           <span style={{ fontWeight: 600 }}>{filename}</span>
           <span className="zrm-diff-pill">UNIFIED DIFF</span>
         </div>
@@ -191,17 +203,17 @@ export function CodeViewer({
         >
           {copied ? (
             <>
-              <span aria-hidden="true">✓</span>
+              <Check size={13} aria-hidden="true" />
               <span>Copied</span>
             </>
           ) : copyError ? (
             <>
-              <span aria-hidden="true">⚠️</span>
+              <AlertTriangle size={13} aria-hidden="true" />
               <span>Copy Failed</span>
             </>
           ) : (
             <>
-              <span aria-hidden="true">📋</span>
+              <Copy size={13} aria-hidden="true" />
               <span>Copy Code</span>
             </>
           )}
@@ -213,6 +225,7 @@ export function CodeViewer({
         className="zrm-code-pre"
         tabIndex={0}
         aria-label={`Remediation patch for ${filename}`}
+        aria-description={explanation}
       >
         <code>{renderFormattedDiff()}</code>
       </pre>
@@ -245,7 +258,7 @@ export function TerminalVerificationCommand({ command, className = '' }: Termina
     <div className={`zrm-cli-box ${className}`}>
       <div className="zrm-cli-header">
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-          <span>💻</span>
+          <Terminal size={14} aria-hidden="true" />
           <span>Local CLI Verification Probe</span>
         </span>
 
@@ -257,12 +270,12 @@ export function TerminalVerificationCommand({ command, className = '' }: Termina
         >
           {copied ? (
             <>
-              <span aria-hidden="true">✓</span>
+              <Check size={13} aria-hidden="true" />
               <span>Copied</span>
             </>
           ) : (
             <>
-              <span aria-hidden="true">📋</span>
+              <Copy size={13} aria-hidden="true" />
               <span>Copy Command</span>
             </>
           )}
@@ -321,10 +334,27 @@ export function FrameworkRemediationModal({
 
   // Synchronize initial framework when remediationData changes
   useEffect(() => {
-    if (availableFrameworks.length > 0 && !availableFrameworks.includes(activeFramework)) {
-      setActiveFramework(availableFrameworks[0]);
+    const defaultFw = availableFrameworks[0];
+    if (defaultFw && !availableFrameworks.includes(activeFramework)) {
+      setActiveFramework(defaultFw);
     }
   }, [remediationData, availableFrameworks, activeFramework]);
+
+  const [verifiedFramework, setVerifiedFramework] = useState<SupportedFramework | null>(
+    verificationResult ? (availableFrameworks[0] || 'nextjs') : null
+  );
+
+  // When verificationResult updates, associate it with the currently active framework
+  useEffect(() => {
+    if (verificationResult) {
+      setVerifiedFramework(activeFramework);
+    } else {
+      setVerifiedFramework(null);
+    }
+  }, [verificationResult]);
+
+  // Active result is only shown if it matches the current framework tab
+  const activeVerificationResult = activeFramework === verifiedFramework ? verificationResult : null;
 
   // Keyboard accessibility: Escape closes modal
   useEffect(() => {
@@ -394,8 +424,8 @@ export function FrameworkRemediationModal({
         aria-modal="true"
         aria-labelledby="remediation-modal-title"
       >
-        <div className="zrm-dialog-content">
-          {/* 1. Header & Identification */}
+        {/* 1. Header & Identification (Sticky Top) */}
+        <div className="zrm-dialog-header">
           <div className="zrm-header">
             <div className="zrm-header-main">
               <div className="zrm-header-meta">
@@ -431,42 +461,73 @@ export function FrameworkRemediationModal({
               </svg>
             </button>
           </div>
+        </div>
 
-          {/* 2. Live Fix Verification Result Banner */}
-          {verificationResult && (
+        {/* 2. Scrollable Workstation Body */}
+        <div className="zrm-dialog-body">
+          {/* Live Fix Verification Result Banner */}
+          {activeVerificationResult && (
             <div
               className={`zrm-result-banner ${
-                verificationResult.fixed ? 'result-success' : 'result-failure'
+                activeVerificationResult.fixed ? 'result-success' : 'result-failure'
               }`}
               role="alert"
               aria-live="polite"
             >
-              <span style={{ fontSize: '1.15rem', flexShrink: 0 }}>
-                {verificationResult.fixed ? '✅' : '⚠️'}
+              <span style={{ flexShrink: 0 }}>
+                {activeVerificationResult.fixed ? (
+                  <CheckCircle2 size={16} color="var(--ds-success)" />
+                ) : (
+                  <AlertTriangle size={16} color="var(--ds-warning)" />
+                )}
               </span>
               <div>
                 <div className="zrm-result-title">
-                  {verificationResult.fixed
+                  {activeVerificationResult.fixed
                     ? 'Target Fix Successfully Verified'
                     : 'Fix Verification Incomplete (Rule Condition Still Triggered)'}
                 </div>
-                <div>{verificationResult.diagnostic}</div>
+                <div>{activeVerificationResult.diagnostic}</div>
               </div>
             </div>
           )}
 
-          {/* 3. Vulnerability Impact Callout */}
+          {/* Cross-framework verification notice when tab switched */}
+          {verificationResult && !activeVerificationResult && verifiedFramework && (
+            <div
+              style={{
+                fontSize: '0.8rem',
+                color: 'var(--text-muted)',
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                padding: '0.5rem 0.75rem',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px dashed var(--border-subtle)',
+              }}
+            >
+              Target endpoint was verified while viewing{' '}
+              <strong style={{ color: 'var(--text-secondary)' }}>
+                {verifiedFramework === 'nextjs' ? 'Next.js' : verifiedFramework === 'express' ? 'Express' : 'Nginx'}
+              </strong>
+              . Switch back to view that result, or re-verify for{' '}
+              <strong style={{ color: 'var(--text-secondary)' }}>
+                {activeFramework === 'nextjs' ? 'Next.js' : activeFramework === 'express' ? 'Express' : 'Nginx'}
+              </strong>
+              .
+            </div>
+          )}
+
+          {/* Vulnerability Impact Callout */}
           {remediationData.impact && (
             <div className="zrm-impact-card">
               <div className="zrm-impact-label">
-                <span>🛡️</span>
+                <Shield size={14} aria-hidden="true" />
                 <span>Vulnerability Impact & Exploitation Vector</span>
               </div>
               <p className="zrm-impact-text">{remediationData.impact}</p>
             </div>
           )}
 
-          {/* 4. Framework Remediation Tabs & Selector */}
+          {/* Framework Remediation Tabs & Selector */}
           <div className="zrm-tabs-section">
             <div className="zrm-tablist-header">
               <span className="zrm-tablist-title">Target Application Framework</span>
@@ -487,14 +548,14 @@ export function FrameworkRemediationModal({
                 </span>
 
                 <span className="zrm-file-badge" title="Target Configuration or Source File">
-                  <span aria-hidden="true">📁</span>
+                  <Folder size={13} aria-hidden="true" />
                   <span>{currentFrameworkData.filename}</span>
                 </span>
               </div>
             )}
           </div>
 
-          {/* 5. Code Viewer & Unified Diff */}
+          {/* Code Viewer & Unified Diff */}
           <div
             ref={panelRef}
             id={`remediation-panel-${activeFramework}`}
@@ -523,46 +584,46 @@ export function FrameworkRemediationModal({
             )}
           </div>
 
-          {/* 6. Local Terminal CLI Verification Probe */}
+          {/* Local Terminal CLI Verification Probe */}
           {cliCommand && (
             <TerminalVerificationCommand command={cliCommand} />
           )}
+        </div>
 
-          {/* 7. Action Footer */}
-          <div className="zrm-footer">
-            <button
-              type="button"
-              onClick={onClose}
-              className="zrm-btn-close"
-            >
-              Close Guide
-            </button>
+        {/* 3. Action Footer (Sticky Bottom) */}
+        <div className="zrm-footer">
+          <button
+            type="button"
+            onClick={onClose}
+            className="zrm-btn-close"
+          >
+            Close Guide
+          </button>
 
-            <button
-              type="button"
-              onClick={() => onVerifyFix(finding.id)}
-              disabled={isVerifying}
-              className="zrm-btn-verify"
-              aria-label={`Verify fix for ${finding.ruleId} on live target`}
-            >
-              {isVerifying ? (
-                <>
-                  <span className="zrm-spinner" aria-hidden="true" />
-                  <span>Re-testing Endpoint...</span>
-                </>
-              ) : verificationResult?.fixed ? (
-                <>
-                  <span aria-hidden="true">✓</span>
-                  <span>Fix Verified (Re-test)</span>
-                </>
-              ) : (
-                <>
-                  <span aria-hidden="true">⚡</span>
-                  <span>Verify Fix on Live Target</span>
-                </>
-              )}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => onVerifyFix(finding.id)}
+            disabled={isVerifying}
+            className="zrm-btn-verify"
+            aria-label={`Verify fix for ${finding.ruleId} on live target`}
+          >
+            {isVerifying ? (
+              <>
+                <span className="zrm-spinner" aria-hidden="true" />
+                <span>Re-testing Endpoint...</span>
+              </>
+            ) : activeVerificationResult?.fixed ? (
+              <>
+                <Check size={14} aria-hidden="true" />
+                <span>Fix Verified (Re-test)</span>
+              </>
+            ) : (
+              <>
+                <Zap size={14} aria-hidden="true" />
+                <span>Verify Fix on Live Target</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>

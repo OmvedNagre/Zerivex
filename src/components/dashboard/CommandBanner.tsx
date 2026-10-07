@@ -3,7 +3,6 @@
 import { useRef, useEffect } from 'react';
 import gsap from 'gsap';
 import {
-  Rocket,
   Crosshair,
   BookOpen,
   ShieldCheck,
@@ -58,7 +57,6 @@ export function CommandBanner({ user, stats, loading = false }: CommandBannerPro
 
   const score = typeof stats?.score === 'number' ? stats.score : 100;
   const grade = stats?.grade || (score === 100 ? 'A+' : score >= 90 ? 'A' : score >= 70 ? 'B' : 'C');
-  const readinessScore = typeof stats?.launchReadinessScore === 'number' ? stats.launchReadinessScore : 100;
 
   // Semantic posture tone
   const postureToneClass =
@@ -176,13 +174,12 @@ export function CommandBanner({ user, stats, loading = false }: CommandBannerPro
 
         <div className="zb-actions" role="group" aria-label="Primary Security Actions">
           <a
-            href="/dashboard/launch-readiness"
+            href="/dashboard/scans"
             className="zb-btn zb-btn-primary"
-            id="cta-launch-readiness"
+            id="cta-run-scans"
           >
-            <Rocket size={15} strokeWidth={2.2} aria-hidden="true" />
-            <span>Launch Readiness Cockpit</span>
-            <span className="zb-btn-badge">{readinessScore}%</span>
+            <ShieldCheck size={15} strokeWidth={2.2} aria-hidden="true" />
+            <span>Deterministic Scanners</span>
           </a>
 
           <a

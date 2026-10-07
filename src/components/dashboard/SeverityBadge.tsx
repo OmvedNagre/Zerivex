@@ -1,8 +1,10 @@
 'use client';
 
+import { OctagonAlert, TriangleAlert, CircleAlert, Info } from 'lucide-react';
+
 export type FindingSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'INFO' | 'INFORMATIONAL';
 
-interface SeverityBadgeProps {
+export interface SeverityBadgeProps {
   severity: FindingSeverity | string;
   className?: string;
   showIcon?: boolean;
@@ -10,56 +12,34 @@ interface SeverityBadgeProps {
 
 export function SeverityBadge({ severity, className = '', showIcon = true }: SeverityBadgeProps) {
   const normalized = (severity || '').toUpperCase().trim();
-  
+
   let label = 'INFO';
   let sevKey = 'info';
-  let icon = (
-    <svg className="zfc-sev-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-      <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" strokeWidth="2" />
-      <path d="M8 7v4M8 5h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
+  let IconComponent = Info;
 
   switch (normalized) {
     case 'CRITICAL':
       label = 'CRITICAL';
       sevKey = 'critical';
-      icon = (
-        <svg className="zfc-sev-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-          <path d="M8 1.5l6.5 12h-13L8 1.5z" />
-          <path d="M8 6v3M8 11h.01" stroke="var(--bg-primary)" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-      );
+      IconComponent = OctagonAlert;
       break;
 
     case 'HIGH':
       label = 'HIGH';
       sevKey = 'high';
-      icon = (
-        <svg className="zfc-sev-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-          <rect x="2" y="2" width="12" height="12" rx="2" transform="rotate(45 8 8)" />
-        </svg>
-      );
+      IconComponent = TriangleAlert;
       break;
 
     case 'MEDIUM':
       label = 'MEDIUM';
       sevKey = 'medium';
-      icon = (
-        <svg className="zfc-sev-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-          <rect x="3" y="3" width="10" height="10" rx="1.5" />
-        </svg>
-      );
+      IconComponent = CircleAlert;
       break;
 
     case 'LOW':
       label = 'LOW';
       sevKey = 'low';
-      icon = (
-        <svg className="zfc-sev-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-          <circle cx="8" cy="8" r="5" />
-        </svg>
-      );
+      IconComponent = Info;
       break;
 
     case 'INFORMATIONAL':
@@ -67,6 +47,7 @@ export function SeverityBadge({ severity, className = '', showIcon = true }: Sev
     default:
       label = 'INFO';
       sevKey = 'info';
+      IconComponent = Info;
       break;
   }
 
@@ -76,8 +57,22 @@ export function SeverityBadge({ severity, className = '', showIcon = true }: Sev
       data-severity={sevKey}
       role="status"
       aria-label={`Severity: ${label}`}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        padding: '2px 8px',
+        borderRadius: 'var(--ds-radius-sm)',
+        fontFamily: 'var(--font-mono)',
+        fontSize: '11px',
+        fontWeight: 600,
+        letterSpacing: '0.04em',
+        backgroundColor: `var(--sev-${sevKey}-bg, var(--ds-bg-subtle))`,
+        color: `var(--sev-${sevKey}, var(--ds-text-primary))`,
+        border: `1px solid var(--sev-${sevKey}-border, var(--ds-border-subtle))`,
+      }}
     >
-      {showIcon && icon}
+      {showIcon && <IconComponent size={12} strokeWidth={2} aria-hidden="true" />}
       <span>{label}</span>
     </span>
   );

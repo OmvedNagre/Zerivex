@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { Check, X, CreditCard, AlertTriangle, Shield } from 'lucide-react';
 
 interface PlanPricing {
   monthlyInr: number;
@@ -230,7 +231,7 @@ export default function BillingPage() {
                 gap: '0.4rem',
               }}
             >
-              <span>💳</span>
+              <CreditCard size={15} />
               <span>{actionLoading === 'portal' ? 'Opening Portal...' : 'Billing Portal & Invoices'}</span>
             </button>
           </div>
@@ -253,7 +254,7 @@ export default function BillingPage() {
             gap: '0.6rem',
           }}
         >
-          <span>{feedback.type === 'success' ? '✓' : '⚠️'}</span>
+          {feedback.type === 'success' ? <Check size={16} /> : <AlertTriangle size={16} />}
           <span>{feedback.message}</span>
         </div>
       )}
@@ -286,7 +287,7 @@ export default function BillingPage() {
               flexShrink: 0,
             }}
           >
-            🛡️
+            <Shield size={20} />
           </div>
           <div>
             <div style={{ color: '#e9d5ff', fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -517,28 +518,28 @@ export default function BillingPage() {
             </div>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#10b981' }}>✓</span> 1 Verified Target
+                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> 1 Verified Target
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#10b981' }}>✓</span> 10 Monthly Scans
+                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> 10 Monthly Scans
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#10b981' }}>✓</span> 1 Team Member Seat
+                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> 1 Team Member Seat
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#10b981' }}>✓</span> Public Passive Scans
+                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> Public Passive Scans
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)' }}>
-                <span>✕</span> Deep Active Vulnerability Scanning
+                <X size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} /> Deep Active Vulnerability Scanning
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)' }}>
-                <span>✕</span> Attack Surface Route Crawler
+                <X size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} /> Attack Surface Route Crawler
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)' }}>
-                <span>✕</span> CI/CD & API Keys
+                <X size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} /> CI/CD & API Keys
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#10b981' }}>✓</span> 7-Day Log Retention
+                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> 7-Day Log Retention
               </li>
             </ul>
           </div>
@@ -638,28 +639,28 @@ export default function BillingPage() {
             </div>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#10b981' }}>✓</span> <strong>5 Verified Targets</strong>
+                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> <strong>5 Verified Targets</strong>
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#10b981' }}>✓</span> <strong>250 Monthly Scans</strong>
+                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> <strong>250 Monthly Scans</strong>
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#10b981' }}>✓</span> <strong>5 Team Member Seats</strong>
+                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> <strong>5 Team Member Seats</strong>
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#10b981' }}>✓</span> Deep Active Scanning (SQLi, XSS, CSRF, SSRF)
+                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> Deep Active Scanning (SQLi, XSS, CSRF, SSRF)
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#10b981' }}>✓</span> Attack Surface Route Crawler & Tech Fingerprinting
+                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> Attack Surface Route Crawler & Tech Fingerprinting
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#10b981' }}>✓</span> CI/CD Integrations, API Keys & Webhooks
+                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> CI/CD Integrations, API Keys & Webhooks
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#10b981' }}>✓</span> Finding Collaboration (Comments & Assignees)
+                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> Finding Collaboration (Comments & Assignees)
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#10b981' }}>✓</span> 30-Day Audit & Finding Retention
+                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> 30-Day Audit & Finding Retention
               </li>
             </ul>
           </div>
@@ -767,28 +768,28 @@ export default function BillingPage() {
             </div>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#8b5cf6' }}>✓</span> <strong>Unlimited Verified Targets</strong>
+                <Check size={14} style={{ color: '#8b5cf6', flexShrink: 0 }} /> <strong>Unlimited Verified Targets</strong>
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#8b5cf6' }}>✓</span> <strong>Unlimited Monthly Scans</strong>
+                <Check size={14} style={{ color: '#8b5cf6', flexShrink: 0 }} /> <strong>Unlimited Monthly Scans</strong>
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#8b5cf6' }}>✓</span> <strong>Unlimited Team Members</strong>
+                <Check size={14} style={{ color: '#8b5cf6', flexShrink: 0 }} /> <strong>Unlimited Team Members</strong>
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#8b5cf6' }}>✓</span> Continuous Security Monitoring & Score Regression
+                <Check size={14} style={{ color: '#8b5cf6', flexShrink: 0 }} /> Continuous Security Monitoring & Score Regression
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#8b5cf6' }}>✓</span> Cryptographic Compliance Audit Vault (CSV/SIEM)
+                <Check size={14} style={{ color: '#8b5cf6', flexShrink: 0 }} /> Cryptographic Compliance Audit Vault (CSV/SIEM)
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#8b5cf6' }}>✓</span> Monotonic SHA-256 Chain Verification
+                <Check size={14} style={{ color: '#8b5cf6', flexShrink: 0 }} /> Monotonic SHA-256 Chain Verification
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#8b5cf6' }}>✓</span> Priority Remediation SLAs & Dedicated Support
+                <Check size={14} style={{ color: '#8b5cf6', flexShrink: 0 }} /> Priority Remediation SLAs & Dedicated Support
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#8b5cf6' }}>✓</span> 365-Day Extended Log Retention
+                <Check size={14} style={{ color: '#8b5cf6', flexShrink: 0 }} /> 365-Day Extended Log Retention
               </li>
             </ul>
           </div>

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
 import { Target } from '@/core/targets/target-service';
 import { QualityGatePolicy } from '@/core/cicd/quality-gate-engine';
+import { ArrowLeft, Shield, Sliders, Check, Lightbulb } from 'lucide-react';
 
 export default function TargetCiCdPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -142,7 +143,7 @@ jobs:
           echo "gate_passed=$GATE_PASSED" >> $GITHUB_OUTPUT
 
           if [ "$GATE_PASSED" != "true" ]; then
-            echo "❌ Zerivex Quality Gate FAILED (Score: $SCORE)"
+            echo "[FAIL] Zerivex Quality Gate FAILED (Score: $SCORE)"
             exit 1
           fi
 
@@ -170,7 +171,7 @@ jobs:
       curl -s -H "Authorization: Bearer $ZERIVEX_API_KEY" \\
         "https://zerivex.com/api/v1/ci/scans/$SCAN_ID/sarif" > zerivex-results.sarif
       if [ "$GATE_PASSED" != "true" ]; then
-        echo "❌ Zerivex Security Quality Gate Failed!"
+        echo "[FAIL] Zerivex Security Quality Gate Failed!"
         exit 1
       fi
   artifacts:
@@ -195,11 +196,11 @@ SCORE=$(echo "$RESPONSE" | jq -r '.score')
 echo "Security Score: $SCORE/100 | Gate Status: $GATE_PASSED"
 
 if [ "$GATE_PASSED" != "true" ]; then
-  echo "❌ Quality Gate Failed: $(echo "$RESPONSE" | jq -r '.gate.summaryText')"
+  echo "[FAIL] Quality Gate Failed: $(echo "$RESPONSE" | jq -r '.gate.summaryText')"
   exit 1
 fi
 
-echo "✅ Quality Gate Passed!"
+echo "[PASS] Quality Gate Passed!"
 exit 0
 `;
 
@@ -217,9 +218,9 @@ exit 0
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
           <Link
             href={`/dashboard/targets/${id}`}
-            style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.85rem' }}
+            style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
           >
-            ← Target Details
+            <ArrowLeft size={14} /> Target Details
           </Link>
           <span style={{ color: 'var(--text-tertiary)' }}>/</span>
           <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>CI/CD & Integrations</span>
@@ -306,9 +307,12 @@ exit 0
             backgroundColor: 'var(--bg-secondary)',
             color: 'var(--text-primary)',
             textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
           }}
         >
-          ⚙️ CI/CD & Integrations
+          <Sliders size={14} /> CI/CD & Integrations
         </Link>
       </div>
 
@@ -328,7 +332,7 @@ exit 0
           <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--card-bg)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ fontSize: '1.25rem' }}>🛡️</span>
+                <Shield size={20} style={{ color: 'var(--accent-primary)' }} />
                 <h2 style={{ fontSize: '1.2rem', fontWeight: 600, margin: 0 }}>
                   {policy?.name || 'Security Quality Gate Policy'}
                 </h2>
@@ -339,8 +343,8 @@ exit 0
             </div>
 
             {saveSuccess && (
-              <div style={{ padding: '0.75rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', borderRadius: 'var(--radius-md)', color: '#10b981', fontSize: '0.85rem', fontWeight: 600 }}>
-                ✓ Quality Gate Policy successfully updated.
+              <div style={{ padding: '0.75rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', borderRadius: 'var(--radius-md)', color: '#10b981', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Check size={14} /> Quality Gate Policy successfully updated.
               </div>
             )}
 
@@ -481,9 +485,12 @@ exit 0
                   fontSize: '0.8rem',
                   fontWeight: 600,
                   cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
                 }}
               >
-                {copiedSnippet ? '✓ Copied!' : 'Copy Snippet'}
+                {copiedSnippet ? <><Check size={14} /> Copied!</> : 'Copy Snippet'}
               </button>
             </div>
 
@@ -532,8 +539,9 @@ exit 0
               {currentSnippet}
             </pre>
 
-            <div style={{ padding: '0.75rem', backgroundColor: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', color: 'var(--primary)' }}>
-              💡 <strong>GitHub Code Scanning:</strong> Uploading the SARIF artifact embeds inline vulnerability alerts directly inside GitHub pull request diffs and the repository Security tab.
+            <div style={{ padding: '0.75rem', backgroundColor: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', color: 'var(--primary)', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+              <Lightbulb size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+              <span><strong>GitHub Code Scanning:</strong> Uploading the SARIF artifact embeds inline vulnerability alerts directly inside GitHub pull request diffs and the repository Security tab.</span>
             </div>
           </div>
         </div>

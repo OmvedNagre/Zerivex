@@ -3,9 +3,25 @@
 import { useState, use } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import SmoothScroll from '@/components/motion/SmoothScroll';
+import { AnnouncementBar } from '@/components/layout/AnnouncementBar';
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
+import { CopyButton } from '@/components/ui/CopyButton';
 import { getArticleBySlug } from '@/core/academy/academy-service';
 import { SupportedFramework } from '@/core/academy/types';
+import {
+  Clock,
+  ArrowRight,
+  ArrowLeft,
+  Bot,
+  AlertTriangle,
+  CheckCircle2,
+  Terminal,
+  Check,
+  X,
+  ListChecks,
+} from 'lucide-react';
 
 const FRAMEWORK_NAMES: Record<SupportedFramework, string> = {
   nextjs: 'Next.js (App Router)',
@@ -32,496 +48,676 @@ export default function ArticleReaderPage({
   const [activeFramework, setActiveFramework] = useState<SupportedFramework>(
     article.remediationSnippets[0]?.framework || 'nextjs'
   );
-  const [copiedCode, setCopiedCode] = useState(false);
-  const [copiedCli, setCopiedCli] = useState<number | null>(null);
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
+  const [selectedQuizOption, setSelectedQuizOption] = useState<number | null>(null);
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
 
   const activeSnippet =
     article.remediationSnippets.find((s) => s.framework === activeFramework) ||
     article.remediationSnippets[0];
 
-  function handleCopySnippet(code: string) {
-    navigator.clipboard.writeText(code);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2000);
-  }
-
-  function handleCopyCli(cmd: string, index: number) {
-    navigator.clipboard.writeText(cmd);
-    setCopiedCli(index);
-    setTimeout(() => setCopiedCli(null), 2000);
-  }
-
   function toggleChecklistItem(index: number) {
     setCheckedItems((prev) => ({ ...prev, [index]: !prev[index] }));
   }
 
+  const quizQuestion = {
+    question: `What is the primary architectural cause of ${article.title.toLowerCase()}?`,
+    options: [
+      'Insecure default settings and client/server boundary leakage in AI-generated snippets',
+      'Flaws in browser TLS certificate validation',
+      'Overclocked database query execution plans',
+      'Missing package.json license fields',
+    ],
+    correctAnswer: 0,
+    explanation:
+      'AI coding assistants frequently blend client and server boundaries or omit strict transport/input policies because they prioritize immediate functional rendering.',
+  };
+
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
-      {/* Top Header */}
-      <header
-        style={{
-          borderBottom: '1px solid var(--border-subtle)',
-          backgroundColor: 'var(--bg-header)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          padding: '0.85rem 1.5rem',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-          transition: 'background-color 0.25s ease, border-color 0.25s ease',
-        }}
-      >
-        <div
-          className="container"
-          style={{
-            maxWidth: '1000px',
-            margin: '0 auto',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-            <Link href="/academy" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              &larr; Back to Academy
-            </Link>
-            <span style={{ color: 'var(--border-subtle)' }}>|</span>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              {article.category.replace(/_/g, ' ')}
-            </span>
-          </div>
+    <SmoothScroll>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--ds-bg-page)' }}>
+        <AnnouncementBar
+          id="zx-article-banner"
+          message={`Reading playbook: ${article.title}. Multi-framework fixes included.`}
+          ctaLabel="All Playbooks"
+          ctaHref="/academy"
+          dismissible={true}
+        />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <ThemeToggle size="sm" />
+        <Header />
+
+        <div style={{ maxWidth: '1240px', margin: '0 auto', width: '100%', padding: '36px 24px 96px' }}>
+          {/* Breadcrumb / Back Navigation */}
+          <div style={{ marginBottom: '28px' }}>
             <Link
-              href="/dashboard"
+              href="/academy"
               style={{
-                backgroundColor: 'var(--accent-primary)',
-                color: '#fff',
-                padding: '0.4rem 0.85rem',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.85rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '13px',
                 fontWeight: 600,
+                color: 'var(--ds-text-secondary)',
                 textDecoration: 'none',
-                boxShadow: 'var(--shadow-sm)',
               }}
             >
-              Scan Your Target &rarr;
+              <ArrowLeft size={14} />
+              <span>Back to Security Academy</span>
             </Link>
           </div>
-        </div>
-      </header>
 
-      {/* Article Body */}
-      <main className="container" style={{ maxWidth: '900px', margin: '0 auto', padding: '3rem 1.5rem 5rem' }}>
-        {/* Meta badges */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <span
-            style={{
-              backgroundColor: 'rgba(37, 99, 235, 0.15)',
-              color: '#60a5fa',
-              padding: '0.2rem 0.5rem',
-              borderRadius: '4px',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-            }}
-          >
-            {article.difficulty}
-          </span>
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            ⏱️ {article.estimatedReadMinutes} min read
-          </span>
-          {article.relatedRuleIds.map((rule) => (
-            <span
-              key={rule}
-              style={{
-                fontFamily: 'monospace',
-                fontSize: '0.75rem',
-                backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                color: '#10b981',
-                padding: '0.2rem 0.5rem',
-                borderRadius: '4px',
-                fontWeight: 600,
-              }}
-            >
-              {rule}
-            </span>
-          ))}
-          {article.cweId && (
-            <span
-              style={{
-                fontSize: '0.75rem',
-                backgroundColor: 'rgba(148, 163, 184, 0.15)',
-                color: 'var(--text-secondary)',
-                padding: '0.2rem 0.5rem',
-                borderRadius: '4px',
-              }}
-            >
-              {article.cweId}
-            </span>
-          )}
-          {article.owaspCategory && (
-            <span
-              style={{
-                fontSize: '0.75rem',
-                backgroundColor: 'rgba(168, 85, 247, 0.15)',
-                color: '#c084fc',
-                padding: '0.2rem 0.5rem',
-                borderRadius: '4px',
-              }}
-            >
-              {article.owaspCategory}
-            </span>
-          )}
-        </div>
-
-        {/* Title & Summary */}
-        <h1
-          style={{
-            fontSize: '2.25rem',
-            fontWeight: 800,
-            letterSpacing: '-0.02em',
-            lineHeight: 1.3,
-            color: 'var(--text-primary)',
-            margin: '0 0 1rem 0',
-          }}
-        >
-          {article.title}
-        </h1>
-        <p
-          style={{
-            fontSize: '1.15rem',
-            color: 'var(--text-secondary)',
-            lineHeight: 1.6,
-            margin: '0 0 2rem 0',
-            borderBottom: '1px solid var(--border-subtle)',
-            paddingBottom: '1.75rem',
-          }}
-        >
-          {article.summary}
-        </p>
-
-        {/* Callout: Why AI Generates This */}
-        <div
-          style={{
-            backgroundColor: 'rgba(239, 68, 68, 0.08)',
-            border: '1px solid rgba(239, 68, 68, 0.25)',
-            borderRadius: '8px',
-            padding: '1.5rem',
-            marginBottom: '2.5rem',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '1.25rem' }}>🤖</span>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#f87171', margin: 0 }}>
-              Why AI Coding Assistants Introduce This Flaw
-            </h3>
-          </div>
-          <p style={{ fontSize: '0.95rem', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0 }}>
-            {article.aiPitfallDescription}
-          </p>
-        </div>
-
-        {/* Section: Technical Vulnerability Analysis */}
-        <section style={{ marginBottom: '2.5rem' }}>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>
-            Technical Vulnerability Analysis
-          </h2>
-          <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.7, margin: '0 0 1.5rem 0' }}>
-            {article.vulnerabilityAnalysis}
-          </p>
-
-          {/* Bad Code Example */}
           <div
             style={{
-              backgroundColor: '#0f172a',
-              borderRadius: '8px',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              overflow: 'hidden',
-              marginBottom: '1rem',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: '48px',
+              alignItems: 'start',
             }}
           >
-            <div
-              style={{
-                backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                padding: '0.6rem 1rem',
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                color: '#f87171',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-              }}
-            >
-              <span>✕</span> VULNERABLE IMPLEMENTATION (DO NOT USE)
-            </div>
-            <pre
-              style={{
-                margin: 0,
-                padding: '1.25rem',
-                color: '#f8fafc',
-                fontSize: '0.9rem',
-                lineHeight: 1.5,
-                overflowX: 'auto',
-                fontFamily: 'monospace',
-              }}
-            >
-              <code>{article.badCodeExample.code}</code>
-            </pre>
-          </div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-            {article.badCodeExample.explanation}
-          </div>
-        </section>
-
-        {/* Section: Framework Remediation Playbooks */}
-        <section style={{ marginBottom: '3rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Remediation Playbook & Code Fixes
-            </h2>
-            <div style={{ display: 'flex', gap: '0.35rem' }}>
-              {article.remediationSnippets.map((snippet) => (
-                <button
-                  key={snippet.framework}
-                  onClick={() => setActiveFramework(snippet.framework)}
+            {/* Left: Article Content */}
+            <main style={{ maxWidth: '820px' }}>
+              {/* Meta Chips */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', marginBottom: '20px' }}>
+                <span
                   style={{
-                    backgroundColor: activeFramework === snippet.framework ? 'var(--accent-primary)' : 'var(--bg-card)',
-                    color: activeFramework === snippet.framework ? '#fff' : 'var(--text-secondary)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '6px',
-                    padding: '0.35rem 0.75rem',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
+                    backgroundColor: 'var(--ds-bg-subtle)',
+                    color: 'var(--ds-text-primary)',
+                    padding: '3px 10px',
+                    borderRadius: 'var(--ds-radius-pill)',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
                   }}
                 >
-                  {FRAMEWORK_NAMES[snippet.framework] || snippet.framework}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {activeSnippet && (
-            <div
-              style={{
-                backgroundColor: '#0f172a',
-                borderRadius: '8px',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
-                overflow: 'hidden',
-                marginBottom: '1rem',
-              }}
-            >
-              <div
-                style={{
-                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                  padding: '0.6rem 1rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#34d399', fontSize: '0.8rem', fontWeight: 700 }}>
-                  <span>✓</span> SECURE PATCH ({activeSnippet.filename})
-                </div>
-                <button
-                  onClick={() => handleCopySnippet(activeSnippet.code)}
+                  {article.category.replace(/_/g, ' ')}
+                </span>
+                <span
                   style={{
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    border: 'none',
-                    color: '#fff',
-                    padding: '0.25rem 0.6rem',
-                    borderRadius: '4px',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
+                    backgroundColor: 'rgba(89, 221, 170, 0.15)',
+                    color: 'var(--ds-success)',
+                    padding: '3px 10px',
+                    borderRadius: 'var(--ds-radius-pill)',
+                    fontSize: '11px',
+                    fontWeight: 700,
                   }}
                 >
-                  {copiedCode ? '✓ Copied!' : 'Copy Code'}
-                </button>
-              </div>
-              <pre
-                style={{
-                  margin: 0,
-                  padding: '1.25rem',
-                  color: '#f8fafc',
-                  fontSize: '0.9rem',
-                  lineHeight: 1.5,
-                  overflowX: 'auto',
-                  fontFamily: 'monospace',
-                }}
-              >
-                <code>{activeSnippet.code}</code>
-              </pre>
-            </div>
-          )}
-
-          {activeSnippet && (
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
-              <strong>Why this works:</strong> {activeSnippet.explanation}
-            </p>
-          )}
-        </section>
-
-        {/* Section: CLI Diagnostic Commands */}
-        {article.cliVerification.length > 0 && (
-          <section style={{ marginBottom: '3rem' }}>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>
-              Local CLI Verification Commands
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {article.cliVerification.map((cmd, i) => (
-                <div
-                  key={i}
-                  style={{
-                    backgroundColor: 'var(--bg-card)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '8px',
-                    padding: '1.25rem',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {cmd.description}
-                    </div>
-                    <button
-                      onClick={() => handleCopyCli(cmd.command, i)}
-                      style={{
-                        background: 'none',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: '4px',
-                        padding: '0.2rem 0.5rem',
-                        fontSize: '0.75rem',
-                        color: 'var(--text-secondary)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {copiedCli === i ? '✓ Copied' : 'Copy'}
-                    </button>
-                  </div>
-                  <pre
+                  {article.difficulty}
+                </span>
+                <span style={{ fontSize: '12px', color: 'var(--ds-text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <Clock size={13} />
+                  <span>{article.estimatedReadMinutes} min read</span>
+                </span>
+                {article.cweId && (
+                  <span
                     style={{
-                      backgroundColor: '#0f172a',
-                      padding: '0.75rem 1rem',
-                      borderRadius: '6px',
-                      color: '#60a5fa',
-                      fontSize: '0.85rem',
-                      margin: '0 0 0.5rem 0',
-                      overflowX: 'auto',
-                      fontFamily: 'monospace',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '11px',
+                      backgroundColor: 'var(--ds-bg-card)',
+                      border: '1px solid var(--ds-border-subtle)',
+                      color: 'var(--ds-text-muted)',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
                     }}
                   >
-                    <code>{cmd.command}</code>
-                  </pre>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    <strong>Expected Output:</strong> <code>{cmd.expectedOutput}</code>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Section: Pre-Deployment Self-Audit Checklist */}
-        {article.checklist.length > 0 && (
-          <section style={{ marginBottom: '3.5rem' }}>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>
-              Pre-Deployment Self-Audit Checklist
-            </h2>
-            <div
-              style={{
-                backgroundColor: 'var(--bg-card)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '8px',
-                padding: '1.25rem',
-              }}
-            >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                {article.checklist.map((item, i) => {
-                  const isChecked = !!checkedItems[i];
-                  return (
-                    <label
-                      key={i}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: '0.75rem',
-                        cursor: 'pointer',
-                        userSelect: 'none',
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => toggleChecklistItem(i)}
-                        style={{ marginTop: '0.25rem', width: '16px', height: '16px', cursor: 'pointer' }}
-                      />
-                      <span
-                        style={{
-                          fontSize: '0.95rem',
-                          color: isChecked ? 'var(--text-secondary)' : 'var(--text-primary)',
-                          textDecoration: isChecked ? 'line-through' : 'none',
-                          lineHeight: 1.5,
-                        }}
-                      >
-                        {item}
-                      </span>
-                    </label>
-                  );
-                })}
+                    {article.cweId}
+                  </span>
+                )}
+                {article.relatedRuleIds.map((rule) => (
+                  <span
+                    key={rule}
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '11px',
+                      backgroundColor: 'rgba(255, 100, 45, 0.1)',
+                      color: 'var(--ds-action-brand)',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {rule}
+                  </span>
+                ))}
               </div>
-            </div>
-          </section>
-        )}
 
-        {/* Related Playbooks */}
-        {relatedArticles.length > 0 && (
-          <section style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '2.5rem' }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1.25rem' }}>
-              Related Security Playbooks
-            </h3>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-                gap: '1rem',
-              }}
-            >
-              {relatedArticles.map((rel) => (
-                <Link
-                  key={rel.id}
-                  href={`/academy/${rel.slug}`}
+              {/* Title & Summary */}
+              <h1
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'clamp(32px, 4.5vw, 48px)',
+                  fontWeight: 800,
+                  letterSpacing: '-0.03em',
+                  lineHeight: 1.15,
+                  color: 'var(--ds-text-primary)',
+                  margin: '0 0 16px',
+                }}
+              >
+                {article.title}
+              </h1>
+
+              <p
+                style={{
+                  fontSize: '18px',
+                  color: 'var(--ds-text-secondary)',
+                  lineHeight: 1.6,
+                  margin: '0 0 36px',
+                  paddingBottom: '28px',
+                  borderBottom: '1px solid var(--ds-border-subtle)',
+                }}
+              >
+                {article.summary}
+              </p>
+
+              {/* Section 1: AI Pitfall Callout */}
+              <section id="ai-pitfall" style={{ marginBottom: '40px' }}>
+                <div
                   style={{
-                    backgroundColor: 'var(--bg-card)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '8px',
-                    padding: '1.25rem',
-                    textDecoration: 'none',
-                    color: 'inherit',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
+                    backgroundColor: 'var(--ds-bg-subtle)',
+                    border: '1px solid var(--ds-border-default)',
+                    borderRadius: 'var(--ds-radius-lg)',
+                    padding: '24px',
+                    boxShadow: 'var(--ds-shadow-1)',
                   }}
                 >
-                  <div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.35rem' }}>
-                      {rel.difficulty}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <Bot size={20} style={{ color: 'var(--ds-action-brand)' }} />
+                    <h2 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: 'var(--ds-text-primary)' }}>
+                      Why AI coding tools introduce this vulnerability
+                    </h2>
+                  </div>
+                  <p style={{ fontSize: '14.5px', color: 'var(--ds-text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                    {article.aiPitfallDescription}
+                  </p>
+                </div>
+              </section>
+
+              {/* Section 2: Technical Vulnerability Analysis */}
+              <section id="technical-analysis" style={{ marginBottom: '48px' }}>
+                <h2
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: '24px',
+                    fontWeight: 700,
+                    color: 'var(--ds-text-primary)',
+                    margin: '0 0 14px',
+                  }}
+                >
+                  Technical Vulnerability Analysis
+                </h2>
+                <p style={{ fontSize: '15px', color: 'var(--ds-text-secondary)', lineHeight: 1.7, margin: '0 0 20px' }}>
+                  {article.vulnerabilityAnalysis}
+                </p>
+
+                {/* Insecure Example Card */}
+                <div
+                  style={{
+                    borderRadius: 'var(--ds-radius-lg)',
+                    backgroundColor: '#FFF7F7',
+                    border: '1px solid rgba(209, 0, 47, 0.25)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '12px 18px',
+                      backgroundColor: 'rgba(209, 0, 47, 0.06)',
+                      borderBottom: '1px solid rgba(209, 0, 47, 0.15)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--ds-danger)', fontWeight: 700, fontSize: '13px' }}>
+                      <AlertTriangle size={16} />
+                      <span>VULNERABLE IMPLEMENTATION (DO NOT USE)</span>
                     </div>
-                    <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: '0.5rem', lineHeight: 1.4 }}>
-                      {rel.title}
+                    <CopyButton value={article.badCodeExample.code} label="Copy code" />
+                  </div>
+                  <div style={{ padding: '18px', overflowX: 'auto' }} data-lenis-prevent>
+                    <pre style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: '13px', lineHeight: 1.6, color: '#6E1B24' }}>
+                      <code>{article.badCodeExample.code}</code>
+                    </pre>
+                  </div>
+                </div>
+                <div style={{ fontSize: '13px', color: 'var(--ds-text-muted)', fontStyle: 'italic', marginTop: '10px' }}>
+                  {article.badCodeExample.explanation}
+                </div>
+              </section>
+
+              {/* Section 3: Remediation Playbook (Before/After & Framework Tabs) */}
+              <section id="remediation-playbook" style={{ marginBottom: '48px' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '16px', marginBottom: '16px' }}>
+                  <h2
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontSize: '24px',
+                      fontWeight: 700,
+                      color: 'var(--ds-text-primary)',
+                      margin: 0,
+                    }}
+                  >
+                    Remediation Playbook &amp; Code Fixes
+                  </h2>
+
+                  {/* Framework Selector Pills */}
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {article.remediationSnippets.map((snippet) => (
+                      <button
+                        key={snippet.framework}
+                        type="button"
+                        onClick={() => setActiveFramework(snippet.framework)}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: 'var(--ds-radius-md)',
+                          border: '1px solid',
+                          borderColor: activeFramework === snippet.framework ? 'var(--ds-border-strong)' : 'var(--ds-border-subtle)',
+                          backgroundColor: activeFramework === snippet.framework ? 'var(--ds-bg-card)' : 'transparent',
+                          color: 'var(--ds-text-primary)',
+                          fontSize: '12.5px',
+                          fontWeight: activeFramework === snippet.framework ? 700 : 500,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {FRAMEWORK_NAMES[snippet.framework] || snippet.framework}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {activeSnippet && (
+                  <div
+                    style={{
+                      borderRadius: 'var(--ds-radius-lg)',
+                      backgroundColor: '#F5FCF8',
+                      border: '1px solid rgba(0, 159, 129, 0.25)',
+                      overflow: 'hidden',
+                      marginBottom: '16px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '12px 18px',
+                        backgroundColor: 'rgba(0, 159, 129, 0.06)',
+                        borderBottom: '1px solid rgba(0, 159, 129, 0.15)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--ds-success)', fontWeight: 700, fontSize: '13px' }}>
+                        <CheckCircle2 size={16} />
+                        <span>SECURE HARDENED PATCH ({activeSnippet.filename})</span>
+                      </div>
+                      <CopyButton value={activeSnippet.code} label="Copy patch" />
+                    </div>
+                    <div style={{ padding: '18px', overflowX: 'auto' }} data-lenis-prevent>
+                      <pre style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: '13px', lineHeight: 1.6, color: '#064E3B' }}>
+                        <code>{activeSnippet.code}</code>
+                      </pre>
                     </div>
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    ⏱️ {rel.estimatedReadMinutes} min read &rarr;
+                )}
+
+                {activeSnippet && (
+                  <p style={{ fontSize: '14px', color: 'var(--ds-text-secondary)', margin: 0, lineHeight: 1.6 }}>
+                    <strong style={{ color: 'var(--ds-text-primary)' }}>Why this fix works:</strong> {activeSnippet.explanation}
+                  </p>
+                )}
+              </section>
+
+              {/* Section 4: CLI Diagnostic Commands */}
+              {article.cliVerification.length > 0 && (
+                <section id="cli-verification" style={{ marginBottom: '48px' }}>
+                  <h2
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontSize: '24px',
+                      fontWeight: 700,
+                      color: 'var(--ds-text-primary)',
+                      margin: '0 0 16px',
+                    }}
+                  >
+                    Local CLI Verification Commands
+                  </h2>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {article.cliVerification.map((cmd, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          borderRadius: 'var(--ds-radius-lg)',
+                          backgroundColor: 'var(--ds-bg-ink)',
+                          color: 'var(--ds-text-on-ink)',
+                          padding: '20px',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ds-text-on-ink-dim)' }}>
+                            {cmd.description}
+                          </span>
+                          <CopyButton value={cmd.command} label="Copy command" />
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-mono)', fontSize: '13px', marginBottom: '10px' }}>
+                          <Terminal size={14} style={{ color: 'var(--ds-action-brand)' }} />
+                          <span style={{ color: '#ffffff' }}>{cmd.command}</span>
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--ds-text-on-ink-dim)' }}>
+                          Expected result: <span style={{ color: 'var(--ds-mint)', fontFamily: 'var(--font-mono)' }}>{cmd.expectedOutput}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
+                </section>
+              )}
+
+              {/* Section 5: Pre-Deployment Self-Audit Checklist */}
+              {article.checklist.length > 0 && (
+                <section id="checklist" style={{ marginBottom: '48px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                    <ListChecks size={20} style={{ color: 'var(--ds-action-brand)' }} />
+                    <h2
+                      style={{
+                        fontFamily: 'var(--font-display)',
+                        fontSize: '24px',
+                        fontWeight: 700,
+                        color: 'var(--ds-text-primary)',
+                        margin: 0,
+                      }}
+                    >
+                      Pre-Deployment Self-Audit Checklist
+                    </h2>
+                  </div>
+
+                  <div
+                    style={{
+                      borderRadius: 'var(--ds-radius-lg)',
+                      backgroundColor: 'var(--ds-bg-card)',
+                      border: '1px solid var(--ds-border-default)',
+                      padding: '20px 24px',
+                      boxShadow: 'var(--ds-shadow-1)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px',
+                    }}
+                  >
+                    {article.checklist.map((item, i) => {
+                      const isChecked = !!checkedItems[i];
+                      return (
+                        <label
+                          key={i}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '12px',
+                            cursor: 'pointer',
+                            userSelect: 'none',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleChecklistItem(i)}
+                            style={{
+                              marginTop: '3px',
+                              width: '16px',
+                              height: '16px',
+                              accentColor: 'var(--ds-action-brand)',
+                            }}
+                          />
+                          <span
+                            style={{
+                              fontSize: '14px',
+                              lineHeight: 1.5,
+                              color: isChecked ? 'var(--ds-text-muted)' : 'var(--ds-text-primary)',
+                              textDecoration: isChecked ? 'line-through' : 'none',
+                            }}
+                          >
+                            {item}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {/* Section 6: Knowledge Check Quiz */}
+              <section id="quiz" style={{ marginBottom: '48px' }}>
+                <h2
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: '24px',
+                    fontWeight: 700,
+                    color: 'var(--ds-text-primary)',
+                    margin: '0 0 16px',
+                  }}
+                >
+                  Knowledge Check: Verify Your Understanding
+                </h2>
+
+                <div
+                  style={{
+                    borderRadius: 'var(--ds-radius-lg)',
+                    backgroundColor: 'var(--ds-bg-card)',
+                    border: '1px solid var(--ds-border-default)',
+                    padding: '28px',
+                    boxShadow: 'var(--ds-shadow-1)',
+                  }}
+                >
+                  <p style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--ds-text-primary)', margin: '0 0 20px' }}>
+                    {quizQuestion.question}
+                  </p>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+                    {quizQuestion.options.map((opt, oIdx) => {
+                      const isSelected = selectedQuizOption === oIdx;
+                      const isCorrect = oIdx === quizQuestion.correctAnswer;
+                      let borderColor = 'var(--ds-border-subtle)';
+                      let bg = 'var(--ds-bg-subtle)';
+
+                      if (quizSubmitted) {
+                        if (isCorrect) {
+                          borderColor = 'var(--ds-success)';
+                          bg = 'rgba(0, 159, 129, 0.08)';
+                        } else if (isSelected) {
+                          borderColor = 'var(--ds-danger)';
+                          bg = 'rgba(209, 0, 47, 0.08)';
+                        }
+                      } else if (isSelected) {
+                        borderColor = 'var(--ds-border-strong)';
+                        bg = 'var(--ds-bg-card)';
+                      }
+
+                      return (
+                        <button
+                          key={oIdx}
+                          type="button"
+                          disabled={quizSubmitted}
+                          onClick={() => setSelectedQuizOption(oIdx)}
+                          style={{
+                            padding: '14px 18px',
+                            borderRadius: 'var(--ds-radius-md)',
+                            border: `1px solid ${borderColor}`,
+                            backgroundColor: bg,
+                            color: 'var(--ds-text-primary)',
+                            fontSize: '14px',
+                            textAlign: 'left',
+                            cursor: quizSubmitted ? 'default' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <span>{opt}</span>
+                          {quizSubmitted && isCorrect && <Check size={18} style={{ color: 'var(--ds-success)' }} />}
+                          {quizSubmitted && isSelected && !isCorrect && <X size={18} style={{ color: 'var(--ds-danger)' }} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {!quizSubmitted ? (
+                    <button
+                      type="button"
+                      disabled={selectedQuizOption === null}
+                      onClick={() => setQuizSubmitted(true)}
+                      style={{
+                        padding: '10px 20px',
+                        borderRadius: 'var(--ds-radius-md)',
+                        backgroundColor: 'var(--ds-action-brand)',
+                        color: 'var(--ds-on-brand)',
+                        fontWeight: 700,
+                        fontSize: '14px',
+                        border: 'none',
+                        cursor: selectedQuizOption === null ? 'not-allowed' : 'pointer',
+                        opacity: selectedQuizOption === null ? 0.6 : 1,
+                      }}
+                    >
+                      Submit Answer
+                    </button>
+                  ) : (
+                    <div
+                      style={{
+                        padding: '16px',
+                        borderRadius: 'var(--ds-radius-md)',
+                        backgroundColor: 'var(--ds-bg-subtle)',
+                        fontSize: '13.5px',
+                        lineHeight: 1.5,
+                        color: 'var(--ds-text-secondary)',
+                      }}
+                    >
+                      <strong style={{ color: 'var(--ds-text-primary)' }}>Explanation:</strong> {quizQuestion.explanation}
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* Bottom CTA: Launch Scan for this vulnerability */}
+              <div
+                style={{
+                  borderRadius: 'var(--ds-radius-xl)',
+                  backgroundColor: 'var(--ds-bg-ink)',
+                  color: 'var(--ds-text-on-ink)',
+                  padding: '36px',
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '24px',
+                }}
+              >
+                <div>
+                  <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#ffffff', margin: '0 0 6px', fontFamily: 'var(--font-display)' }}>
+                    Test your website for {article.relatedRuleIds[0] || 'this finding'}
+                  </h3>
+                  <p style={{ fontSize: '14px', color: 'var(--ds-text-on-ink-dim)', margin: 0 }}>
+                    Run our 14 deterministic engines to inspect your live deployment.
+                  </p>
+                </div>
+
+                <Link
+                  href="/login"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px 24px',
+                    borderRadius: 'var(--ds-radius-md)',
+                    backgroundColor: 'var(--ds-action-brand)',
+                    color: 'var(--ds-on-brand)',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <span>Launch scan for this flaw</span>
+                  <ArrowRight size={16} />
                 </Link>
-              ))}
-            </div>
-          </section>
-        )}
-      </main>
-    </div>
+              </div>
+            </main>
+
+            {/* Right: Sticky Table of Contents & Related */}
+            <aside style={{ position: 'sticky', top: '100px' }}>
+              <div
+                style={{
+                  borderRadius: 'var(--ds-radius-lg)',
+                  backgroundColor: 'var(--ds-bg-card)',
+                  border: '1px solid var(--ds-border-subtle)',
+                  padding: '24px',
+                  boxShadow: 'var(--ds-shadow-1)',
+                  marginBottom: '24px',
+                }}
+              >
+                <h3 style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--ds-text-muted)', marginBottom: '14px' }}>
+                  On This Page
+                </h3>
+                <nav style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <a href="#ai-pitfall" style={{ fontSize: '13px', color: 'var(--ds-text-secondary)', textDecoration: 'none' }}>
+                    1. Why AI Generates This
+                  </a>
+                  <a href="#technical-analysis" style={{ fontSize: '13px', color: 'var(--ds-text-secondary)', textDecoration: 'none' }}>
+                    2. Vulnerability Analysis
+                  </a>
+                  <a href="#remediation-playbook" style={{ fontSize: '13px', color: 'var(--ds-text-secondary)', textDecoration: 'none' }}>
+                    3. Code Remediation
+                  </a>
+                  <a href="#cli-verification" style={{ fontSize: '13px', color: 'var(--ds-text-secondary)', textDecoration: 'none' }}>
+                    4. CLI Commands
+                  </a>
+                  <a href="#checklist" style={{ fontSize: '13px', color: 'var(--ds-text-secondary)', textDecoration: 'none' }}>
+                    5. Audit Checklist
+                  </a>
+                  <a href="#quiz" style={{ fontSize: '13px', color: 'var(--ds-text-secondary)', textDecoration: 'none' }}>
+                    6. Knowledge Quiz
+                  </a>
+                </nav>
+              </div>
+
+              {/* Related Playbooks */}
+              {relatedArticles.length > 0 && (
+                <div
+                  style={{
+                    borderRadius: 'var(--ds-radius-lg)',
+                    backgroundColor: 'var(--ds-bg-card)',
+                    border: '1px solid var(--ds-border-subtle)',
+                    padding: '24px',
+                    boxShadow: 'var(--ds-shadow-1)',
+                  }}
+                >
+                  <h3 style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--ds-text-muted)', marginBottom: '14px' }}>
+                    Related Playbooks
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {relatedArticles.map((rel) => (
+                      <Link
+                        key={rel.id}
+                        href={`/academy/${rel.slug}`}
+                        style={{
+                          textDecoration: 'none',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '2px',
+                        }}
+                      >
+                        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ds-text-primary)' }}>
+                          {rel.title}
+                        </span>
+                        <span style={{ fontSize: '11px', color: 'var(--ds-text-muted)' }}>
+                          {rel.estimatedReadMinutes} min read
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </aside>
+          </div>
+        </div>
+
+        <Footer />
+      </div>
+    </SmoothScroll>
   );
 }

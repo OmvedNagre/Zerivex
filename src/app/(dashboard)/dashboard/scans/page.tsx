@@ -7,6 +7,9 @@ import { ScanMode } from '@/core/scanner/checks/types';
 import { ScansExecutionTable } from '@/components/dashboard/ScansExecutionTable';
 import { LaunchScanModal } from '@/components/dashboard/LaunchScanModal';
 
+import { Button } from '@/components/ui/Button';
+import { Plus, RefreshCw } from 'lucide-react';
+
 export default function ScansPage() {
   const [scans, setScans] = useState<ScanJobRecord[]>([]);
   const [targets, setTargets] = useState<Target[]>([]);
@@ -97,32 +100,72 @@ export default function ScansPage() {
       setLaunching(false);
     }
   };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+      {/* Page Header (eyebrow -> H1 -> subtitle -> brand CTA) */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: '24px',
+          flexWrap: 'wrap',
+        }}
+      >
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-            <span className="pulse-indicator" />
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'var(--font-mono)' }}>
-              Deterministic Engine
-            </span>
+          <div
+            style={{
+              fontSize: '12px',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              color: 'var(--ds-text-muted)',
+              marginBottom: '6px',
+            }}
+          >
+            Scans
           </div>
-          <h1 style={{ fontSize: '1.85rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '0.35rem' }}>
-            Security Assessment Scans
+          <h1
+            style={{
+              fontSize: '28px',
+              fontWeight: 800,
+              color: 'var(--ds-text-primary)',
+              letterSpacing: '-0.02em',
+              margin: '0 0 6px',
+              fontFamily: 'var(--font-display)',
+            }}
+          >
+            Scans
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', maxWidth: '650px' }}>
-            Evidence-based vulnerability scanning engine for modern web endpoints, analyzing headers, TLS ciphers, leaked tokens, and cloud misconfigurations.
+          <p
+            style={{
+              fontSize: '14px',
+              color: 'var(--ds-text-secondary)',
+              margin: 0,
+              maxWidth: '620px',
+            }}
+          >
+            Deterministic vulnerability scans analyzing headers, secrets, injection vectors, and cloud misconfigurations.
           </p>
         </div>
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="btn-cyber-primary"
-          style={{ height: '42px' }}
-        >
-          <span>+</span> Launch New Scan
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <Button
+            variant="secondary"
+            onClick={() => fetchData(false)}
+            icon={<RefreshCw size={14} className={isRefreshing ? 'zse-spin' : ''} />}
+          >
+            Refresh
+          </Button>
+          <Button
+            variant="brand"
+            onClick={() => setIsModalOpen(true)}
+            icon={<Plus size={16} />}
+          >
+            Launch New Scan
+          </Button>
+        </div>
       </div>
 
       {/* Component 7: ScansExecutionTable & ScoreBadges */}

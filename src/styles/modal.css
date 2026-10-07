@@ -1,0 +1,287 @@
+/* ==========================================================================
+   ZERIVEX — COMPONENT 13: SHARED MODAL / DIALOG SYSTEM
+   Styles for reusable modal primitive (Modal.tsx)
+   ========================================================================== */
+
+/* 1. BACKDROP / OVERLAY */
+.zmd-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background-color: rgba(7, 8, 10, 0.85);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="light"] .zmd-overlay,
+.light .zmd-overlay {
+  background-color: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+/* 2. DIALOG CONTAINER */
+.zmd-dialog {
+  position: relative;
+  width: 100%;
+  margin: auto;
+  background-color: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-xl);
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  max-height: min(90vh, 90dvh);
+  outline: none;
+  overflow: hidden;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+
+[data-theme="light"] .zmd-dialog,
+.light .zmd-dialog {
+  background-color: var(--surface);
+  border-color: var(--hairline);
+  box-shadow: var(--shadow-lg);
+  color: var(--ink);
+}
+
+/* 3. SIZE VARIANTS */
+.zmd-size-sm {
+  max-width: 440px;
+}
+
+.zmd-size-md {
+  max-width: 580px;
+}
+
+.zmd-size-lg {
+  max-width: 720px;
+}
+
+.zmd-size-xl {
+  max-width: 960px;
+}
+
+.zmd-size-full {
+  max-width: 1200px;
+}
+
+/* 4. MODAL HEADER */
+.zmd-header {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem 1.75rem 1.25rem 1.75rem;
+  border-bottom: 1px solid var(--hairline-soft);
+  flex-shrink: 0;
+  background-color: var(--surface);
+}
+
+[data-theme="light"] .zmd-header,
+.light .zmd-header {
+  background-color: #ffffff;
+  border-bottom-color: #e2e8f0;
+}
+
+.zmd-header-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.zmd-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--ink);
+  letter-spacing: -0.015em;
+  word-break: break-word;
+}
+
+[data-theme="light"] .zmd-title,
+.light .zmd-title {
+  color: #0f172a;
+}
+
+.zmd-description {
+  margin: 0.35rem 0 0 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--body-text);
+}
+
+[data-theme="light"] .zmd-description,
+.light .zmd-description {
+  color: #64748b;
+}
+
+/* 5. CLOSE BUTTON */
+.zmd-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -0.5rem -0.5rem 0 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background-color: transparent;
+  color: var(--mute);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--transition-fast, 0.15s ease);
+}
+
+.zmd-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+  border-color: var(--border-subtle, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme="light"] .zmd-close-btn:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.zmd-close-btn:active {
+  transform: scale(0.96);
+}
+
+.zmd-close-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  color: var(--ink);
+}
+
+[data-theme="light"] .zmd-close-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  color: #0f172a;
+}
+
+/* 6. MODAL BODY */
+.zmd-body {
+  flex: 1 1 auto;
+  padding: 1.5rem 1.75rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom internal scrollbar */
+.zmd-body::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.zmd-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.zmd-body::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+
+.zmd-body::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.28);
+}
+
+[data-theme="light"] .zmd-body::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.16);
+}
+
+[data-theme="light"] .zmd-body::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.28);
+}
+
+/* 7. MODAL FOOTER */
+.zmd-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1.25rem 1.75rem 1.5rem 1.75rem;
+  border-top: 1px solid var(--hairline-soft);
+  flex-shrink: 0;
+  background-color: var(--surface);
+}
+
+[data-theme="light"] .zmd-footer,
+.light .zmd-footer {
+  background-color: #ffffff;
+  border-top-color: #e2e8f0;
+}
+
+/* 8. MOBILE & RESPONSIVE BEHAVIOR */
+@media (max-width: 640px) {
+  .zmd-overlay {
+    padding: 0.75rem;
+    align-items: flex-end;
+  }
+
+  .zmd-dialog {
+    max-height: min(92vh, 92dvh);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .zmd-header {
+    padding: 1.25rem 1.25rem 1rem 1.25rem;
+  }
+
+  .zmd-body {
+    padding: 1.25rem;
+  }
+
+  .zmd-footer {
+    padding: 1rem 1.25rem 1.25rem 1.25rem;
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+  }
+
+  .zmd-footer > * {
+    width: 100%;
+  }
+}
+
+@media (max-width: 360px) {
+  .zmd-overlay {
+    padding: 0.5rem;
+  }
+
+  .zmd-title {
+    font-size: 1.05rem;
+  }
+
+  .zmd-header,
+  .zmd-body,
+  .zmd-footer {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* 9. REDUCED MOTION */
+@media (prefers-reduced-motion: reduce) {
+  .zmd-overlay,
+  .zmd-dialog,
+  .zmd-close-btn {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { Check } from 'lucide-react';
 
 interface InvitationDetails {
   id: string;
@@ -175,9 +176,12 @@ export default function InviteAcceptPage() {
                 marginBottom: '1rem',
                 fontSize: '0.95rem',
                 fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
               }}
             >
-              ✓ Invitation accepted! Redirecting to team dashboard...
+              <Check size={18} /> <span>Invitation accepted! Redirecting to team dashboard...</span>
             </div>
           </div>
         ) : invite ? (

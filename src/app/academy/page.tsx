@@ -2,9 +2,20 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import SmoothScroll from '@/components/motion/SmoothScroll';
+import { AnnouncementBar } from '@/components/layout/AnnouncementBar';
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 import { ACADEMY_ARTICLES, LEARNING_TRACKS } from '@/core/academy/academy-catalog';
 import { AcademyCategory, DifficultyLevel, LearningTrackId } from '@/core/academy/types';
+import {
+  Search,
+  Clock,
+  ArrowRight,
+  GraduationCap,
+  X,
+  Compass,
+} from 'lucide-react';
 
 const CATEGORY_LABELS: Record<AcademyCategory, string> = {
   AI_CODE_SMELLS: 'AI Code Smells',
@@ -12,12 +23,6 @@ const CATEGORY_LABELS: Record<AcademyCategory, string> = {
   INJECTION_DEFENSES: 'Injection Defenses',
   AUTHENTICATION_SESSION: 'Auth & Sessions',
   INFRASTRUCTURE_HEADERS: 'Security Headers',
-};
-
-const DIFFICULTY_COLORS: Record<DifficultyLevel, { bg: string; text: string; border: string }> = {
-  BEGINNER: { bg: 'rgba(16, 185, 129, 0.15)', text: '#10b981', border: 'rgba(16, 185, 129, 0.3)' },
-  INTERMEDIATE: { bg: 'rgba(245, 158, 11, 0.15)', text: '#f59e0b', border: 'rgba(245, 158, 11, 0.3)' },
-  ADVANCED: { bg: 'rgba(239, 68, 68, 0.15)', text: '#ef4444', border: 'rgba(239, 68, 68, 0.3)' },
 };
 
 export default function AcademyPage() {
@@ -60,484 +65,552 @@ export default function AcademyPage() {
     });
   }, [searchQuery, selectedCategory, selectedTrack, selectedDifficulty]);
 
+  const getDifficultyColor = (diff: DifficultyLevel) => {
+    if (diff === 'BEGINNER') return 'var(--ds-success)';
+    if (diff === 'INTERMEDIATE') return 'var(--ds-warning)';
+    return 'var(--ds-danger)';
+  };
+
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
-      {/* Navigation Header */}
-      <header
-        style={{
-          borderBottom: '1px solid var(--border-subtle)',
-          backgroundColor: 'var(--bg-header)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          padding: '0.85rem 1.5rem',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-          transition: 'background-color 0.25s ease, border-color 0.25s ease',
-        }}
-      >
-        <div
-          className="container"
-          style={{
-            maxWidth: '1200px',
-            margin: '0 auto',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}>
-              <span
+    <SmoothScroll>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--ds-bg-page)' }}>
+        <AnnouncementBar
+          id="zx-academy-banner"
+          message="Security Academy: 10 interactive playbooks engineered for software built with AI tools."
+          ctaLabel="Explore All Tracks"
+          ctaHref="#tracks-strip"
+          dismissible={true}
+        />
+
+        <Header />
+
+        <main style={{ flex: 1, padding: '48px 24px 96px', maxWidth: '1240px', margin: '0 auto', width: '100%' }}>
+          {/* Hero Header */}
+          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '4px 12px',
+                borderRadius: 'var(--ds-radius-pill)',
+                backgroundColor: 'var(--ds-bg-subtle)',
+                border: '1px solid var(--ds-border-default)',
+                fontSize: '12px',
+                fontWeight: 700,
+                color: 'var(--ds-text-primary)',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                marginBottom: '16px',
+              }}
+            >
+              <GraduationCap size={14} style={{ color: 'var(--ds-action-brand)' }} />
+              <span>Interactive Developer Academy</span>
+            </div>
+
+            <h1
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'clamp(34px, 5vw, 56px)',
+                fontWeight: 800,
+                lineHeight: 1.1,
+                letterSpacing: '-0.03em',
+                color: 'var(--ds-text-primary)',
+                margin: '0 0 16px',
+              }}
+            >
+              Security playbooks for AI builders.
+            </h1>
+
+            <p
+              style={{
+                fontSize: '18px',
+                color: 'var(--ds-text-secondary)',
+                maxWidth: '680px',
+                margin: '0 auto 32px',
+                lineHeight: 1.55,
+              }}
+            >
+              Master vulnerability remediation, understand real-world exploits, and test fixes with deterministic CLI commands across Next.js, Express, and Nginx.
+            </p>
+
+            {/* Search Input Bar */}
+            <div
+              style={{
+                maxWidth: '600px',
+                margin: '0 auto',
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <Search
+                size={18}
+                style={{
+                  position: 'absolute',
+                  left: '16px',
+                  color: 'var(--ds-text-muted)',
+                  pointerEvents: 'none',
+                }}
+              />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by vulnerability, CWE ID, framework, or keyword..."
+                aria-label="Search security playbooks"
+                style={{
+                  width: '100%',
+                  padding: '14px 16px 14px 46px',
+                  borderRadius: 'var(--ds-radius-lg)',
+                  border: '1px solid var(--ds-border-strong)',
+                  backgroundColor: 'var(--ds-bg-card)',
+                  color: 'var(--ds-text-primary)',
+                  fontSize: '15px',
+                  fontFamily: 'var(--font-sans)',
+                  boxShadow: 'var(--ds-shadow-1)',
+                  outline: 'none',
+                }}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear search"
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--ds-text-muted)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '4px',
+                  }}
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Choose-Your-Path Track Strip */}
+          <div id="tracks-strip" style={{ marginBottom: '56px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <Compass size={16} style={{ color: 'var(--ds-action-brand)' }} />
+              <h2
+                style={{
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  color: 'var(--ds-text-muted)',
+                  margin: 0,
+                }}
+              >
+                Choose Your Learning Track
+              </h2>
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                gap: '16px',
+              }}
+            >
+              {LEARNING_TRACKS.map((track) => {
+                const count = ACADEMY_ARTICLES.filter((a) => a.trackId === track.id).length;
+                const isSelected = selectedTrack === track.id;
+
+                return (
+                  <div
+                    key={track.id}
+                    onClick={() => setSelectedTrack(isSelected ? 'ALL' : track.id)}
+                    style={{
+                      padding: '20px',
+                      borderRadius: 'var(--ds-radius-lg)',
+                      backgroundColor: isSelected ? 'var(--ds-bg-card)' : 'var(--ds-bg-subtle)',
+                      border: isSelected ? '2px solid var(--ds-action-brand)' : '1px solid var(--ds-border-subtle)',
+                      boxShadow: isSelected ? 'var(--ds-shadow-sticker)' : 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ds-action-brand)', fontFamily: 'var(--font-mono)' }}>
+                          TRACK
+                        </span>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: 'var(--ds-radius-pill)',
+                            backgroundColor: 'var(--ds-bg-card)',
+                            border: '1px solid var(--ds-border-subtle)',
+                            color: 'var(--ds-text-secondary)',
+                          }}
+                        >
+                          {count} {count === 1 ? 'Guide' : 'Guides'}
+                        </span>
+                      </div>
+                      <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 6px', color: 'var(--ds-text-primary)' }}>
+                        {track.title}
+                      </h3>
+                      <p style={{ fontSize: '13px', color: 'var(--ds-text-secondary)', margin: 0, lineHeight: 1.45 }}>
+                        {track.description}
+                      </p>
+                    </div>
+
+                    <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: 'var(--ds-action-link)' }}>
+                      <span>{isSelected ? 'Track Selected' : 'Filter by track'}</span>
+                      <ArrowRight size={13} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Filter Pills Bar */}
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '16px',
+              marginBottom: '24px',
+              padding: '16px 20px',
+              backgroundColor: 'var(--ds-bg-card)',
+              borderRadius: 'var(--ds-radius-lg)',
+              border: '1px solid var(--ds-border-subtle)',
+              boxShadow: 'var(--ds-shadow-1)',
+            }}
+          >
+            {/* Category Pills */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setSelectedCategory('ALL')}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: 'var(--ds-radius-pill)',
+                  border: '1px solid',
+                  borderColor: selectedCategory === 'ALL' ? 'var(--ds-border-strong)' : 'var(--ds-border-subtle)',
+                  backgroundColor: selectedCategory === 'ALL' ? 'var(--ds-bg-ink)' : 'transparent',
+                  color: selectedCategory === 'ALL' ? '#ffffff' : 'var(--ds-text-primary)',
+                  fontSize: '13px',
+                  fontWeight: selectedCategory === 'ALL' ? 700 : 500,
+                  cursor: 'pointer',
+                }}
+              >
+                All ({ACADEMY_ARTICLES.length})
+              </button>
+
+              {(Object.keys(CATEGORY_LABELS) as AcademyCategory[]).map((cat) => {
+                const count = ACADEMY_ARTICLES.filter((a) => a.category === cat).length;
+                const isSelected = selectedCategory === cat;
+
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setSelectedCategory(isSelected ? 'ALL' : cat)}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: 'var(--ds-radius-pill)',
+                      border: '1px solid',
+                      borderColor: isSelected ? 'var(--ds-border-strong)' : 'var(--ds-border-subtle)',
+                      backgroundColor: isSelected ? 'var(--ds-bg-ink)' : 'transparent',
+                      color: isSelected ? '#ffffff' : 'var(--ds-text-primary)',
+                      fontSize: '13px',
+                      fontWeight: isSelected ? 700 : 500,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {CATEGORY_LABELS[cat]} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Difficulty Selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '13px', color: 'var(--ds-text-muted)' }}>Difficulty:</span>
+              <select
+                value={selectedDifficulty}
+                onChange={(e) => setSelectedDifficulty(e.target.value as any)}
+                aria-label="Filter playbooks by difficulty"
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: 'var(--ds-radius-md)',
+                  border: '1px solid var(--ds-border-default)',
+                  backgroundColor: 'var(--ds-bg-subtle)',
+                  color: 'var(--ds-text-primary)',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="ALL">All Levels</option>
+                <option value="BEGINNER">Beginner</option>
+                <option value="INTERMEDIATE">Intermediate</option>
+                <option value="ADVANCED">Advanced</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Result Count and Active Filters Notice */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '28px',
+              fontSize: '13.5px',
+              color: 'var(--ds-text-secondary)',
+            }}
+          >
+            <div>
+              Showing <strong>{filteredArticles.length}</strong> of {ACADEMY_ARTICLES.length} security playbooks
+              {selectedTrack !== 'ALL' && ' (Filtered by Track)'}
+            </div>
+
+            {(selectedCategory !== 'ALL' || selectedTrack !== 'ALL' || selectedDifficulty !== 'ALL' || searchQuery) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCategory('ALL');
+                  setSelectedTrack('ALL');
+                  setSelectedDifficulty('ALL');
+                  setSearchQuery('');
+                }}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: 'var(--radius-sm)',
-                  backgroundColor: 'var(--accent-primary)',
-                  color: '#fff',
-                  fontWeight: 700,
-                  fontSize: '0.9rem',
-                }}
-              >
-                Z
-              </span>
-              <span style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
-                ZERIVEX
-              </span>
-            </Link>
-            <nav style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
-              <Link href="/dashboard" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', textDecoration: 'none' }}>
-                Dashboard
-              </Link>
-              <Link href="/academy" style={{ color: 'var(--accent-primary)', fontSize: '0.9rem', fontWeight: 600, textDecoration: 'none' }}>
-                Academy
-              </Link>
-            </nav>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <ThemeToggle size="sm" />
-            <Link
-              href="/dashboard"
-              style={{
-                backgroundColor: 'var(--accent-primary)',
-                color: '#fff',
-                padding: '0.45rem 1rem',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                textDecoration: 'none',
-                boxShadow: 'var(--shadow-sm)',
-              }}
-            >
-              Launch Console →
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero Section */}
-      <section
-        style={{
-          padding: '3.5rem 1.5rem 2.5rem',
-          borderBottom: '1px solid var(--border-subtle)',
-          background: 'linear-gradient(180deg, rgba(37, 99, 235, 0.08) 0%, transparent 100%)',
-        }}
-      >
-        <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
-          <div
-            style={{
-              display: 'inline-block',
-              backgroundColor: 'rgba(37, 99, 235, 0.15)',
-              color: '#60a5fa',
-              border: '1px solid rgba(37, 99, 235, 0.3)',
-              padding: '0.25rem 0.75rem',
-              borderRadius: '9999px',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              marginBottom: '1rem',
-              letterSpacing: '0.04em',
-            }}
-          >
-            SECURITY ACADEMY & REMEDIATION PLAYBOOKS
-          </div>
-
-          <h1
-            style={{
-              fontSize: '2.5rem',
-              fontWeight: 800,
-              letterSpacing: '-0.03em',
-              marginBottom: '0.75rem',
-              color: 'var(--text-primary)',
-            }}
-          >
-            Securing Software Built with AI
-          </h1>
-          <p
-            style={{
-              fontSize: '1.1rem',
-              color: 'var(--text-secondary)',
-              maxWidth: '680px',
-              margin: '0 auto 2rem',
-              lineHeight: 1.6,
-            }}
-          >
-            Definitive guides, framework code patches, and CLI diagnostic tests for developers shipping with Cursor, Lovable, v0, Bolt, Claude Code, and Antigravity.
-          </p>
-
-          {/* Search Bar */}
-          <div style={{ maxWidth: '640px', margin: '0 auto', position: 'relative' }}>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by vulnerability, rule ID (e.g. ZX-CORS-001), tag, or CWE..."
-              style={{
-                width: '100%',
-                padding: '0.85rem 1.25rem',
-                fontSize: '1rem',
-                backgroundColor: 'var(--bg-card)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '8px',
-                color: 'var(--text-primary)',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                outline: 'none',
-              }}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                style={{
-                  position: 'absolute',
-                  right: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
+                  gap: '4px',
                   background: 'none',
                   border: 'none',
-                  color: 'var(--text-secondary)',
+                  color: 'var(--ds-action-link)',
+                  fontSize: '13px',
+                  fontWeight: 600,
                   cursor: 'pointer',
-                  fontWeight: 700,
                 }}
               >
-                ✕
+                <X size={14} />
+                <span>Reset all filters</span>
               </button>
             )}
           </div>
-        </div>
-      </section>
 
-      {/* Main Content Area */}
-      <main className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '2.5rem 1.5rem' }}>
-        {/* Learning Tracks Grid */}
-        <div style={{ marginBottom: '2.5rem' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-primary)' }}>
-            Curated Learning Tracks
-          </h2>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-              gap: '1rem',
-            }}
-          >
-            {LEARNING_TRACKS.map((track) => {
-              const isSelected = selectedTrack === track.id;
-              return (
-                <div
-                  key={track.id}
-                  onClick={() => setSelectedTrack(isSelected ? 'ALL' : track.id)}
+          {/* Articles Grid */}
+          {filteredArticles.length === 0 ? (
+            <div
+              style={{
+                padding: '64px 24px',
+                textAlign: 'center',
+                backgroundColor: 'var(--ds-bg-card)',
+                borderRadius: 'var(--ds-radius-xl)',
+                border: '1px solid var(--ds-border-subtle)',
+              }}
+            >
+              <GraduationCap size={40} style={{ color: 'var(--ds-text-muted)', marginBottom: '16px' }} />
+              <h3 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 8px', color: 'var(--ds-text-primary)' }}>
+                No matching security playbooks found
+              </h3>
+              <p style={{ fontSize: '14px', color: 'var(--ds-text-secondary)', margin: '0 0 20px' }}>
+                Try adjusting your search terms or clearing selected category and track filters.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCategory('ALL');
+                  setSelectedTrack('ALL');
+                  setSelectedDifficulty('ALL');
+                  setSearchQuery('');
+                }}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: 'var(--ds-radius-md)',
+                  backgroundColor: 'var(--ds-bg-subtle)',
+                  border: '1px solid var(--ds-border-default)',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Clear all filters
+              </button>
+            </div>
+          ) : (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                gap: '24px',
+              }}
+            >
+              {filteredArticles.map((article) => (
+                <Link
+                  key={article.slug}
+                  href={`/academy/${article.slug}`}
                   style={{
-                    backgroundColor: 'var(--bg-card)',
-                    border: isSelected ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
-                    borderRadius: '8px',
-                    padding: '1.25rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    boxShadow: isSelected ? '0 0 0 1px var(--accent-primary)' : 'none',
-                  }}
-                >
-                  <div style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>{track.icon}</div>
-                  <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
-                    {track.title}
-                  </div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.4, marginBottom: '0.75rem' }}>
-                    {track.description}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', fontWeight: 600 }}>
-                    {track.articleSlugs.length} Guides in Track &rarr;
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Filters Row */}
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '0.75rem',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '2rem',
-            borderBottom: '1px solid var(--border-subtle)',
-            paddingBottom: '1.25rem',
-          }}
-        >
-          {/* Category Tabs */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <button
-              onClick={() => setSelectedCategory('ALL')}
-              style={{
-                backgroundColor: selectedCategory === 'ALL' ? 'var(--accent-primary)' : 'var(--bg-card)',
-                color: selectedCategory === 'ALL' ? '#fff' : 'var(--text-secondary)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '6px',
-                padding: '0.4rem 0.85rem',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              All Guides ({ACADEMY_ARTICLES.length})
-            </button>
-            {(Object.keys(CATEGORY_LABELS) as AcademyCategory[]).map((cat) => {
-              const count = ACADEMY_ARTICLES.filter((a) => a.category === cat).length;
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(selectedCategory === cat ? 'ALL' : cat)}
-                  style={{
-                    backgroundColor: selectedCategory === cat ? 'var(--accent-primary)' : 'var(--bg-card)',
-                    color: selectedCategory === cat ? '#fff' : 'var(--text-secondary)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '6px',
-                    padding: '0.4rem 0.85rem',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {CATEGORY_LABELS[cat]} ({count})
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Difficulty Dropdown */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Difficulty:</span>
-            <select
-              value={selectedDifficulty}
-              onChange={(e) => setSelectedDifficulty(e.target.value as any)}
-              style={{
-                backgroundColor: 'var(--bg-card)',
-                border: '1px solid var(--border-subtle)',
-                color: 'var(--text-primary)',
-                padding: '0.35rem 0.65rem',
-                borderRadius: '6px',
-                fontSize: '0.85rem',
-              }}
-            >
-              <option value="ALL">All Levels</option>
-              <option value="BEGINNER">Beginner</option>
-              <option value="INTERMEDIATE">Intermediate</option>
-              <option value="ADVANCED">Advanced</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Results Counter */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-            Showing <strong>{filteredArticles.length}</strong> security playbooks
-            {selectedCategory !== 'ALL' && ` in ${CATEGORY_LABELS[selectedCategory]}`}
-            {selectedTrack !== 'ALL' && ` (filtered by Track)`}
-          </div>
-          {(selectedCategory !== 'ALL' || selectedTrack !== 'ALL' || selectedDifficulty !== 'ALL' || searchQuery) && (
-            <button
-              onClick={() => {
-                setSelectedCategory('ALL');
-                setSelectedTrack('ALL');
-                setSelectedDifficulty('ALL');
-                setSearchQuery('');
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--accent-primary)',
-                fontSize: '0.85rem',
-                cursor: 'pointer',
-                fontWeight: 600,
-              }}
-            >
-              Reset Filters ✕
-            </button>
-          )}
-        </div>
-
-        {/* Articles Grid */}
-        {filteredArticles.length === 0 ? (
-          <div
-            style={{
-              padding: '4rem 2rem',
-              textAlign: 'center',
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '8px',
-            }}
-          >
-            <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🔍</div>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>
-              No Guides Match Your Criteria
-            </h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '420px', margin: '0 auto 1.5rem' }}>
-              Try searching for a different keyword or resetting your category and difficulty filters.
-            </p>
-            <button
-              onClick={() => {
-                setSelectedCategory('ALL');
-                setSelectedTrack('ALL');
-                setSelectedDifficulty('ALL');
-                setSearchQuery('');
-              }}
-              style={{
-                backgroundColor: 'var(--accent-primary)',
-                color: '#fff',
-                border: 'none',
-                padding: '0.6rem 1.2rem',
-                borderRadius: '6px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              Show All Guides
-            </button>
-          </div>
-        ) : (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
-              gap: '1.5rem',
-            }}
-          >
-            {filteredArticles.map((article) => {
-              const diffStyle = DIFFICULTY_COLORS[article.difficulty];
-              return (
-                <div
-                  key={article.id}
-                  style={{
-                    backgroundColor: 'var(--bg-card)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '8px',
-                    padding: '1.5rem',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
-                    transition: 'border-color 0.15s ease',
+                    padding: '28px',
+                    borderRadius: 'var(--ds-radius-lg)',
+                    backgroundColor: 'var(--ds-bg-card)',
+                    border: '1px solid var(--ds-border-subtle)',
+                    boxShadow: 'var(--ds-shadow-1)',
+                    textDecoration: 'none',
+                    transition: 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = 'var(--ds-shadow-sticker)';
+                    e.currentTarget.style.borderColor = 'var(--ds-border-strong)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'none';
+                    e.currentTarget.style.boxShadow = 'var(--ds-shadow-1)';
+                    e.currentTarget.style.borderColor = 'var(--ds-border-subtle)';
                   }}
                 >
                   <div>
-                    {/* Top Badges */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
+                    {/* Header Chips */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                       <span
                         style={{
-                          backgroundColor: diffStyle.bg,
-                          color: diffStyle.text,
-                          border: `1px solid ${diffStyle.border}`,
-                          padding: '0.15rem 0.5rem',
-                          borderRadius: '4px',
-                          fontSize: '0.7rem',
+                          fontSize: '11px',
                           fontWeight: 700,
                           textTransform: 'uppercase',
+                          letterSpacing: '0.06em',
+                          padding: '3px 8px',
+                          borderRadius: 'var(--ds-radius-sm)',
+                          backgroundColor: 'var(--ds-bg-subtle)',
+                          color: 'var(--ds-text-primary)',
                         }}
                       >
-                        {article.difficulty}
+                        {CATEGORY_LABELS[article.category]}
                       </span>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                        ⏱️ {article.estimatedReadMinutes} min read
-                      </span>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {article.cweId && (
+                          <span
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '11px',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              backgroundColor: 'var(--ds-bg-subtle)',
+                              color: 'var(--ds-text-muted)',
+                            }}
+                          >
+                            {article.cweId}
+                          </span>
+                        )}
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: getDifficultyColor(article.difficulty),
+                          }}
+                        >
+                          &bull; {article.difficulty}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Title */}
-                    <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 0.6rem 0', lineHeight: 1.4 }}>
-                      <Link
-                        href={`/academy/${article.slug}`}
-                        style={{ color: 'inherit', textDecoration: 'none' }}
-                      >
-                        {article.title}
-                      </Link>
+                    <h3
+                      style={{
+                        fontFamily: 'var(--font-display)',
+                        fontSize: '19px',
+                        fontWeight: 700,
+                        lineHeight: 1.35,
+                        color: 'var(--ds-text-primary)',
+                        margin: '0 0 10px',
+                      }}
+                    >
+                      {article.title}
                     </h3>
 
                     {/* Summary */}
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 1rem 0' }}>
+                    <p
+                      style={{
+                        fontSize: '14px',
+                        lineHeight: 1.55,
+                        color: 'var(--ds-text-secondary)',
+                        margin: '0 0 16px',
+                      }}
+                    >
                       {article.summary}
                     </p>
 
-                    {/* Rules & Standards Tags */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.25rem' }}>
-                      {article.relatedRuleIds.map((rule) => (
+                    {/* Tags */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
+                      {article.tags.slice(0, 3).map((tag, tIdx) => (
                         <span
-                          key={rule}
+                          key={tIdx}
                           style={{
-                            fontFamily: 'monospace',
-                            fontSize: '0.75rem',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            color: '#60a5fa',
-                            padding: '0.15rem 0.4rem',
-                            borderRadius: '3px',
+                            fontSize: '11px',
+                            color: 'var(--ds-text-muted)',
+                            backgroundColor: 'var(--ds-bg-subtle)',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
                           }}
                         >
-                          {rule}
+                          #{tag}
                         </span>
                       ))}
-                      {article.cweId && (
-                        <span
-                          style={{
-                            fontSize: '0.75rem',
-                            backgroundColor: 'rgba(148, 163, 184, 0.1)',
-                            color: 'var(--text-secondary)',
-                            padding: '0.15rem 0.4rem',
-                            borderRadius: '3px',
-                          }}
-                        >
-                          {article.cweId}
-                        </span>
-                      )}
                     </div>
                   </div>
 
-                  {/* Bottom Action */}
-                  <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      {CATEGORY_LABELS[article.category]}
-                    </span>
-                    <Link
-                      href={`/academy/${article.slug}`}
+                  {/* Footer Meta */}
+                  <div
+                    style={{
+                      paddingTop: '16px',
+                      borderTop: '1px solid var(--ds-border-subtle)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      fontSize: '12px',
+                      color: 'var(--ds-text-muted)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Clock size={13} />
+                      <span>{article.estimatedReadMinutes} min read</span>
+                    </div>
+
+                    <span
                       style={{
-                        color: 'var(--accent-primary)',
+                        color: 'var(--ds-action-link)',
                         fontWeight: 600,
-                        fontSize: '0.85rem',
-                        textDecoration: 'none',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.25rem',
+                        gap: '4px',
                       }}
                     >
-                      Read Playbook &rarr;
-                    </Link>
+                      <span>Read playbook</span>
+                      <ArrowRight size={14} />
+                    </span>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </main>
-    </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </main>
+
+        <Footer />
+      </div>
+    </SmoothScroll>
   );
 }

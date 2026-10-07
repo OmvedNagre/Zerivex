@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { WebhookRecord, WebhookDeliveryRecord } from '@/core/webhooks/webhook-repository';
+import { ArrowLeft, Key, Zap, CheckCircle2, XCircle } from 'lucide-react';
 
 export default function WebhooksSettingsPage() {
   const [webhooks, setWebhooks] = useState<WebhookRecord[]>([]);
@@ -26,7 +27,7 @@ export default function WebhooksSettingsPage() {
   const [deliveries, setDeliveries] = useState<WebhookDeliveryRecord[]>([]);
   const [loadingDeliveries, setLoadingDeliveries] = useState(false);
   const [testingId, setTestingId] = useState<string | null>(null);
-  const [testResult, setTestResult] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const fetchWebhooks = useCallback(async () => {
     try {
@@ -95,16 +96,16 @@ export default function WebhooksSettingsPage() {
       if (!res.ok) throw new Error(data.error || 'Test ping failed');
       const r = data.data;
       if (r.success) {
-        setTestResult(`✅ Ping succeeded (HTTP ${r.statusCode}, ${r.responseTimeMs}ms)`);
+        setTestResult({ success: true, message: `Ping succeeded (HTTP ${r.statusCode}, ${r.responseTimeMs}ms)` });
       } else {
-        setTestResult(`❌ Ping failed (HTTP ${r.statusCode || 'N/A'}: ${r.errorMessage})`);
+        setTestResult({ success: false, message: `Ping failed (HTTP ${r.statusCode || 'N/A'}: ${r.errorMessage})` });
       }
       fetchWebhooks();
       if (selectedWebhook?.id === id) {
         fetchDeliveries(selectedWebhook);
       }
     } catch (err) {
-      setTestResult(`❌ Ping failed: ${(err as Error).message}`);
+      setTestResult({ success: false, message: `Ping failed: ${(err as Error).message}` });
     } finally {
       setTestingId(null);
     }
@@ -137,9 +138,9 @@ export default function WebhooksSettingsPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
             <Link
               href="/dashboard/targets"
-              style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.85rem' }}
+              style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
             >
-              ← Dashboard
+              <ArrowLeft size={14} /> Dashboard
             </Link>
             <span style={{ color: 'var(--text-tertiary)' }}>/</span>
             <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Developer Settings</span>
@@ -184,9 +185,12 @@ export default function WebhooksSettingsPage() {
             fontWeight: 600,
             color: 'var(--text-secondary)',
             textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
           }}
         >
-          🔑 API Keys
+          <Key size={14} /> API Keys
         </Link>
         <Link
           href="/dashboard/settings/webhooks"
@@ -198,15 +202,19 @@ export default function WebhooksSettingsPage() {
             backgroundColor: 'var(--bg-secondary)',
             color: 'var(--text-primary)',
             textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
           }}
         >
-          ⚡ Outbound Webhooks
+          <Zap size={14} /> Outbound Webhooks
         </Link>
       </div>
 
       {testResult && (
-        <div style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', backgroundColor: 'var(--bg-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
-          {testResult}
+        <div style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', backgroundColor: 'var(--bg-secondary)', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', color: testResult.success ? '#10b981' : '#ef4444' }}>
+          {testResult.success ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+          <span>{testResult.message}</span>
         </div>
       )}
 

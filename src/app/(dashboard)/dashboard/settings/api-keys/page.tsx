@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { ApiKeyRecord } from '@/core/auth/api-key-service';
+import { ArrowLeft, Key, Zap, Lock, Check, Plus } from 'lucide-react';
 
 export default function ApiKeysSettingsPage() {
   const [apiKeys, setApiKeys] = useState<ApiKeyRecord[]>([]);
@@ -111,9 +112,9 @@ export default function ApiKeysSettingsPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
             <Link
               href="/dashboard/targets"
-              style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.85rem' }}
+              style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
             >
-              ← Dashboard
+              <ArrowLeft size={14} /> Dashboard
             </Link>
             <span style={{ color: 'var(--text-tertiary)' }}>/</span>
             <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Developer Settings</span>
@@ -143,7 +144,7 @@ export default function ApiKeysSettingsPage() {
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           }}
         >
-          <span>+</span> Generate New API Key
+          <Plus size={16} /> Generate New API Key
         </button>
       </div>
 
@@ -159,9 +160,12 @@ export default function ApiKeysSettingsPage() {
             backgroundColor: 'var(--bg-secondary)',
             color: 'var(--text-primary)',
             textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
           }}
         >
-          🔑 API Keys
+          <Key size={14} /> API Keys
         </Link>
         <Link
           href="/dashboard/settings/webhooks"
@@ -172,9 +176,12 @@ export default function ApiKeysSettingsPage() {
             fontWeight: 600,
             color: 'var(--text-secondary)',
             textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
           }}
         >
-          ⚡ Outbound Webhooks
+          <Zap size={14} /> Outbound Webhooks
         </Link>
       </div>
 
@@ -445,7 +452,7 @@ export default function ApiKeysSettingsPage() {
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '1rem' }}>
           <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid #10b981', borderRadius: 'var(--radius-lg)', width: '100%', maxWidth: '580px', padding: '1.75rem', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.3)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '1.5rem' }}>🔐</span>
+              <Lock size={20} style={{ color: '#10b981' }} />
               <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                 API Key Successfully Created
               </h3>
@@ -483,9 +490,13 @@ export default function ApiKeysSettingsPage() {
                   fontSize: '0.85rem',
                   cursor: 'pointer',
                   minWidth: '100px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.35rem',
                 }}
               >
-                {copied ? '✓ Copied!' : 'Copy Key'}
+                {copied ? <><Check size={14} /> Copied!</> : 'Copy Key'}
               </button>
             </div>
 

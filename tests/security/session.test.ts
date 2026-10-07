@@ -14,6 +14,8 @@ describe('Server-Side Session Security & Revocation Controls', () => {
   let testUserId: string;
 
   beforeAll(async () => {
+    // Clean up any stale user from previous runs
+    await query("DELETE FROM users WHERE email = 'session-tester@zerivex.local'");
     // Create a test user
     const res = await query<{ id: string }>(
       "INSERT INTO users (email, display_name, role) VALUES ('session-tester@zerivex.local', 'Session Tester', 'USER') RETURNING id"

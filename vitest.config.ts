@@ -17,6 +17,7 @@ export default defineConfig({
     include: ['tests/**/*.test.{ts,tsx}'],
     fileParallelism: false,
     testTimeout: 20000,
+    hookTimeout: 30000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

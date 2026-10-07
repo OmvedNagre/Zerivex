@@ -1,9 +1,26 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  Search,
+  CheckCircle2,
+  AlertTriangle,
+  RefreshCw,
+  Plus,
+  ChevronDown,
+  ChevronUp,
+  Layers,
+} from 'lucide-react';
 import { getRemediationForRule, RuleRemediation } from '@/core/remediation/remediation-catalog';
 import { FindingsAccordionCard } from '@/components/dashboard/FindingsAccordionCard';
+import { FrameworkRemediationModal } from '@/components/dashboard/FrameworkRemediationModal';
+import { SeverityBadge } from '@/components/dashboard/SeverityBadge';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import {
+  adaptFindingGroups,
+  FindingGroupItem,
+} from '@/adapters/dashboard-adapters';
 
 interface FindingItem {
   id: string;
@@ -36,38 +53,28 @@ export default function FindingsPage() {
   const [severityFilter, setSeverityFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedFindings, setExpandedFindings] = useState<Record<string, boolean>>({});
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   // Status modal
   const [selectedFinding, setSelectedFinding] = useState<FindingItem | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<FindingGroupItem | null>(null);
   const [newStatus, setNewStatus] = useState<string>('OPEN');
   const [riskReason, setRiskReason] = useState<string>('');
   const [updating, setUpdating] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
   const [updateError, setUpdateError] = useState<string | null>(null);
-
-  // Collaboration modal & comments
-  const [collabFinding, setCollabFinding] = useState<FindingItem | null>(null);
-  const [collabComments, setCollabComments] = useState<any[]>([]);
-  const [collabLoading, setCollabLoading] = useState(false);
-  const [collabError, setCollabError] = useState<string | null>(null);
-  const [newCommentText, setNewCommentText] = useState('');
-  const [postingComment, setPostingComment] = useState(false);
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
-  const [assigning, setAssigning] = useState(false);
 
   // Remediation & Fix Verification Modal
   const [remediationFinding, setRemediationFinding] = useState<FindingItem | null>(null);
   const [remediationData, setRemediationData] = useState<RuleRemediation | null>(null);
-  const [activeFramework, setActiveFramework] = useState<'nextjs' | 'express' | 'nginx'>('nextjs');
   const [verifyingFix, setVerifyingFix] = useState(false);
   const [verifyingFindingId, setVerifyingFindingId] = useState<string | null>(null);
-  const [fixResult, setFixResult] = useState<{ fixed: boolean; diagnostic: string } | null>(null);
   const [fixResults, setFixResults] = useState<Record<string, { fixed: boolean; diagnostic: string }>>({});
-  const [copiedCli, setCopiedCli] = useState(false);
 
   const fetchFindings = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       const params = new URLSearchParams();
       if (severityFilter !== 'ALL') params.set('severity', severityFilter);
       if (statusFilter !== 'ALL') params.set('status', statusFilter);
@@ -78,9 +85,8 @@ export default function FindingsPage() {
         throw new Error(data.error || 'Failed to fetch findings');
       }
       setFindings(data.data.findings || []);
-      setError(null);
-    } catch (err) {
-      setError((err as Error).message);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load findings');
     } finally {
       setLoading(false);
     }
@@ -90,177 +96,70 @@ export default function FindingsPage() {
     fetchFindings();
   }, [fetchFindings]);
 
-  const toggleExpand = (findingId: string) => {
-    setExpandedFindings((prev) => ({
+  // Adapt and group findings
+  const { groups, stats } = useMemo(() => {
+    return adaptFindingGroups(findings);
+  }, [findings]);
+
+  // Filter groups by search query
+  const filteredGroups = useMemo(() => {
+    if (!searchQuery.trim()) return groups;
+    const q = searchQuery.toLowerCase();
+    return groups.filter(
+      (g) =>
+        g.title.toLowerCase().includes(q) ||
+        g.ruleId.toLowerCase().includes(q) ||
+        g.endpoint.toLowerCase().includes(q) ||
+        g.targetUrl.toLowerCase().includes(q)
+    );
+  }, [groups, searchQuery]);
+
+  const toggleGroupExpand = (groupKey: string) => {
+    setExpandedGroups((prev) => ({
       ...prev,
-      [findingId]: !prev[findingId],
+      [groupKey]: !prev[groupKey],
     }));
   };
 
-  const handleOpenStatusModal = (f: FindingItem) => {
-    setSelectedFinding(f);
-    setNewStatus(f.status);
-    setRiskReason(f.acceptedRiskReason || '');
-    setUpdateError(null);
-  };
-
-  const handleOpenCollabModal = async (finding: FindingItem) => {
-    setCollabFinding(finding);
-    setCollabLoading(true);
-    setCollabError(null);
-    setNewCommentText('');
-    try {
-      const [commentsRes, membersRes] = await Promise.all([
-        fetch(`/api/findings/${finding.id}/comments`),
-        fetch('/api/teams/members'),
-      ]);
-      const commentsData = await commentsRes.json();
-      const membersData = await membersRes.json();
-
-      if (commentsData.success) {
-        setCollabComments(commentsData.data.comments);
-      }
-      if (membersData.success) {
-        setTeamMembers(membersData.data.members);
-      }
-    } catch (err: any) {
-      setCollabError(err?.message || 'Failed to load comments');
-    } finally {
-      setCollabLoading(false);
-    }
-  };
-
-  const handleAddComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!collabFinding || !newCommentText.trim()) return;
-    setPostingComment(true);
-    setCollabError(null);
-    try {
-      const res = await fetch(`/api/findings/${collabFinding.id}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: newCommentText.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setCollabError(data.error || 'Failed to post comment');
-        return;
-      }
-      setCollabComments((prev) => [...prev, data.data.comment]);
-      setNewCommentText('');
-    } catch (err: any) {
-      setCollabError(err?.message || 'Error posting comment');
-    } finally {
-      setPostingComment(false);
-    }
-  };
-
-  const handleAssignUser = async (userId: string | null) => {
-    if (!collabFinding) return;
-    setAssigning(true);
-    setCollabError(null);
-    try {
-      const res = await fetch(`/api/findings/${collabFinding.id}/assign`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignedUserId: userId || null }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setCollabError(data.error || 'Failed to assign finding');
-        return;
-      }
-
-      setCollabFinding((prev) =>
-        prev
-          ? {
-              ...prev,
-              assignedUserId: data.data.assignedUserId,
-              assignedUserEmail: data.data.assignedUserEmail,
-              assignedUserName: data.data.assignedUserName,
-            }
-          : null
-      );
-
-      setFindings((prev) =>
-        prev.map((f) =>
-          f.id === collabFinding.id
-            ? {
-                ...f,
-                assignedUserId: data.data.assignedUserId,
-                assignedUserEmail: data.data.assignedUserEmail,
-                assignedUserName: data.data.assignedUserName,
-              }
-            : f
-        )
-      );
-
-      // Refresh comments to display new system note
-      const commentsRes = await fetch(`/api/findings/${collabFinding.id}/comments`);
-      const commentsData = await commentsRes.json();
-      if (commentsData.success) {
-        setCollabComments(commentsData.data.comments);
-      }
-    } catch (err: any) {
-      setCollabError(err?.message || 'Error assigning finding');
-    } finally {
-      setAssigning(false);
-    }
-  };
-
-  const handleOpenRemediationModal = (finding: FindingItem) => {
+  const handleOpenRemediation = (finding: FindingItem) => {
     const data = getRemediationForRule(finding.ruleId);
     setRemediationFinding(finding);
     setRemediationData(data);
-    setFixResult(null);
-    setCopiedCli(false);
-
-    if (data.frameworks.nextjs) setActiveFramework('nextjs');
-    else if (data.frameworks.express) setActiveFramework('express');
-    else if (data.frameworks.nginx) setActiveFramework('nginx');
   };
 
   const handleVerifyFix = async (findingId: string) => {
     setVerifyingFix(true);
     setVerifyingFindingId(findingId);
-    setFixResult(null);
 
     try {
-      const res = await fetch(`/api/findings/${findingId}/verify`, {
-        method: 'POST',
-      });
+      const res = await fetch(`/api/findings/${findingId}/verify`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || 'Failed to verify fix');
       }
 
-      const resObj = {
-        fixed: data.data.fixed,
-        diagnostic: data.data.diagnostic,
-      };
-      setFixResult(resObj);
+      const resObj = { fixed: data.data.fixed, diagnostic: data.data.diagnostic };
       setFixResults((prev) => ({ ...prev, [findingId]: resObj }));
 
       const updatedStatus = data.data.fixed ? 'FIXED' : data.data.newStatus;
       setFindings((prev) =>
         prev.map((f) => (f.id === findingId ? { ...f, status: updatedStatus } : f))
       );
-    } catch (err) {
-      const errObj = {
-        fixed: false,
-        diagnostic: (err as Error).message,
-      };
-      setFixResult(errObj);
-      setFixResults((prev) => ({ ...prev, [findingId]: errObj }));
+    } catch (err: any) {
+      setFixResults((prev) => ({
+        ...prev,
+        [findingId]: { fixed: false, diagnostic: err.message || 'Verification failed' },
+      }));
     } finally {
       setVerifyingFix(false);
       setVerifyingFindingId(null);
     }
   };
 
+  // Status update (single or batch)
   const handleUpdateStatus = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedFinding) return;
+    if (!selectedFinding && !selectedGroup) return;
 
     if (newStatus === 'ACCEPTED_RISK' && !riskReason.trim()) {
       setUpdateError('An explicit business justification is required for accepted risks.');
@@ -270,922 +169,617 @@ export default function FindingsPage() {
     try {
       setUpdating(true);
       setUpdateError(null);
-      const res = await fetch(`/api/findings/${selectedFinding.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: newStatus,
-          acceptedRiskReason: newStatus === 'ACCEPTED_RISK' ? riskReason : null,
-        }),
-      });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to update finding status');
+      if (selectedGroup) {
+        // Batch apply sequentially to all occurrences with progress tracking
+        const items = selectedGroup.occurrences;
+        let failCount = 0;
+
+        for (let i = 0; i < items.length; i++) {
+          setBatchProgress({ current: i + 1, total: items.length });
+          try {
+            const res = await fetch(`/api/findings/${items[i].id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                status: newStatus,
+                acceptedRiskReason: newStatus === 'ACCEPTED_RISK' ? riskReason : null,
+              }),
+            });
+            if (!res.ok) failCount++;
+          } catch {
+            failCount++;
+          }
+        }
+
+        if (failCount > 0) {
+          setUpdateError(`Updated with ${failCount} failures out of ${items.length} items.`);
+        } else {
+          setSelectedGroup(null);
+          setBatchProgress(null);
+        }
+        await fetchFindings();
+      } else if (selectedFinding) {
+        const res = await fetch(`/api/findings/${selectedFinding.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: newStatus,
+            acceptedRiskReason: newStatus === 'ACCEPTED_RISK' ? riskReason : null,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to update finding status');
+        }
+
+        setFindings((prev) =>
+          prev.map((item) =>
+            item.id === selectedFinding.id
+              ? { ...item, status: newStatus as any, acceptedRiskReason: riskReason }
+              : item
+          )
+        );
+        setSelectedFinding(null);
       }
-
-      setFindings((prev) =>
-        prev.map((item) =>
-          item.id === selectedFinding.id
-            ? { ...item, status: newStatus as any, acceptedRiskReason: riskReason }
-            : item
-        )
-      );
-
-      setSelectedFinding(null);
-    } catch (err) {
-      setUpdateError((err as Error).message);
+    } catch (err: any) {
+      setUpdateError(err.message || 'Failed to update finding');
     } finally {
       setUpdating(false);
+      setBatchProgress(null);
     }
   };
 
-  const filteredFindings = findings.filter((f) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      f.title.toLowerCase().includes(q) ||
-      f.ruleId.toLowerCase().includes(q) ||
-      f.targetUrl.toLowerCase().includes(q) ||
-      (f.resourceEndpoint || '').toLowerCase().includes(q)
-    );
-  });
-
-  const totalCount = findings.length;
-  const criticalHighOpenCount = findings.filter(
-    (f) => (f.severity === 'CRITICAL' || f.severity === 'HIGH') && (f.status === 'OPEN' || f.status === 'CONFIRMED' || f.status === 'REOPENED')
-  ).length;
-  const acceptedRiskCount = findings.filter((f) => f.status === 'ACCEPTED_RISK').length;
-  const fixedCount = findings.filter((f) => f.status === 'FIXED').length;
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+      {/* Page Header (eyebrow -> H1 -> subtitle -> actions) */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: '24px',
+          flexWrap: 'wrap',
+        }}
+      >
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-            <span className="pulse-indicator" />
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'var(--font-mono)' }}>
-              Vulnerability Management
-            </span>
+          <div
+            style={{
+              fontSize: '12px',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              color: 'var(--ds-text-muted)',
+              marginBottom: '6px',
+            }}
+          >
+            Findings
           </div>
-          <h1 style={{ fontSize: '1.85rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '0.35rem' }}>
-            Security Findings Inventory
+          <h1
+            style={{
+              fontSize: '28px',
+              fontWeight: 800,
+              color: 'var(--ds-text-primary)',
+              letterSpacing: '-0.02em',
+              margin: '0 0 6px',
+              fontFamily: 'var(--font-display)',
+            }}
+          >
+            Findings
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', maxWidth: '650px' }}>
-            Consolidated vulnerability database from deterministic scanner runs with closed-loop fix verification, CWE taxonomy, and actionable remediation diffs.
+          <p
+            style={{
+              fontSize: '14px',
+              color: 'var(--ds-text-secondary)',
+              margin: 0,
+              maxWidth: '620px',
+            }}
+          >
+            Open issues by severity across your verified sites with step-by-step code remediations.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <button onClick={() => fetchFindings()} className="btn-cyber-secondary">
-            ↻ Refresh
-          </button>
-          <Link href="/dashboard/scans" className="btn-cyber-primary">
-            + Launch Scan
-          </Link>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <Button variant="secondary" onClick={() => fetchFindings()} icon={<RefreshCw size={14} />}>
+            Refresh
+          </Button>
+          <Button variant="brand" href="/dashboard/scans" icon={<Plus size={16} />}>
+            Launch Scan
+          </Button>
         </div>
       </div>
 
-      {/* Metric Cards */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '1rem',
-        }}
-      >
-        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem' }}>
-          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em' }}>
-            Total Findings
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
-            {totalCount}
-          </div>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-            Discovered across target fleet
-          </div>
-        </div>
-
-        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem' }}>
-          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#f87171', fontWeight: 600, letterSpacing: '0.05em' }}>
-            Open Critical / High
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#f87171', marginTop: '0.25rem' }}>
-            {criticalHighOpenCount}
-          </div>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-            Immediate action required
-          </div>
-        </div>
-
-        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem' }}>
-          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#fbbf24', fontWeight: 600, letterSpacing: '0.05em' }}>
-            Accepted Risks
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#fbbf24', marginTop: '0.25rem' }}>
-            {acceptedRiskCount}
-          </div>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-            Business justified exceptions
-          </div>
-        </div>
-
-        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem' }}>
-          <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#34d399', fontWeight: 600, letterSpacing: '0.05em' }}>
-            Resolved & Verified
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#34d399', marginTop: '0.25rem' }}>
-            {fixedCount}
-          </div>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-            Confirmed closed loop
-          </div>
-        </div>
-      </div>
-
-      {/* Filters Bar */}
-      <div
-        className="glass-panel"
-        style={{
-          padding: '1.25rem 1.5rem',
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '1.25rem',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div>
-            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>
-              Severity
-            </label>
-            <select
-              value={severityFilter}
-              onChange={(e) => setSeverityFilter(e.target.value)}
-              style={{
-                padding: '0.4rem 0.75rem',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--border-subtle)',
-                backgroundColor: 'var(--bg-surface)',
-                color: 'var(--text-primary)',
-                fontSize: '0.85rem',
-              }}
-            >
-              <option value="ALL">All Severities</option>
-              <option value="CRITICAL">Critical</option>
-              <option value="HIGH">High</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="LOW">Low</option>
-            </select>
-          </div>
-
-          <div>
-            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>
-              Status
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              style={{
-                padding: '0.4rem 0.75rem',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--border-subtle)',
-                backgroundColor: 'var(--bg-surface)',
-                color: 'var(--text-primary)',
-                fontSize: '0.85rem',
-              }}
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="OPEN">Open</option>
-              <option value="CONFIRMED">Confirmed</option>
-              <option value="ACCEPTED_RISK">Accepted Risk</option>
-              <option value="FALSE_POSITIVE">False Positive</option>
-              <option value="FIXED">Fixed</option>
-              <option value="REOPENED">Reopened</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>
-            Search Findings
-          </label>
-          <input
-            type="text"
-            placeholder="Search title, rule, target, or endpoint..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              padding: '0.4rem 0.75rem',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--border-subtle)',
-              backgroundColor: 'var(--bg-surface)',
-              color: 'var(--text-primary)',
-              fontSize: '0.85rem',
-              width: '280px',
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Error state */}
+      {/* Error Banner */}
       {error && (
         <div
           style={{
-            padding: '1rem',
-            borderRadius: 'var(--radius-sm)',
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.25)',
-            color: '#f87171',
-            marginBottom: '1.5rem',
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      {/* Findings List */}
-      {loading ? (
-        <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-          Loading findings...
-        </div>
-      ) : filteredFindings.length === 0 ? (
-        <div
-          className="card"
-          style={{
-            padding: '3rem',
-            textAlign: 'center',
-            backgroundColor: 'var(--bg-card)',
-          }}
-        >
-          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🛡️</div>
-          <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
-            No Findings Found
-          </h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '450px', margin: '0 auto' }}>
-            No vulnerability records match your criteria.
-          </p>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {filteredFindings.map((finding) => (
-            <FindingsAccordionCard
-              key={finding.id}
-              finding={finding}
-              isExpanded={!!expandedFindings[finding.id]}
-              onToggleExpand={toggleExpand}
-              onOpenRemediation={handleOpenRemediationModal}
-              onOpenStatusModal={handleOpenStatusModal}
-              onVerifyFix={handleVerifyFix}
-              isVerifying={verifyingFindingId === finding.id}
-              verificationResult={fixResults[finding.id] || null}
-              onOpenCollabModal={handleOpenCollabModal}
-              showCollab={true}
-              showScanLink={true}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Remediation & Fix Verification Modal */}
-      {remediationFinding && remediationData && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            padding: '14px 18px',
+            borderRadius: 'var(--ds-radius-md)',
+            backgroundColor: 'var(--ds-danger-bg)',
+            border: '1px solid rgba(209, 0, 47, 0.25)',
             display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '1.5rem',
+            color: 'var(--ds-danger)',
           }}
         >
-          <div
-            className="card"
-            style={{
-              width: '100%',
-              maxWidth: '720px',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
-              padding: '2rem',
-            }}
-          >
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
-                  <span
-                    style={{
-                      fontFamily: 'monospace',
-                      fontSize: '0.8rem',
-                      fontWeight: 700,
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      padding: '0.15rem 0.4rem',
-                      borderRadius: '4px',
-                    }}
-                  >
-                    {remediationData.ruleId}
-                  </span>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    {remediationData.cwe}
-                  </span>
-                </div>
-                <h3 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  {remediationData.title}
-                </h3>
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+            <AlertTriangle size={16} />
+            <span>{error}</span>
+          </div>
+          <Button variant="secondary" size="sm" onClick={() => fetchFindings()} icon={<RefreshCw size={13} />}>
+            Retry
+          </Button>
+        </div>
+      )}
 
-              <button
-                onClick={() => setRemediationFinding(null)}
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.5rem', cursor: 'pointer', lineHeight: 1 }}
-              >
-                &times;
-              </button>
-            </div>
-
-            {/* Verification Result Banner */}
-            {fixResult && (
-              <div
-                style={{
-                  padding: '1rem',
-                  borderRadius: 'var(--radius-sm)',
-                  marginBottom: '1.25rem',
-                  backgroundColor: fixResult.fixed ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                  border: `1px solid ${fixResult.fixed ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-                  color: fixResult.fixed ? '#34d399' : '#f87171',
-                  fontSize: '0.9rem',
-                }}
-              >
-                <div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>
-                  {fixResult.fixed ? '✓ Remediation Verified!' : '✗ Vulnerability Still Present'}
-                </div>
-                <div>{fixResult.diagnostic}</div>
-              </div>
-            )}
-
-            {/* Impact */}
-            <div style={{ marginBottom: '1.25rem' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                Vulnerability Impact
-              </div>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                {remediationData.impact}
-              </p>
-            </div>
-
-            {/* Framework Diffs */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                  Code Remediation Diff
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.35rem' }}>
-                  {(['nextjs', 'express', 'nginx'] as const).map((fw) => {
-                    const available = !!remediationData.frameworks[fw];
-                    if (!available) return null;
-                    const isActive = activeFramework === fw;
-
-                    return (
-                      <button
-                        key={fw}
-                        onClick={() => setActiveFramework(fw)}
-                        style={{
-                          padding: '0.2rem 0.6rem',
-                          borderRadius: '4px',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          backgroundColor: isActive ? 'var(--accent-primary)' : 'rgba(255, 255, 255, 0.05)',
-                          color: isActive ? '#ffffff' : 'var(--text-secondary)',
-                          border: 'none',
-                        }}
-                      >
-                        {fw === 'nextjs' ? 'Next.js' : fw === 'express' ? 'Express' : 'Nginx'}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {remediationData.frameworks[activeFramework] ? (
-                <div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                    {remediationData.frameworks[activeFramework]?.explanation}
-                  </div>
-                  <pre
-                    style={{
-                      margin: 0,
-                      padding: '1rem',
-                      backgroundColor: '#0a0d14',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-sm)',
-                      overflowX: 'auto',
-                      fontFamily: 'monospace',
-                      fontSize: '0.85rem',
-                      color: '#e2e8f0',
-                      lineHeight: 1.45,
-                    }}
-                  >
-                    {remediationData.frameworks[activeFramework]?.diff}
-                  </pre>
-                </div>
-              ) : (
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  {remediationData.summary}
-                </div>
-              )}
-            </div>
-
-            {/* CLI Verification */}
-            {remediationData.cliVerification && (
-              <div style={{ marginBottom: '1.5rem', backgroundColor: 'rgba(0, 0, 0, 0.2)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-                    Local CLI Verification (curl)
-                  </span>
-                  <button
-                    onClick={() => {
-                      const cmd = remediationData.cliVerification.replace('YOUR_TARGET_URL', remediationFinding.targetUrl);
-                      navigator.clipboard.writeText(cmd);
-                      setCopiedCli(true);
-                      setTimeout(() => setCopiedCli(false), 2000);
-                    }}
-                    style={{ background: 'transparent', border: 'none', color: copiedCli ? '#34d399' : 'var(--text-secondary)', fontSize: '0.75rem', cursor: 'pointer' }}
-                  >
-                    {copiedCli ? '✓ Copied' : 'Copy command'}
-                  </button>
-                </div>
-                <code style={{ fontSize: '0.8rem', color: '#67e8f9', wordBreak: 'break-all' }}>
-                  {remediationData.cliVerification.replace('YOUR_TARGET_URL', remediationFinding.targetUrl)}
-                </code>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)' }}>
-              <button
-                type="button"
-                onClick={() => setRemediationFinding(null)}
-                className="btn btn-secondary"
-              >
-                Close Guide
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleVerifyFix(remediationFinding.id)}
-                disabled={verifyingFix}
-                className="btn btn-primary"
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-              >
-                {verifyingFix ? (
-                  <>
-                    <span>⚡</span>
-                    <span>Re-testing Endpoint...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>✓</span>
-                    <span>Verify Fix Now</span>
-                  </>
-                )}
-              </button>
-            </div>
+      {/* 4 Light Severity Summary Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+        <div
+          style={{
+            padding: '20px 24px',
+            borderRadius: 'var(--ds-radius-lg)',
+            backgroundColor: 'var(--ds-bg-card)',
+            border: '1px solid var(--ds-border-subtle)',
+            boxShadow: 'var(--ds-shadow-1)',
+          }}
+        >
+          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ds-danger)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Open Critical / High
+          </div>
+          <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--ds-danger)', margin: '6px 0 2px' }}>
+            {stats.openCriticalHigh}
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--ds-text-secondary)' }}>
+            Requires priority remediation
           </div>
         </div>
-      )}
 
-      {/* Status Modal */}
-      {selectedFinding && (
         <div
           style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '1.5rem',
+            padding: '20px 24px',
+            borderRadius: 'var(--ds-radius-lg)',
+            backgroundColor: 'var(--ds-bg-card)',
+            border: '1px solid var(--ds-border-subtle)',
+            boxShadow: 'var(--ds-shadow-1)',
           }}
         >
-          <div
-            className="card"
+          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ds-warning)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Needs Triage
+          </div>
+          <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--ds-warning)', margin: '6px 0 2px' }}>
+            {stats.needsTriage}
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--ds-text-secondary)' }}>
+            Low and medium items open
+          </div>
+        </div>
+
+        <div
+          style={{
+            padding: '20px 24px',
+            borderRadius: 'var(--ds-radius-lg)',
+            backgroundColor: 'var(--ds-bg-card)',
+            border: '1px solid var(--ds-border-subtle)',
+            boxShadow: 'var(--ds-shadow-1)',
+          }}
+        >
+          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ds-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Accepted Risk
+          </div>
+          <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--ds-text-primary)', margin: '6px 0 2px' }}>
+            {stats.acceptedRisk}
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--ds-text-secondary)' }}>
+            Documented business exceptions
+          </div>
+        </div>
+
+        <div
+          style={{
+            padding: '20px 24px',
+            borderRadius: 'var(--ds-radius-lg)',
+            backgroundColor: 'var(--ds-bg-card)',
+            border: '1px solid var(--ds-border-subtle)',
+            boxShadow: 'var(--ds-shadow-1)',
+          }}
+        >
+          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ds-success)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Fixed &amp; Verified
+          </div>
+          <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--ds-success)', margin: '6px 0 2px' }}>
+            {stats.fixedAndVerified}
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--ds-text-secondary)' }}>
+            Closed via targeted verification
+          </div>
+        </div>
+      </div>
+
+      {/* Filters Toolbar */}
+      <div
+        style={{
+          padding: '16px 20px',
+          borderRadius: 'var(--ds-radius-lg)',
+          backgroundColor: 'var(--ds-bg-card)',
+          border: '1px solid var(--ds-border-subtle)',
+          boxShadow: 'var(--ds-shadow-1)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '16px',
+          flexWrap: 'wrap',
+        }}
+      >
+        <div style={{ display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Search Input with 42px leading padding */}
+          <div style={{ position: 'relative', width: '280px' }}>
+            <Search size={14} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ds-text-muted)' }} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search findings or rules..."
+              style={{
+                width: '100%',
+                padding: '8px 14px 8px 42px',
+                borderRadius: 'var(--ds-radius-md)',
+                border: '1px solid var(--ds-border-default)',
+                backgroundColor: 'var(--ds-bg-subtle)',
+                color: 'var(--ds-text-primary)',
+                fontSize: '13px',
+                outline: 'none',
+              }}
+            />
+          </div>
+
+          {/* Severity Filter */}
+          <select
+            value={severityFilter}
+            onChange={(e) => setSeverityFilter(e.target.value)}
             style={{
-              width: '100%',
-              maxWidth: '520px',
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
-              padding: '1.75rem',
+              padding: '8px 12px',
+              borderRadius: 'var(--ds-radius-md)',
+              border: '1px solid var(--ds-border-default)',
+              backgroundColor: 'var(--ds-bg-card)',
+              color: 'var(--ds-text-primary)',
+              fontSize: '13px',
+              outline: 'none',
             }}
           >
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
-              Triage & Update Status
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
-              Updating finding: <strong>{selectedFinding.title}</strong>
-            </p>
+            <option value="ALL">All Severities</option>
+            <option value="CRITICAL">Critical</option>
+            <option value="HIGH">High</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="LOW">Low</option>
+          </select>
 
+          {/* Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: 'var(--ds-radius-md)',
+              border: '1px solid var(--ds-border-default)',
+              backgroundColor: 'var(--ds-bg-card)',
+              color: 'var(--ds-text-primary)',
+              fontSize: '13px',
+              outline: 'none',
+            }}
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="OPEN">Open</option>
+            <option value="CONFIRMED">Confirmed</option>
+            <option value="ACCEPTED_RISK">Accepted Risk</option>
+            <option value="FIXED">Fixed</option>
+          </select>
+        </div>
+
+        <div style={{ fontSize: '13px', color: 'var(--ds-text-muted)', fontWeight: 600 }}>
+          {filteredGroups.length} unique {filteredGroups.length === 1 ? 'issue group' : 'issue groups'} ({findings.length} total occurrences)
+        </div>
+      </div>
+
+      {/* Grouped Findings List */}
+      {loading ? (
+        <div style={{ padding: '64px', textAlign: 'center', color: 'var(--ds-text-muted)' }}>
+          Loading security findings...
+        </div>
+      ) : filteredGroups.length === 0 ? (
+        <div
+          style={{
+            padding: '72px 24px',
+            textAlign: 'center',
+            backgroundColor: 'var(--ds-bg-card)',
+            borderRadius: 'var(--ds-radius-lg)',
+            border: '1px solid var(--ds-border-subtle)',
+            boxShadow: 'var(--ds-shadow-1)',
+          }}
+        >
+          <CheckCircle2 size={40} style={{ color: 'var(--ds-success)', margin: '0 auto 16px' }} />
+          <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ds-text-primary)', margin: '0 0 8px' }}>
+            No matching findings
+          </h3>
+          <p style={{ fontSize: '13.5px', color: 'var(--ds-text-secondary)', maxWidth: '440px', margin: '0 auto 20px' }}>
+            No security findings match your current filter parameters.
+          </p>
+          {(severityFilter !== 'ALL' || statusFilter !== 'ALL' || searchQuery) && (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setSeverityFilter('ALL');
+                setStatusFilter('ALL');
+                setSearchQuery('');
+              }}
+            >
+              Clear filters
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {filteredGroups.map((group) => {
+            const isExpanded = Boolean(expandedGroups[group.groupKey]);
+            const latestFinding = group.latestFinding;
+
+            return (
+              <div
+                key={group.groupKey}
+                style={{
+                  borderRadius: 'var(--ds-radius-lg)',
+                  backgroundColor: 'var(--ds-bg-card)',
+                  border: '1px solid var(--ds-border-subtle)',
+                  boxShadow: 'var(--ds-shadow-1)',
+                  overflow: 'hidden',
+                }}
+              >
+                {/* Group Summary Header */}
+                <div
+                  style={{
+                    padding: '20px 24px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '16px',
+                    cursor: 'pointer',
+                    backgroundColor: isExpanded ? 'var(--ds-bg-subtle)' : 'var(--ds-bg-card)',
+                    borderBottom: isExpanded ? '1px solid var(--ds-border-subtle)' : 'none',
+                  }}
+                  onClick={() => toggleGroupExpand(group.groupKey)}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <SeverityBadge severity={group.severity} />
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          fontFamily: 'var(--font-mono)',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          backgroundColor: 'var(--ds-bg-subtle)',
+                          color: 'var(--ds-text-muted)',
+                        }}
+                      >
+                        {group.ruleId}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          backgroundColor: 'var(--ds-bg-subtle)',
+                          color: 'var(--ds-text-secondary)',
+                        }}
+                      >
+                        {group.confidenceLabel}
+                      </span>
+                      {group.occurrenceCount > 1 && (
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: 'var(--ds-radius-pill)',
+                            backgroundColor: 'rgba(255, 100, 45, 0.1)',
+                            color: 'var(--ds-action-brand)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          <Layers size={11} />
+                          Seen in {group.occurrenceCount} scans
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ds-text-primary)', margin: 0 }}>
+                      {group.title}
+                    </h3>
+
+                    <div style={{ fontSize: '12px', color: 'var(--ds-text-muted)', fontFamily: 'var(--font-mono)' }}>
+                      {group.endpoint}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenRemediation(latestFinding);
+                      }}
+                    >
+                      See fix
+                    </Button>
+
+                    {group.occurrenceCount > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedGroup(group);
+                          setNewStatus('ACCEPTED_RISK');
+                        }}
+                      >
+                        Apply to all ({group.occurrenceCount})
+                      </Button>
+                    )}
+
+                    <div style={{ color: 'var(--ds-text-muted)', display: 'flex', alignItems: 'center' }}>
+                      {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Expanded Occurrences List */}
+                {isExpanded && (
+                  <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ds-text-muted)', textTransform: 'uppercase' }}>
+                      Occurrences ({group.occurrences.length})
+                    </div>
+                    {group.occurrences.map((occ) => (
+                      <FindingsAccordionCard
+                        key={occ.id}
+                        finding={occ}
+                        isExpanded={false}
+                        onToggleExpand={() => {}}
+                        onOpenRemediation={handleOpenRemediation}
+                        onOpenStatusModal={(f) => {
+                          setSelectedFinding(f);
+                          setNewStatus(f.status || 'OPEN');
+                        }}
+                        onVerifyFix={handleVerifyFix}
+                        isVerifying={verifyingFix && verifyingFindingId === occ.id}
+                        verificationResult={fixResults[occ.id] || null}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Remediation Modal */}
+      {remediationFinding && (
+        <FrameworkRemediationModal
+          onClose={() => setRemediationFinding(null)}
+          finding={remediationFinding}
+          remediationData={remediationData}
+          onVerifyFix={handleVerifyFix}
+          isVerifying={verifyingFix}
+          verificationResult={remediationFinding ? fixResults[remediationFinding.id] : null}
+        />
+      )}
+
+      {/* Status Modal (Single or Batch) */}
+      {(selectedFinding || selectedGroup) && (
+        <Modal
+          isOpen={Boolean(selectedFinding || selectedGroup)}
+          onClose={() => {
+            if (!updating) {
+              setSelectedFinding(null);
+              setSelectedGroup(null);
+              setUpdateError(null);
+            }
+          }}
+          title={selectedGroup ? `Update ${selectedGroup.occurrenceCount} Occurrences` : 'Update Finding Status'}
+        >
+          <form onSubmit={handleUpdateStatus} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {updateError && (
               <div
                 style={{
-                  padding: '0.75rem',
-                  borderRadius: 'var(--radius-sm)',
-                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                  border: '1px solid rgba(239, 68, 68, 0.25)',
-                  color: '#f87171',
-                  fontSize: '0.85rem',
-                  marginBottom: '1rem',
+                  padding: '10px 14px',
+                  borderRadius: 'var(--ds-radius-sm)',
+                  backgroundColor: 'var(--ds-danger-bg)',
+                  color: 'var(--ds-danger)',
+                  fontSize: '12.5px',
                 }}
               >
                 {updateError}
               </div>
             )}
 
-            <form onSubmit={handleUpdateStatus}>
-              <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
-                  Lifecycle Status
-                </label>
-                <select
-                  value={newStatus}
-                  onChange={(e) => setNewStatus(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem 0.85rem',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-subtle)',
-                    backgroundColor: 'var(--bg-surface)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.9rem',
-                  }}
-                >
-                  <option value="OPEN">OPEN (Unaddressed)</option>
-                  <option value="CONFIRMED">CONFIRMED (Triage Verified)</option>
-                  <option value="FIXED">FIXED (Remediated)</option>
-                  <option value="ACCEPTED_RISK">ACCEPTED_RISK (Risk Documented)</option>
-                  <option value="FALSE_POSITIVE">FALSE_POSITIVE (Invalid Finding)</option>
-                </select>
+            {batchProgress && (
+              <div style={{ fontSize: '13px', color: 'var(--ds-action-brand)', fontWeight: 600 }}>
+                Applying status: {batchProgress.current} / {batchProgress.total}...
               </div>
+            )}
 
-              {newStatus === 'ACCEPTED_RISK' && (
-                <div style={{ marginBottom: '1.25rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#fbbf24', marginBottom: '0.4rem' }}>
-                    Required Business Justification
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder="Document business justification and compensating controls..."
-                    value={riskReason}
-                    onChange={(e) => setRiskReason(e.target.value)}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '0.6rem 0.85rem',
-                      borderRadius: 'var(--radius-sm)',
-                      border: '1px solid rgba(245, 158, 11, 0.4)',
-                      backgroundColor: 'var(--bg-surface)',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.85rem',
-                      fontFamily: 'inherit',
-                    }}
-                  />
-                </div>
-              )}
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-                <button
-                  type="button"
-                  onClick={() => setSelectedFinding(null)}
-                  className="btn btn-secondary"
-                  disabled={updating}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={updating}
-                >
-                  {updating ? 'Saving...' : 'Save Triage'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Collaboration & Discussion Modal */}
-      {collabFinding && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '1.5rem',
-            backdropFilter: 'blur(4px)',
-          }}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '680px',
-              maxHeight: '90vh',
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-lg)',
-              display: 'flex',
-              flexDirection: 'column',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-              overflow: 'hidden',
-            }}
-          >
-            {/* Modal Header */}
-            <div
-              style={{
-                padding: '1.25rem 1.5rem',
-                borderBottom: '1px solid var(--border-subtle)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-              }}
-            >
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
-                  <span
-                    style={{
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      padding: '0.15rem 0.45rem',
-                      borderRadius: '4px',
-                      backgroundColor:
-                        collabFinding.severity === 'CRITICAL'
-                          ? 'rgba(239, 68, 68, 0.2)'
-                          : collabFinding.severity === 'HIGH'
-                          ? 'rgba(249, 115, 22, 0.2)'
-                          : 'rgba(234, 179, 8, 0.2)',
-                      color:
-                        collabFinding.severity === 'CRITICAL'
-                          ? '#f87171'
-                          : collabFinding.severity === 'HIGH'
-                          ? '#fb923c'
-                          : '#fbbf24',
-                    }}
-                  >
-                    {collabFinding.severity}
-                  </span>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                    {collabFinding.ruleId}
-                  </span>
-                </div>
-                <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                  {collabFinding.title}
-                </h2>
-              </div>
-
-              <button
-                onClick={() => setCollabFinding(null)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '1.25rem', cursor: 'pointer' }}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ds-text-primary)' }}>
+                Select Status
+              </label>
+              <select
+                value={newStatus}
+                onChange={(e) => setNewStatus(e.target.value)}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 'var(--ds-radius-md)',
+                  border: '1px solid var(--ds-border-default)',
+                  backgroundColor: 'var(--ds-bg-card)',
+                  color: 'var(--ds-text-primary)',
+                  fontSize: '13.5px',
+                }}
               >
-                ✕
-              </button>
+                <option value="OPEN">Open (Active finding)</option>
+                <option value="CONFIRMED">Confirmed (Verified defect)</option>
+                <option value="ACCEPTED_RISK">Accepted Risk (Business exception)</option>
+                <option value="FALSE_POSITIVE">False Positive (Scanner exception)</option>
+                <option value="FIXED">Fixed (Resolved)</option>
+              </select>
             </div>
 
-            {/* Assignee Bar */}
-            <div
-              style={{
-                padding: '0.85rem 1.5rem',
-                backgroundColor: 'var(--bg-secondary)',
-                borderBottom: '1px solid var(--border-subtle)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                  Assignee:
-                </span>
-                <select
-                  value={collabFinding.assignedUserId || ''}
-                  onChange={(e) => handleAssignUser(e.target.value || null)}
-                  disabled={assigning}
-                  style={{
-                    backgroundColor: 'var(--bg-main)',
-                    color: 'var(--text-primary)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '0.35rem 0.65rem',
-                    fontSize: '0.85rem',
-                    outline: 'none',
-                    cursor: assigning ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  <option value="">Unassigned</option>
-                  {teamMembers.map((member) => (
-                    <option key={member.userId} value={member.userId}>
-                      {member.displayName || member.email} ({member.role})
-                    </option>
-                  ))}
-                </select>
-                {assigning && (
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Updating...</span>
-                )}
-              </div>
-
-              {collabFinding.resourceEndpoint && (
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                  {collabFinding.resourceEndpoint}
-                </div>
-              )}
-            </div>
-
-            {/* Scrollable Comments Thread */}
-            <div
-              style={{
-                flex: 1,
-                overflowY: 'auto',
-                padding: '1.5rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1rem',
-                maxHeight: '360px',
-              }}
-            >
-              {collabError && (
-                <div
-                  style={{
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                    color: '#f87171',
-                    padding: '0.65rem 0.85rem',
-                    borderRadius: 'var(--radius-sm)',
-                    fontSize: '0.85rem',
-                  }}
-                >
-                  {collabError}
-                </div>
-              )}
-
-              {collabLoading ? (
-                <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
-                  Loading discussion thread...
-                </div>
-              ) : collabComments.length === 0 ? (
-                <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem', fontSize: '0.9rem' }}>
-                  No comments yet. Start the engineering collaboration thread below.
-                </div>
-              ) : (
-                collabComments.map((comment) => {
-                  if (comment.commentType === 'SYSTEM_NOTE') {
-                    return (
-                      <div
-                        key={comment.id}
-                        style={{
-                          textAlign: 'center',
-                          margin: '0.25rem 0',
-                        }}
-                      >
-                        <span
-                          style={{
-                            display: 'inline-block',
-                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                            color: 'var(--text-muted)',
-                            fontSize: '0.75rem',
-                            padding: '0.25rem 0.65rem',
-                            borderRadius: '999px',
-                            border: '1px solid var(--border-subtle)',
-                          }}
-                        >
-                          ℹ️ {comment.content} • {new Date(comment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div
-                      key={comment.id}
-                      style={{
-                        display: 'flex',
-                        gap: '0.75rem',
-                        alignItems: 'flex-start',
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '50%',
-                          backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                          color: '#60a5fa',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 700,
-                          fontSize: '0.8rem',
-                          flexShrink: 0,
-                        }}
-                      >
-                        {(comment.authorName || comment.authorEmail || 'U')[0].toUpperCase()}
-                      </div>
-                      <div
-                        style={{
-                          flex: 1,
-                          backgroundColor: 'var(--bg-main)',
-                          border: '1px solid var(--border-subtle)',
-                          borderRadius: 'var(--radius-md)',
-                          padding: '0.75rem 1rem',
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                            {comment.authorName || comment.authorEmail}
-                          </span>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            {new Date(comment.createdAt).toLocaleString(undefined, {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                        </div>
-                        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
-                          {comment.content}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            {/* Post Comment Input */}
-            <form
-              onSubmit={handleAddComment}
-              style={{
-                padding: '1rem 1.5rem',
-                borderTop: '1px solid var(--border-subtle)',
-                backgroundColor: 'var(--bg-main)',
-              }}
-            >
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
+            {newStatus === 'ACCEPTED_RISK' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ds-text-primary)' }}>
+                  Business Justification (Required)
+                </label>
                 <textarea
-                  rows={2}
-                  placeholder="Leave a comment or mitigation update..."
-                  value={newCommentText}
-                  onChange={(e) => setNewCommentText(e.target.value)}
+                  required
+                  value={riskReason}
+                  onChange={(e) => setRiskReason(e.target.value)}
+                  placeholder="Explain why this finding is accepted as an operational risk..."
+                  rows={3}
                   style={{
-                    flex: 1,
-                    padding: '0.6rem 0.85rem',
-                    backgroundColor: 'var(--bg-card)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: 'var(--radius-sm)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.85rem',
-                    fontFamily: 'inherit',
+                    padding: '10px 14px',
+                    borderRadius: 'var(--ds-radius-md)',
+                    border: '1px solid var(--ds-border-default)',
+                    backgroundColor: 'var(--ds-bg-card)',
+                    color: 'var(--ds-text-primary)',
+                    fontSize: '13px',
                     outline: 'none',
-                    resize: 'none',
                   }}
                 />
-                <button
-                  type="submit"
-                  disabled={postingComment || !newCommentText.trim()}
-                  style={{
-                    backgroundColor: 'var(--accent-primary)',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '0 1.25rem',
-                    borderRadius: 'var(--radius-sm)',
-                    fontWeight: 600,
-                    fontSize: '0.85rem',
-                    cursor: postingComment || !newCommentText.trim() ? 'not-allowed' : 'pointer',
-                    alignSelf: 'stretch',
-                  }}
-                >
-                  {postingComment ? 'Posting...' : 'Post'}
-                </button>
               </div>
-            </form>
-          </div>
-        </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+              <Button
+                variant="secondary"
+                type="button"
+                disabled={updating}
+                onClick={() => {
+                  setSelectedFinding(null);
+                  setSelectedGroup(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button variant="brand" type="submit" disabled={updating}>
+                {updating ? 'Updating...' : selectedGroup ? `Apply to all ${selectedGroup.occurrenceCount}` : 'Update Status'}
+              </Button>
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   );

@@ -13,7 +13,22 @@ export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const ip = getClientIp(req.headers);
 
-  // 1. API Route Protection (Rate Limiting & Payload Inspection)
+  // 1. Dashboard Route Protection (Edge level)
+  if (pathname.startsWith('/dashboard')) {
+    const cookieName =
+      process.env.NODE_ENV === 'production'
+        ? '__Host-zerivex_session'
+        : 'zerivex_session';
+    const sessionCookie = req.cookies.get(cookieName);
+
+    if (!sessionCookie?.value) {
+      const loginUrl = new URL('/login', req.url);
+      loginUrl.searchParams.set('returnTo', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  // 2. API Route Protection (Rate Limiting & Payload Inspection)
   if (pathname.startsWith('/api/')) {
     // A. Payload Size Inspection on Mutations
     if (['POST', 'PUT', 'PATCH'].includes(req.method)) {

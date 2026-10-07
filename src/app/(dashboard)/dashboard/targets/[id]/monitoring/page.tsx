@@ -7,6 +7,7 @@ import { ScanScheduleRecord } from '@/core/scheduler/schedule-repository';
 import { MonitoringAlertRecord, TargetSecurityTrend } from '@/core/monitoring/monitoring-repository';
 import { ScheduleFrequency } from '@/core/scheduler/cron-evaluator';
 import { ScanMode } from '@/core/scanner/checks/types';
+import { ArrowLeft, Check, AlertTriangle, AlertCircle, Zap, Lock, X, Clock } from 'lucide-react';
 
 export default function TargetMonitoringPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -185,8 +186,8 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
         <div style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: 'var(--radius-md)' }}>
           {error}
         </div>
-        <Link href="/dashboard/targets" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 600 }}>
-          ← Back to Targets
+        <Link href="/dashboard/targets" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+          <ArrowLeft size={14} /> Back to Targets
         </Link>
       </div>
     );
@@ -211,7 +212,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
             marginBottom: '0.75rem',
           }}
         >
-          ← Back to Targets
+          <ArrowLeft size={14} /> Back to Targets
         </Link>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -235,9 +236,12 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                   backgroundColor: 'rgba(16, 185, 129, 0.15)',
                   color: '#34d399',
                   border: '1px solid rgba(16, 185, 129, 0.3)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
                 }}
               >
-                ✓ VERIFIED TARGET
+                <Check size={13} /> VERIFIED TARGET
               </span>
             ) : (
               <span
@@ -249,9 +253,12 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                   backgroundColor: 'rgba(245, 158, 11, 0.15)',
                   color: '#fbbf24',
                   border: '1px solid rgba(245, 158, 11, 0.3)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
                 }}
               >
-                ⚠️ UNVERIFIED
+                <AlertTriangle size={13} /> UNVERIFIED
               </span>
             )}
 
@@ -331,14 +338,14 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
       </div>
 
       {actionSuccess && (
-        <div style={{ padding: '0.75rem 1rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#34d399', borderRadius: 'var(--radius-md)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-          ✓ {actionSuccess}
+        <div style={{ padding: '0.75rem 1rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#34d399', borderRadius: 'var(--radius-md)', border: '1px solid rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <Check size={14} /> <span>{actionSuccess}</span>
         </div>
       )}
 
       {error && (
-        <div style={{ padding: '0.75rem 1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: 'var(--radius-md)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-          ⚠ {error}
+        <div style={{ padding: '0.75rem 1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: 'var(--radius-md)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <AlertTriangle size={14} /> <span>{error}</span>
         </div>
       )}
 
@@ -541,7 +548,11 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                       cursor: runningScheduleId === s.id ? 'not-allowed' : 'pointer',
                     }}
                   >
-                    {runningScheduleId === s.id ? 'Running...' : 'Run Now ⚡'}
+                    {runningScheduleId === s.id ? 'Running...' : (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                        Run Now <Zap size={12} />
+                      </span>
+                    )}
                   </button>
 
                   <button
@@ -588,8 +599,8 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
           Security Regression & Posture Alerts
         </h2>
         {alerts.length === 0 ? (
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', padding: '1rem 0' }}>
-            ✓ Zero alerts detected. Target security posture is stable.
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', padding: '1rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Check size={14} style={{ color: '#10b981' }} /> Zero alerts detected. Target security posture is stable.
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -695,7 +706,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <span style={{ fontSize: '1.25rem' }}>⏱️</span>
+                <Clock size={20} style={{ color: 'var(--accent-primary)' }} />
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
                   Configure Automated Scan Schedule
                 </h3>
@@ -725,7 +736,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                 }}
                 title="Close"
               >
-                ✕
+                <X size={16} />
               </button>
             </div>
 
@@ -745,7 +756,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                   marginBottom: '1.25rem',
                 }}
               >
-                <span style={{ fontSize: '1.1rem' }}>✓</span>
+                <Check size={16} />
                 <span style={{ fontWeight: 600 }}>{modalSuccess}</span>
               </div>
             )}
@@ -765,7 +776,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                   marginBottom: '1.25rem',
                 }}
               >
-                <span>⚠</span>
+                <AlertCircle size={16} />
                 <span>{modalError}</span>
               </div>
             )}
@@ -891,7 +902,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                       opacity: isVerified ? 1 : 0.5,
                     }}
                   >
-                    Full Active Scan {isVerified ? '✓' : '🔒'}
+                    Full Active Scan {isVerified ? <Check size={13} style={{ display: 'inline', marginLeft: '4px' }} /> : <Lock size={13} style={{ display: 'inline', marginLeft: '4px' }} />}
                   </button>
                 </div>
               </div>
@@ -937,7 +948,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                   {submitting ? (
                     'Saving Schedule...'
                   ) : modalSuccess ? (
-                    '✓ Scheduled!'
+                    <><Check size={14} /> Scheduled!</>
                   ) : (
                     'Save Schedule'
                   )}

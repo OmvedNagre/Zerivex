@@ -1,6 +1,26 @@
 import type { Metadata } from 'next';
+import { Bricolage_Grotesque, Inter, JetBrains_Mono } from 'next/font/google';
 import '@/styles/globals.css';
-import { ThemeProvider } from '@/components/theme/ThemeProvider';
+import { AuthProvider } from '@/components/auth/AuthProvider';
+
+const bricolage = Bricolage_Grotesque({
+  subsets: ['latin'],
+  variable: '--font-display',
+  weight: ['600', '700', '800'],
+  display: 'swap',
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Zerivex — Security for Software Built with AI',
@@ -13,31 +33,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var stored = localStorage.getItem('zerivex-theme');
-                  var theme = stored ? stored : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-                  document.documentElement.setAttribute('data-theme', theme);
-                  if (theme === 'light') {
-                    document.documentElement.classList.add('light');
-                  } else {
-                    document.documentElement.classList.add('dark');
-                  }
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
-      </head>
-      <body>
-        <ThemeProvider>
+    <html lang="en" className={`${bricolage.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
+      <body style={{ backgroundColor: 'var(--ds-bg-page)', color: 'var(--ds-text-primary)' }}>
+        <AuthProvider>
           {children}
-        </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

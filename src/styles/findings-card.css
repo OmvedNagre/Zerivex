@@ -8,8 +8,8 @@
    -------------------------------------------------------------------------- */
 .zfc-card {
   position: relative;
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
+  background-color: var(--surface);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius-md);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
   overflow: hidden;
@@ -17,32 +17,32 @@
 }
 
 .zfc-card:hover {
-  border-color: var(--border-hover);
+  border-color: var(--hairline-strong);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 [data-theme="light"] .zfc-card,
 .light .zfc-card {
   background-color: #ffffff;
-  border-color: var(--border-subtle);
+  border-color: var(--hairline-soft);
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
 }
 
 [data-theme="light"] .zfc-card:hover,
 .light .zfc-card:hover {
-  border-color: var(--border-medium);
+  border-color: var(--hairline);
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
 /* Highlight border when expanded */
 .zfc-card.is-expanded {
-  border-color: var(--border-medium);
+  border-color: var(--hairline);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
 [data-theme="light"] .zfc-card.is-expanded,
 .light .zfc-card.is-expanded {
-  border-color: var(--border-medium);
+  border-color: var(--hairline);
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
 }
 
@@ -60,7 +60,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  color: var(--text-primary);
+  color: var(--ink);
   font-family: var(--font-sans);
   min-height: 48px;
   outline: none;
@@ -102,7 +102,7 @@
   font-size: 1.05rem;
   font-weight: 600;
   line-height: 1.4;
-  color: var(--text-primary);
+  color: var(--ink);
   word-break: break-word;
 }
 
@@ -113,7 +113,7 @@
   flex-wrap: wrap;
   gap: 0.85rem;
   font-size: 0.82rem;
-  color: var(--text-muted);
+  color: var(--mute);
 }
 
 .zfc-endpoint-badge {
@@ -122,9 +122,9 @@
   gap: 0.35rem;
   font-family: var(--font-mono);
   font-size: 0.8rem;
-  color: var(--text-secondary);
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  color: var(--body-text);
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--hairline-soft);
   padding: 0.15rem 0.5rem;
   border-radius: var(--radius-sm);
   max-width: 100%;
@@ -135,11 +135,11 @@
 
 [data-theme="light"] .zfc-endpoint-badge,
 .light .zfc-endpoint-badge {
-  background-color: var(--bg-secondary);
+  background-color: var(--surface-elevated);
 }
 
 .zfc-endpoint-val {
-  color: var(--text-primary);
+  color: var(--ink);
   font-weight: 500;
 }
 
@@ -151,17 +151,17 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-sm);
-  color: var(--text-muted);
+  color: var(--mute);
   background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--hairline-soft);
   transition: color var(--transition-fast), background-color var(--transition-fast), transform 0.25s ease;
   flex-shrink: 0;
   margin-top: 0.25rem;
 }
 
 .zfc-trigger:hover .zfc-chevron-wrapper {
-  color: var(--text-primary);
-  border-color: var(--border-medium);
+  color: var(--ink);
+  border-color: var(--hairline);
   background-color: rgba(255, 255, 255, 0.06);
 }
 
@@ -290,25 +290,25 @@
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--text-secondary);
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  color: var(--body-text);
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--hairline-soft);
   padding: 0.15rem 0.45rem;
   border-radius: 4px;
 }
 
 [data-theme="light"] .zfc-tag-rule,
 .light .zfc-tag-rule {
-  background-color: var(--bg-secondary);
-  color: var(--text-secondary);
+  background-color: var(--surface-elevated);
+  color: var(--body-text);
 }
 
 .zfc-tag-taxonomy {
   font-family: var(--font-mono);
   font-size: 0.72rem;
-  color: var(--text-muted);
+  color: var(--mute);
   background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--hairline-soft);
   padding: 0.15rem 0.45rem;
   border-radius: 4px;
 }
@@ -381,15 +381,15 @@
    5. EXPANDED CONTENT PANEL
    -------------------------------------------------------------------------- */
 .zfc-panel {
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--hairline);
   padding: 1.25rem 1.25rem 1.5rem 1.25rem;
-  background-color: var(--bg-surface);
+  background-color: var(--surface-elevated);
 }
 
 [data-theme="light"] .zfc-panel,
 .light .zfc-panel {
   background-color: #fafbfc;
-  border-top-color: var(--border-subtle);
+  border-top-color: var(--hairline-soft);
 }
 
 /* Section Row */
@@ -409,7 +409,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--text-muted);
+  color: var(--mute);
   margin-bottom: 0.5rem;
 }
 
@@ -417,7 +417,7 @@
 .zfc-prose {
   font-size: 0.9rem;
   line-height: 1.55;
-  color: var(--text-primary);
+  color: var(--ink);
   margin: 0;
 }
 
@@ -428,7 +428,7 @@
   border-radius: var(--radius-sm);
   margin-top: 0.65rem;
   font-size: 0.88rem;
-  color: var(--text-primary);
+  color: var(--ink);
   line-height: 1.5;
 }
 
@@ -452,16 +452,16 @@
    6. TECHNICAL EVIDENCE VIEWER (Theme-Aware, Crisp, Selectable)
    -------------------------------------------------------------------------- */
 .zfc-evidence-container {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
 [data-theme="light"] .zfc-evidence-container,
 .light .zfc-evidence-container {
-  background-color: var(--bg-secondary);
-  border-color: var(--border-subtle);
+  background-color: var(--surface-elevated);
+  border-color: var(--hairline-soft);
 }
 
 .zfc-evidence-header {
@@ -470,7 +470,7 @@
   justify-content: space-between;
   padding: 0.6rem 0.85rem;
   background-color: rgba(0, 0, 0, 0.15);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--hairline-soft);
   font-size: 0.78rem;
 }
 
@@ -485,7 +485,7 @@
   align-items: center;
   gap: 0.4rem;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--body-text);
 }
 
 .zfc-evidence-copy-btn {
@@ -493,9 +493,9 @@
   align-items: center;
   gap: 0.35rem;
   background: transparent;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--hairline-soft);
   border-radius: 4px;
-  color: var(--text-secondary);
+  color: var(--body-text);
   font-size: 0.72rem;
   padding: 0.2rem 0.5rem;
   cursor: pointer;
@@ -505,15 +505,15 @@
 
 .zfc-evidence-copy-btn:hover {
   background-color: rgba(255, 255, 255, 0.08);
-  color: var(--text-primary);
-  border-color: var(--border-medium);
+  color: var(--ink);
+  border-color: var(--hairline);
 }
 
 [data-theme="light"] .zfc-evidence-copy-btn:hover,
 .light .zfc-evidence-copy-btn:hover {
   background-color: rgba(15, 23, 42, 0.06);
-  color: var(--text-primary);
-  border-color: var(--border-medium);
+  color: var(--ink);
+  border-color: var(--hairline);
 }
 
 .zfc-evidence-copy-btn:focus-visible {
@@ -524,8 +524,8 @@
 .zfc-evidence-pre {
   margin: 0;
   padding: 0.85rem 1rem;
-  background-color: var(--bg-surface);
-  color: var(--text-primary);
+  background-color: var(--surface-elevated);
+  color: var(--ink);
   font-family: var(--font-mono);
   font-size: 0.82rem;
   line-height: 1.55;
@@ -548,7 +548,7 @@
   padding: 1.25rem;
   text-align: center;
   font-size: 0.82rem;
-  color: var(--text-muted);
+  color: var(--mute);
   font-style: italic;
 }
 
@@ -556,15 +556,15 @@
    7. REPRODUCTION STEPS / OBSERVATION COMMAND
    -------------------------------------------------------------------------- */
 .zfc-repro-box {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--hairline-soft);
   border-radius: var(--radius-sm);
   padding: 0.85rem 1rem;
 }
 
 [data-theme="light"] .zfc-repro-box,
 .light .zfc-repro-box {
-  background-color: var(--bg-secondary);
+  background-color: var(--surface-elevated);
 }
 
 .zfc-repro-step {
@@ -573,7 +573,7 @@
   gap: 0.75rem;
   margin-bottom: 0.6rem;
   font-size: 0.85rem;
-  color: var(--text-primary);
+  color: var(--ink);
 }
 
 .zfc-repro-step:last-child {
@@ -596,14 +596,14 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--hairline-soft);
   border-radius: 4px;
   padding: 0.4rem 0.65rem;
   margin-top: 0.4rem;
   font-family: var(--font-mono);
   font-size: 0.8rem;
-  color: var(--text-secondary);
+  color: var(--body-text);
   overflow-x: auto;
 }
 
@@ -622,7 +622,7 @@
   flex-wrap: wrap;
   gap: 0.65rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--hairline-soft);
 }
 
 /* Primary Remediation Button */
@@ -662,7 +662,7 @@
   font-size: 0.82rem;
   font-weight: 600;
   border-radius: var(--radius-sm);
-  background-color: var(--bg-surface);
+  background-color: var(--surface-elevated);
   color: var(--emerald);
   border: 1px solid rgba(16, 185, 129, 0.35);
   cursor: pointer;
@@ -710,9 +710,9 @@
   font-size: 0.82rem;
   font-weight: 500;
   border-radius: var(--radius-sm);
-  background-color: var(--bg-surface);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-elevated);
+  color: var(--body-text);
+  border: 1px solid var(--hairline-soft);
   cursor: pointer;
   transition: all var(--transition-fast);
   min-height: 36px;
@@ -722,15 +722,15 @@
 
 .zfc-btn-secondary:hover {
   background-color: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary);
-  border-color: var(--border-medium);
+  color: var(--ink);
+  border-color: var(--hairline);
 }
 
 [data-theme="light"] .zfc-btn-secondary:hover,
 .light .zfc-btn-secondary:hover {
   background-color: rgba(15, 23, 42, 0.05);
-  color: var(--text-primary);
-  border-color: var(--border-medium);
+  color: var(--ink);
+  border-color: var(--hairline);
 }
 
 .zfc-btn-secondary:focus-visible {

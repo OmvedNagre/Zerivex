@@ -19,6 +19,8 @@ import {
   Activity,
   BarChart3,
   FileText,
+  X,
+  ArrowRight,
 } from 'lucide-react';
 import { ScanJobRecord } from '@/core/scanner/scan-runner';
 import { ScanMode } from '@/core/scanner/checks/types';
@@ -198,9 +200,11 @@ export function ScanModeBadge({ mode }: { mode: ScanMode | string }) {
         className="zse-mode-badge zse-mode-active"
         title="Verified Active Scanning: Deep active security verification authorized per ADR-0008"
         aria-label="Scan mode: Verified Active"
+        data-mode="ACTIVE"
       >
         <ShieldCheck size={11} aria-hidden="true" />
-        <span>ACTIVE</span>
+        <span>Active (verified)</span>
+        <span className="sr-only">ACTIVE</span>
       </span>
     );
   }
@@ -210,9 +214,11 @@ export function ScanModeBadge({ mode }: { mode: ScanMode | string }) {
       className="zse-mode-badge zse-mode-passive"
       title="Public Passive Assessment: Non-intrusive configuration and header evaluation"
       aria-label="Scan mode: Public Passive"
+      data-mode="PASSIVE"
     >
       <Globe size={11} aria-hidden="true" />
-      <span>PASSIVE</span>
+      <span>Passive</span>
+      <span className="sr-only">PASSIVE</span>
     </span>
   );
 }
@@ -468,6 +474,7 @@ export function ScansExecutionTable({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="zse-search-input"
+                style={{ paddingInlineStart: '42px' }}
                 aria-label="Filter scans by target URL or hostname"
               />
               {searchQuery && (
@@ -478,12 +485,12 @@ export function ScansExecutionTable({
                   title="Clear search"
                   aria-label="Clear target filter"
                 >
-                  ✕
+                  <X size={13} />
                 </button>
               )}
             </div>
 
-            {/* Status Filter Tabs */}
+            {/* Status Filter Tabs: All · In progress · Completed · Failed */}
             <div className="zse-filter-tabs" role="tablist" aria-label="Filter scans by execution status">
               <button
                 type="button"
@@ -502,7 +509,7 @@ export function ScansExecutionTable({
                 onClick={() => setStatusFilter('ACTIVE')}
                 className={`zse-filter-tab ${statusFilter === 'ACTIVE' ? 'active' : ''}`}
               >
-                Active
+                In progress
                 <span className="zse-filter-count">{activeCount}</span>
               </button>
               <button
@@ -515,18 +522,16 @@ export function ScansExecutionTable({
                 Completed
                 <span className="zse-filter-count">{completedCount}</span>
               </button>
-              {failedCount > 0 && (
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={statusFilter === 'FAILED'}
-                  onClick={() => setStatusFilter('FAILED')}
-                  className={`zse-filter-tab ${statusFilter === 'FAILED' ? 'active' : ''}`}
-                >
-                  Failed
-                  <span className="zse-filter-count">{failedCount}</span>
-                </button>
-              )}
+              <button
+                type="button"
+                role="tab"
+                aria-selected={statusFilter === 'FAILED'}
+                onClick={() => setStatusFilter('FAILED')}
+                className={`zse-filter-tab ${statusFilter === 'FAILED' ? 'active' : ''}`}
+              >
+                Failed
+                <span className="zse-filter-count">{failedCount}</span>
+              </button>
             </div>
           </div>
 
@@ -642,7 +647,6 @@ export function ScansExecutionTable({
             {/* Native HTML Table (Desktop & Tablet >= 768px) */}
             <div className="zse-table-wrap">
               <table className="zse-table">
-                <caption className="sr-only">Fleet Scan Execution History and Security Posture Ledger</caption>
                 <thead className="zse-thead">
                   <tr>
                     <th scope="col" className="zse-th zse-col-target">Target Endpoint</th>
@@ -740,7 +744,7 @@ export function ScansExecutionTable({
                             aria-label={`View security assessment report for ${displayHostname}`}
                           >
                             <span>View Report</span>
-                            <span aria-hidden="true">→</span>
+                            <ArrowRight size={13} aria-hidden="true" />
                           </Link>
                         </td>
                       </tr>
@@ -800,7 +804,7 @@ export function ScansExecutionTable({
                         aria-label={`View report for ${displayHostname}`}
                       >
                         <span>View Report</span>
-                        <span aria-hidden="true">→</span>
+                        <ArrowRight size={13} aria-hidden="true" />
                       </Link>
                     </div>
                   </article>
