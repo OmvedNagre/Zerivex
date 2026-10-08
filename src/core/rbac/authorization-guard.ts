@@ -190,6 +190,14 @@ export async function requireTenantAccess(
   resourceType: string,
   resourceId?: string
 ): Promise<void> {
+  // Strict confinement: sessions issued via staff portal can NEVER access other organizations
+  if (context.viaStaffPortal) {
+    if (!context.organizationId || context.organizationId !== resourceOrganizationId) {
+      throw new ForbiddenError('Staff portal session is strictly confined to the internal organization.');
+    }
+    return;
+  }
+
   if (context.user.role === 'OWNER') {
     // Owner is authorized to view customer resources, but the action MUST be audited
     if (context.organizationId !== resourceOrganizationId) {

@@ -10,6 +10,7 @@ import {
   Info,
   RefreshCw,
   ChevronRight,
+  UserCheck,
 } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Button } from '@/components/ui/Button';
@@ -46,18 +47,21 @@ export default function DashboardOverviewPage() {
   const [selectedFindingForFix, setSelectedFindingForFix] = useState<any | null>(null);
   const [remediationData, setRemediationData] = useState<RuleRemediation | null>(null);
 
+  const [showProfileBanner, setShowProfileBanner] = useState(false);
+
   const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const [targetsRes, findingsRes, scansRes, qgRes, healthRes] =
+      const [targetsRes, findingsRes, scansRes, qgRes, healthRes, profileRes] =
         await Promise.allSettled([
           fetch('/api/targets').then((r) => r.json()),
           fetch('/api/findings').then((r) => r.json()),
           fetch('/api/scans').then((r) => r.json()),
           fetch('/api/quality-gates').then((r) => r.json()),
           fetch('/api/health').then((r) => r.json()),
+          fetch('/api/me/profile').then((r) => r.json()),
         ]);
 
       let targetsList: any[] = [];
@@ -114,6 +118,17 @@ export default function DashboardOverviewPage() {
         hasFixedFinding: findingsList.some((f: any) => f.status === 'FIXED'),
         hasCiGate: Boolean(qgData?.policy),
       });
+
+      // 4. Soft profile setup banner check
+      if (profileRes.status === 'fulfilled' && profileRes.value?.success) {
+        const prof = profileRes.value.data?.profile;
+        const isCompleted = Boolean(prof?.onboardingCompletedAt || prof?.onboardingSkippedAt);
+        let isDismissed = false;
+        try {
+          isDismissed = sessionStorage.getItem('zx_dismiss_profile_banner') === 'true';
+        } catch {}
+        setShowProfileBanner(!isCompleted && !isDismissed);
+      }
     } catch (err: any) {
       setError(err.message || 'Network error occurred while fetching dashboard data.');
     } finally {
@@ -238,6 +253,68 @@ export default function DashboardOverviewPage() {
           <Button variant="secondary" size="sm" onClick={loadDashboardData} icon={<RefreshCw size={13} />}>
             Retry
           </Button>
+        </div>
+      )}
+
+      {/* Dismissible Profile Setup Banner (for existing/unconfigured accounts) */}
+      {showProfileBanner && !loading && (
+        <div
+          style={{
+            padding: '16px 20px',
+            borderRadius: 'var(--ds-radius-lg)',
+            backgroundColor: 'var(--ds-bg-card)',
+            border: '1px solid var(--ds-border-subtle)',
+            boxShadow: 'var(--ds-shadow-1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '16px',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--ds-radius-md)',
+                backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <UserCheck size={18} color="var(--brand)" />
+            </div>
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ds-text-primary)' }}>
+                Finish setting up your profile
+              </div>
+              <div style={{ fontSize: '13px', color: 'var(--ds-text-secondary)', marginTop: '2px' }}>
+                Tell us about your persona and tech stack to customize your security recommendations and code guides.
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Link href="/onboarding">
+              <Button variant="brand" size="sm">
+                Complete Setup
+              </Button>
+            </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setShowProfileBanner(false);
+                try {
+                  sessionStorage.setItem('zx_dismiss_profile_banner', 'true');
+                } catch {}
+              }}
+            >
+              Dismiss
+            </Button>
+          </div>
         </div>
       )}
 

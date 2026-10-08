@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     const orgCtx = await getUserActiveOrganization(auth.user.id);
 
     // Enforce billing target quota
-    const quota = await checkTargetQuota(orgCtx.organizationId, auth.user.role);
+    const quota = await checkTargetQuota(orgCtx.organizationId, auth);
     if (!quota.allowed) {
       return NextResponse.json(
         {

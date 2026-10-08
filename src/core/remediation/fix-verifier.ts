@@ -8,6 +8,7 @@ import { query } from '@/core/db/database';
 import { recordAuditEvent } from '@/core/audit/audit-service';
 import { ALL_SCAN_CHECKS } from '@/core/scanner/scan-runner';
 import { ScanCheck, ScanContext, RawFinding } from '@/core/scanner/checks/types';
+import { resolveEntitlements } from '@/core/billing/entitlement-service';
 
 export interface FixVerificationResult {
   success: boolean;
@@ -113,6 +114,28 @@ export async function verifyFindingFix(params: {
   const finding = findingRes.rows[0];
   if (!finding) {
     throw new Error(`Finding "${findingId}" not found or unauthorized`);
+  }
+
+  // 1b. Enforce per-finding daily fix re-test cap (§F5: fixRetestDailyCapPerFinding)
+  const countRes = await query<{ count: string }>(
+    `
+    SELECT COUNT(*) as count
+    FROM audit_logs
+    WHERE resource_type = 'finding'
+      AND resource_id = $1
+      AND action IN ('FINDING_VERIFIED_FIXED', 'FINDING_FIX_FAILED')
+      AND created_at >= NOW() - INTERVAL '24 hours'
+    `,
+    [findingId]
+  );
+  const retestCount = parseInt(countRes.rows[0]?.count || '0', 10);
+  const entitlements = await resolveEntitlements(organizationId);
+  const dailyCap = entitlements.limits.fixRetestDailyCapPerFinding || 10;
+
+  if (retestCount >= dailyCap) {
+    throw new Error(
+      `Daily fix re-test limit reached for this finding (${retestCount}/${dailyCap} in last 24h). Upgrade your plan or wait 24 hours.`
+    );
   }
 
   // 2. Identify check module

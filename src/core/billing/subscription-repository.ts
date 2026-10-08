@@ -82,7 +82,7 @@ export async function getSubscriptionByOrgId(organizationId: string): Promise<Su
  */
 export async function upsertSubscription(params: {
   organizationId: string;
-  planId?: PlanId;
+  planId?: PlanId | string;
   status?: SubscriptionStatus;
   billingCycle?: BillingCycle;
   currency?: string;

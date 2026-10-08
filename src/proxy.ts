@@ -7,14 +7,38 @@ import {
 } from '@/core/security/rate-limiter';
 
 /**
- * Production Security & Rate Limiting Edge Middleware (Phase 14)
+ * Production Security & Rate Limiting Edge Proxy (Next.js 16)
  */
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const ip = getClientIp(req.headers);
 
-  // 1. Dashboard Route Protection (Edge level)
-  if (pathname.startsWith('/dashboard')) {
+  // 1. Staff Portal Kill Switch & Edge Protection
+  if (pathname.startsWith('/staff') || pathname.startsWith('/api/staff')) {
+    if (process.env.STAFF_PORTAL_ENABLED === 'false') {
+      return new NextResponse('Not Found', { status: 404 });
+    }
+
+    // Protect UI pages (except login)
+    if (pathname.startsWith('/staff') && !pathname.startsWith('/staff/login')) {
+      const staffCookieName =
+        process.env.NODE_ENV === 'production'
+          ? '__Host-zx_staff_session'
+          : 'zx_staff_session';
+      const staffCookie = req.cookies.get(staffCookieName);
+
+      if (!staffCookie?.value) {
+        const staffLoginUrl = new URL('/staff/login', req.url);
+        const redirectRes = NextResponse.redirect(staffLoginUrl);
+        redirectRes.headers.set('X-Robots-Tag', 'noindex, nofollow');
+        redirectRes.headers.set('Cache-Control', 'no-store');
+        return redirectRes;
+      }
+    }
+  }
+
+  // 2. Customer Dashboard & Onboarding Route Protection (Edge level)
+  if (pathname.startsWith('/dashboard') || pathname.startsWith('/onboarding')) {
     const cookieName =
       process.env.NODE_ENV === 'production'
         ? '__Host-zerivex_session'
@@ -28,7 +52,7 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  // 2. API Route Protection (Rate Limiting & Payload Inspection)
+  // 3. API Route Protection (Rate Limiting & Payload Inspection)
   if (pathname.startsWith('/api/')) {
     // A. Payload Size Inspection on Mutations
     if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
@@ -79,7 +103,7 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  // 2. Pass request and append Defense-in-Depth HTTP Security Headers
+  // 4. Pass request and append Defense-in-Depth HTTP Security Headers
   const response = NextResponse.next();
 
   response.headers.set('X-Content-Type-Options', 'nosniff');
@@ -100,6 +124,12 @@ export function middleware(req: NextRequest) {
     'Permissions-Policy',
     'camera=(), microphone=(), geolocation=(), browsing-topics=()'
   );
+
+  // Phase C: Staff routes must be completely hidden from search engines and never cached
+  if (pathname.startsWith('/staff') || pathname.startsWith('/api/staff')) {
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+    response.headers.set('Cache-Control', 'no-store');
+  }
 
   return response;
 }

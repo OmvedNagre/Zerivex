@@ -1,0 +1,189 @@
+/* ==========================================================================
+   ZERIVEX STAFF CONSOLE DESIGN SYSTEM ("Dark Operator" + Violet Accent)
+   Strict isolation from Customer Portal (Ember & Paper)
+   ========================================================================== */
+
+:root {
+  --staff-bg-canvas: #0E1015;
+  --staff-bg-card: #151821;
+  --staff-bg-subtle: #1C202C;
+  --staff-bg-hover: #232838;
+  --staff-border: #262A36;
+  --staff-border-strong: #373C4E;
+
+  --staff-text-primary: #E9EAF0;
+  --staff-text-secondary: #9FA4B8;
+  --staff-text-muted: #646A82;
+
+  --staff-violet-600: #5925AB;
+  --staff-violet-500: #7839EE;
+  --staff-violet-400: #AB6CFE;
+  --staff-violet-glow: rgba(171, 108, 254, 0.15);
+
+  --staff-danger: #EF4444;
+  --staff-danger-bg: rgba(239, 68, 68, 0.12);
+  --staff-warning: #F59E0B;
+  --staff-warning-bg: rgba(245, 158, 11, 0.12);
+  --staff-success: #10B981;
+  --staff-success-bg: rgba(16, 185, 129, 0.12);
+}
+
+.staff-root {
+  background-color: var(--staff-bg-canvas);
+  color: var(--staff-text-primary);
+  min-height: 100vh;
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+}
+
+/* 28px Permanent Violet Staff Stripe */
+.staff-stripe {
+  height: 28px;
+  background-color: var(--staff-violet-600);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  user-select: none;
+  z-index: 1000;
+  position: sticky;
+  top: 0;
+  box-shadow: 0 2px 8px rgba(89, 37, 171, 0.4);
+}
+
+/* Staff Left Sidebar */
+.staff-sidebar {
+  width: 240px;
+  background-color: #12141B;
+  border-right: 1px solid var(--staff-border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.staff-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  color: var(--staff-text-secondary);
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  border-radius: 6px;
+  margin: 2px 8px;
+  transition: all 0.15s ease;
+}
+
+.staff-nav-item:hover {
+  background-color: var(--staff-bg-subtle);
+  color: var(--staff-text-primary);
+}
+
+.staff-nav-item.active {
+  background-color: rgba(171, 108, 254, 0.14);
+  color: #FFFFFF;
+  font-weight: 600;
+  border-left: 3px solid var(--staff-violet-400);
+}
+
+/* Staff Operator Cards */
+.staff-card {
+  background-color: var(--staff-bg-card);
+  border: 1px solid var(--staff-border);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* Staff Buttons */
+.staff-btn-brand {
+  background-color: var(--staff-violet-500);
+  color: #FFFFFF;
+  border: 1px solid var(--staff-violet-400);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+}
+
+.staff-btn-brand:hover {
+  background-color: var(--staff-violet-400);
+  box-shadow: 0 0 16px var(--staff-violet-glow);
+}
+
+.staff-btn-secondary {
+  background-color: var(--staff-bg-subtle);
+  color: var(--staff-text-primary);
+  border: 1px solid var(--staff-border);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+}
+
+.staff-btn-secondary:hover {
+  background-color: var(--staff-bg-hover);
+  border-color: var(--staff-border-strong);
+}
+
+.staff-btn-danger {
+  background-color: var(--staff-danger-bg);
+  color: var(--staff-danger);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+}
+
+.staff-btn-danger:hover {
+  background-color: rgba(239, 68, 68, 0.22);
+}
+
+/* Staff Data Table */
+.staff-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.staff-table th {
+  padding: 12px 16px;
+  color: var(--staff-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--staff-border);
+}
+
+.staff-table td {
+  padding: 14px 16px;
+  color: var(--staff-text-primary);
+  border-bottom: 1px solid var(--staff-border);
+}
+
+.staff-table tr:hover td {
+  background-color: rgba(255, 255, 255, 0.015);
+}

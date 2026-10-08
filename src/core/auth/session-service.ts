@@ -18,6 +18,9 @@ export interface SessionContext {
   organizationId: string | null;
   organizationRole: string | null;
   expiresAt: Date;
+  viaStaffPortal?: boolean;
+  previewPlanId?: string | null;
+  staffRole?: string | null;
 }
 
 export const SESSION_COOKIE_NAME =
@@ -114,6 +117,8 @@ export async function validateSessionToken(rawToken: string): Promise<SessionCon
     status: 'ACTIVE' | 'SUSPENDED';
     organizationId: string | null;
     organizationRole: string | null;
+    viaStaffPortal: boolean;
+    previewPlanId: string | null;
   }>(
     `
     SELECT
@@ -126,7 +131,9 @@ export async function validateSessionToken(rawToken: string): Promise<SessionCon
       u.role,
       u.status,
       m.organization_id as "organizationId",
-      m.role as "organizationRole"
+      m.role as "organizationRole",
+      s.via_staff_portal as "viaStaffPortal",
+      s.preview_plan_id as "previewPlanId"
     FROM sessions s
     JOIN users u ON u.id = s.user_id
     LEFT JOIN memberships m ON m.user_id = u.id
@@ -145,6 +152,31 @@ export async function validateSessionToken(rawToken: string): Promise<SessionCon
     return null;
   }
 
+  // 1. If this session was issued via staff portal, enforce active platform role & internal org confinement
+  let effectiveOrgId = row.organizationId;
+  let staffRole: string | null = null;
+
+  if (row.viaStaffPortal) {
+    const roleCheck = await query<{ role: string }>(
+      `SELECT role FROM platform_roles WHERE user_id = $1 AND revoked_at IS NULL LIMIT 1`,
+      [row.userId]
+    );
+
+    if (roleCheck.rows.length === 0) {
+      // Platform role was revoked or demoted -> invalidate via_staff_portal customer session immediately
+      return null;
+    }
+    staffRole = roleCheck.rows[0]!.role;
+
+    // Confine to internal organization
+    const internalOrg = await query<{ id: string }>(
+      `SELECT id FROM organizations WHERE is_internal = true LIMIT 1`
+    );
+    if (internalOrg.rows[0]) {
+      effectiveOrgId = internalOrg.rows[0].id;
+    }
+  }
+
   // Touch last_used_at timestamp asynchronously
   query('UPDATE sessions SET last_used_at = NOW() WHERE id = $1', [row.sessionId]).catch(() => {});
 
@@ -159,8 +191,11 @@ export async function validateSessionToken(rawToken: string): Promise<SessionCon
       role: row.role,
       status: row.status,
     },
-    organizationId: row.organizationId,
-    organizationRole: row.organizationRole,
+    organizationId: effectiveOrgId,
+    organizationRole: row.viaStaffPortal ? 'ORG_OWNER' : row.organizationRole,
+    viaStaffPortal: row.viaStaffPortal,
+    previewPlanId: row.previewPlanId,
+    staffRole,
   };
 }
 

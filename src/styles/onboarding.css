@@ -1,0 +1,306 @@
+/* ==========================================================================
+   ZERIVEX ONBOARDING WIZARD STYLES (Phase B)
+   Adheres to Ember & Paper tokens, hairline borders, Inter ss03, Lucide icons.
+   ========================================================================== */
+
+.zob-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--ds-bg-page, #07080a);
+  color: var(--ds-text-primary, #ffffff);
+  font-family: var(--font-sans);
+  padding: 2.5rem 1.5rem;
+}
+
+.zob-container {
+  max-width: 680px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.zob-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+}
+
+.zob-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+  color: var(--ds-text-primary, #ffffff);
+  text-decoration: none;
+}
+
+.zob-logo-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 0.85rem;
+}
+
+.zob-skip-btn {
+  font-size: 0.82rem;
+  color: var(--ds-text-muted, #64748b);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-sm, 6px);
+  transition: all 0.15s ease;
+}
+
+.zob-skip-btn:hover {
+  color: var(--ds-text-primary, #ffffff);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Progress Indicator */
+.zob-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.zob-step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.15);
+  transition: all 0.25s ease;
+}
+
+.zob-step-dot.is-active {
+  width: 24px;
+  background: #f97316;
+}
+
+.zob-step-dot.is-completed {
+  background: #34d399;
+}
+
+/* Card Body */
+.zob-card {
+  background: var(--ds-bg-card, #0d0d0d);
+  border: 1px solid var(--hairline, #242728);
+  border-radius: var(--radius-lg, 12px);
+  padding: 2.25rem 2.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.zob-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #f97316;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.zob-title {
+  font-size: 1.65rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ds-text-primary, #ffffff);
+  margin: 0 0 0.5rem 0;
+  line-height: 1.25;
+}
+
+.zob-subtitle {
+  font-size: 0.92rem;
+  color: var(--ds-text-secondary, #94a3b8);
+  margin: 0 0 2rem 0;
+  line-height: 1.45;
+}
+
+/* Selectable Cards (Step 2: Personas) */
+.zob-grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.zob-choice-card {
+  padding: 1.25rem;
+  border-radius: var(--radius-md, 8px);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--hairline, #242728);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  text-align: left;
+}
+
+.zob-choice-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.zob-choice-card.is-selected {
+  background: rgba(249, 115, 22, 0.08);
+  border-color: #f97316;
+  box-shadow: 0 0 0 1px #f97316;
+}
+
+.zob-choice-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ds-text-primary, #ffffff);
+  flex-shrink: 0;
+}
+
+.zob-choice-card.is-selected .zob-choice-icon {
+  background: rgba(249, 115, 22, 0.2);
+  color: #f97316;
+}
+
+.zob-choice-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ds-text-primary, #ffffff);
+  margin-bottom: 0.2rem;
+}
+
+.zob-choice-desc {
+  font-size: 0.78rem;
+  color: var(--ds-text-secondary, #94a3b8);
+  line-height: 1.35;
+}
+
+/* Chip Multi-select (Step 3: Goals & Step 4: Tools) */
+.zob-chips-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-bottom: 1.5rem;
+}
+
+.zob-chip-btn {
+  padding: 0.55rem 1rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--hairline, #242728);
+  color: var(--ds-text-secondary, #94a3b8);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.zob-chip-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ds-text-primary, #ffffff);
+}
+
+.zob-chip-btn.is-selected {
+  background: rgba(249, 115, 22, 0.12);
+  border-color: #f97316;
+  color: #fb923c;
+}
+
+/* Input Fields */
+.zob-input-group {
+  margin-bottom: 1.75rem;
+}
+
+.zob-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ds-text-secondary, #94a3b8);
+  margin-bottom: 0.4rem;
+}
+
+.zob-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--hairline, #242728);
+  color: var(--ds-text-primary, #ffffff);
+  font-size: 0.92rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.zob-input:focus {
+  border-color: #f97316;
+}
+
+/* Action Buttons Footer */
+.zob-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.zob-btn-back {
+  padding: 0.65rem 1.25rem;
+  border-radius: var(--radius-sm, 6px);
+  background: transparent;
+  border: 1px solid var(--hairline, #242728);
+  color: var(--ds-text-secondary, #94a3b8);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.zob-btn-back:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ds-text-primary, #ffffff);
+}
+
+.zob-btn-next {
+  padding: 0.65rem 1.5rem;
+  border-radius: var(--radius-sm, 6px);
+  background: #f97316;
+  border: none;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.15s ease;
+}
+
+.zob-btn-next:hover {
+  background: #ea580c;
+}
+
+.zob-footer-note {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--ds-text-muted, #64748b);
+  margin-top: 2rem;
+}

@@ -32,6 +32,41 @@ const envSchema = z.object({
   SCANNER_MAX_CONCURRENT_JOBS: z.string().transform(Number).default('5'),
   SCANNER_REQUEST_TIMEOUT_MS: z.string().transform(Number).default('15000'),
   SCANNER_MAX_RESPONSE_BYTES: z.string().transform(Number).default('10485760'), // 10MB
+
+  // Staff Portal & Console (Phase C)
+  STAFF_ALLOWED_EMAIL_DOMAINS: z
+    .string()
+    .optional()
+    .refine(
+      (val) => {
+        if (!val) return true;
+        const publicDomains = [
+          'gmail.com',
+          'googlemail.com',
+          'outlook.com',
+          'hotmail.com',
+          'yahoo.com',
+          'icloud.com',
+          'proton.me',
+          'protonmail.com',
+          'aol.com',
+          'mail.com',
+          'zoho.com',
+        ];
+        const domains = val.split(',').map((d) => d.trim().toLowerCase());
+        return !domains.some((d) => publicDomains.includes(d));
+      },
+      {
+        message:
+          'STAFF_ALLOWED_EMAIL_DOMAINS cannot contain public consumer email domains (e.g. gmail.com). Use STAFF_ALLOWED_EMAILS for individual accounts.',
+      }
+    ),
+  STAFF_ALLOWED_EMAILS: z.string().optional(),
+  STAFF_SESSION_TTL_MINUTES: z.string().regex(/^\d+$/).transform(Number).default('480'),
+  STAFF_IDLE_TTL_MINUTES: z.string().regex(/^\d+$/).transform(Number).default('30'),
+  STAFF_REAUTH_WINDOW_MINUTES: z.string().regex(/^\d+$/).transform(Number).default('10'),
+  STAFF_PORTAL_ENABLED: z.string().transform((v) => v !== 'false').default('true'),
+  STAFF_BOOTSTRAP_OWNER_EMAIL: z.string().email().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

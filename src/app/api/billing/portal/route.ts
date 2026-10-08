@@ -4,6 +4,7 @@ import { getUserActiveOrganization } from '@/core/auth/organization-context';
 import { getSubscriptionByOrgId } from '@/core/billing/subscription-repository';
 import { createStripePortalSession } from '@/core/billing/stripe-service';
 import { recordAuditEvent } from '@/core/audit/audit-service';
+import { query } from '@/core/db/database';
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,6 +12,19 @@ export async function POST(req: NextRequest) {
     requirePermission(auth, 'billing:manage');
 
     const orgCtx = await getUserActiveOrganization(auth.user.id);
+
+    // Section C6: Billing disabled for internal organizations
+    const orgCheck = await query<{ isInternal: boolean }>(
+      'SELECT is_internal as "isInternal" FROM organizations WHERE id = $1',
+      [orgCtx.organizationId]
+    );
+    if (orgCheck.rows[0]?.isInternal) {
+      return NextResponse.json(
+        { error: 'Internal workspace has no billing' },
+        { status: 403 }
+      );
+    }
+
     const subscription = await getSubscriptionByOrgId(orgCtx.organizationId);
 
     const origin = req.nextUrl.origin || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';

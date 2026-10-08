@@ -57,12 +57,25 @@ export type AuditAction =
   | 'AGENCY_BRANDING_UPDATED'
   | 'AGENCY_CLIENT_ACCESS_GRANTED'
   | 'AGENCY_CLIENT_ACCESS_REVOKED'
-  | 'SELF_SCAN_TRIGGERED';
+  | 'SELF_SCAN_TRIGGERED'
+  | 'PROFILE_UPDATED'
+  | 'STAFF_LOGIN'
+  | 'STAFF_LOGOUT'
+  | 'STAFF_REAUTH'
+  | 'STAFF_FAILED_LOGIN'
+  | 'STAFF_ROLE_GRANTED'
+  | 'STAFF_ROLE_REVOKED'
+  | 'STAFF_ORGANIZATION_SUSPENDED'
+  | 'STAFF_ORGANIZATION_UNSUSPENDED'
+  | 'STAFF_CREDITS_GRANTED'
+  | 'STAFF_PORTAL_SWITCHED'
+  | 'STAFF_PLAN_PREVIEW_CHANGED';
 
 export interface AuditLogEntry {
   id: string;
   organizationId?: string | null;
   actorUserId?: string | null;
+  actorType?: 'USER' | 'STAFF' | 'SYSTEM';
   action: AuditAction;
   resourceType: string;
   resourceId?: string | null;
@@ -116,6 +129,7 @@ export async function recordAuditEvent(
   params: {
     organizationId?: string | null;
     actorUserId?: string | null;
+    actorType?: 'USER' | 'STAFF' | 'SYSTEM';
     action: AuditAction;
     resourceType: string;
     resourceId?: string | null;
@@ -140,13 +154,15 @@ export async function recordAuditEvent(
       reason,
       ip_address,
       user_agent,
-      metadata_json
+      metadata_json,
+      actor_type
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
     RETURNING 
       id,
       organization_id as "organizationId",
       actor_user_id as "actorUserId",
+      actor_type as "actorType",
       action,
       resource_type as "resourceType",
       resource_id as "resourceId",
@@ -166,6 +182,7 @@ export async function recordAuditEvent(
       params.ipAddress ?? null,
       params.userAgent ?? null,
       JSON.stringify(sanitizedMeta),
+      params.actorType || 'USER',
     ]
   );
 

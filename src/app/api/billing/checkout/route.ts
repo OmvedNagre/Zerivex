@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, requirePermission, handleAuthError } from '@/core/rbac/authorization-guard';
 import { getUserActiveOrganization } from '@/core/auth/organization-context';
 import { createStripeCheckoutSession } from '@/core/billing/stripe-service';
-import { PlanId, BillingCycle } from '@/core/billing/types';
+import { PlanId, BillingCycle, resolvePlanId } from '@/core/billing/types';
 import { recordAuditEvent } from '@/core/audit/audit-service';
+import { query } from '@/core/db/database';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,9 +14,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { planId, billingCycle } = body;
 
-    if (!planId || !['FREE_DEVELOPER', 'TEAM_PRO', 'ENTERPRISE'].includes(planId)) {
+    const resolvedPlan = resolvePlanId(planId);
+    const validPaidPlans = ['PRO', 'TEAM', 'ENTERPRISE'];
+    if (!planId || !validPaidPlans.includes(resolvedPlan)) {
       return NextResponse.json(
-        { error: 'Valid planId required (TEAM_PRO or ENTERPRISE)' },
+        { error: 'Valid paid planId required (PRO, TEAM, or ENTERPRISE)' },
         { status: 400 }
       );
     }
@@ -28,6 +31,19 @@ export async function POST(req: NextRequest) {
     }
 
     const orgCtx = await getUserActiveOrganization(auth.user.id);
+
+    // Section C6: Billing disabled for internal organizations
+    const orgCheck = await query<{ isInternal: boolean }>(
+      'SELECT is_internal as "isInternal" FROM organizations WHERE id = $1',
+      [orgCtx.organizationId]
+    );
+    if (orgCheck.rows[0]?.isInternal) {
+      return NextResponse.json(
+        { error: 'Internal workspace has no billing' },
+        { status: 403 }
+      );
+    }
+
     const origin = req.nextUrl.origin || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
     const session = await createStripeCheckoutSession({

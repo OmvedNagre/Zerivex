@@ -5,6 +5,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { TopBar } from '@/components/dashboard/TopBar';
 import { CommandPalette } from '@/components/ui/CommandPalette';
+import { CustomerPortalStaffBar } from '@/components/staff/CustomerPortalStaffBar';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isPinned, setIsPinned] = useState(false);
@@ -19,6 +20,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
     } catch {
       // Ignore localStorage exceptions in private browsing
+    }
+
+    // Phase B: Safe redirect-once to /onboarding for new users who haven't completed or skipped
+    try {
+      const checkDone = sessionStorage.getItem('zx_onboarding_check_done');
+      if (!checkDone) {
+        fetch('/api/me/profile')
+          .then((r) => r.json())
+          .then((res) => {
+            sessionStorage.setItem('zx_onboarding_check_done', 'true');
+            if (
+              res.success &&
+              res.data?.isNewUser &&
+              !res.data.hasCompletedOnboarding &&
+              !res.data.hasSkippedOnboarding
+            ) {
+              const redirected = sessionStorage.getItem('zx_onboarding_redirected');
+              if (!redirected) {
+                sessionStorage.setItem('zx_onboarding_redirected', 'true');
+                window.location.href = '/onboarding';
+              }
+            }
+          })
+          .catch(() => {});
+      }
+    } catch {
+      // Ignore
     }
   }, []);
 
@@ -61,6 +89,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             transition: 'margin-left 180ms cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
+          {/* Customer Portal Staff Mode Bar */}
+          <CustomerPortalStaffBar />
+
           {/* Slim Top Bar */}
           <TopBar />
 

@@ -200,12 +200,12 @@ export function adaptPlans(
   currentPlanId?: string,
   isAnnual = false
 ): AdaptedPlanCard[] {
-  const planKeys: PlanId[] = ['FREE_DEVELOPER', 'TEAM_PRO', 'ENTERPRISE'];
+  const planKeys: PlanId[] = ['STARTER', 'PRO', 'TEAM', 'ENTERPRISE'];
 
   return planKeys.map((key) => {
     const p: PlanDefinition = PLANS[key];
     const isCurrent = currentPlanId === p.id;
-    const isPopular = p.badge === 'MOST POPULAR';
+    const isPopular = p.badge === 'RECOMMENDED' || p.badge === 'MOST POPULAR';
 
     const monthlyPrice = p.pricing.monthlyInr;
     const annualPrice = p.pricing.yearlyInr;
@@ -213,27 +213,30 @@ export function adaptPlans(
     const annualSavingsText = annualSavings > 0 ? `Save ${formatCurrencyINR(annualSavings)}/yr` : '';
 
     const featuresList = [
-      { text: `${p.limits.maxVerifiedTargets} Monitored Target${p.limits.maxVerifiedTargets > 1 ? 's' : ''}`, enabled: true },
+      { text: `${p.limits.maxSites} Monitored Target${p.limits.maxSites > 1 ? 's' : ''}`, enabled: true },
       { text: `${p.limits.maxMonthlyScans} Scans per month`, enabled: true },
       { text: `${p.limits.maxTeamMembers} Team member${p.limits.maxTeamMembers > 1 ? 's' : ''}`, enabled: true },
-      { text: 'Deterministic vulnerability scanner (14 checks)', enabled: true },
-      { text: 'Multi-framework code diffs & targeted fix verifier', enabled: true },
-      { text: 'Continuous monitoring & regression alerts', enabled: p.features.continuousMonitoring },
-      { text: 'CI/CD quality gates & OASIS SARIF v2.1.0', enabled: p.features.cicdIntegrations },
-      { text: 'Tamper-evident compliance audit vault', enabled: p.features.complianceAuditVault },
+      { text: p.id === 'STARTER' ? 'Perimeter security checks (7 passive engines)' : 'Full 14 security engines (passive + active verified)', enabled: true },
+      { text: 'Fix verification & remediation code diffs', enabled: true },
+      { text: 'Continuous monitoring & regression alerts', enabled: p.features.alerts },
+      { text: 'CI/CD quality gates & OASIS SARIF v2.1.0', enabled: p.features.ciGates },
+      { text: 'Tamper-evident activity log & audit vault', enabled: p.features.auditVault },
       { text: 'Authenticated security scanning', enabled: false, comingSoon: true },
       { text: 'Repository & dependency analysis', enabled: false, comingSoon: true },
     ];
 
-    let ctaLabel = 'Start Free Scan';
+    let ctaLabel = 'Start with Starter';
     let ctaVariant: 'brand' | 'secondary' | 'ghost' = 'secondary';
 
-    if (p.id === 'FREE_DEVELOPER') {
-      ctaLabel = isCurrent ? 'Your Current Plan' : 'Start Free Scan';
+    if (p.id === 'STARTER') {
+      ctaLabel = isCurrent ? 'Your Current Plan' : 'Start with Starter';
       ctaVariant = 'secondary';
-    } else if (p.id === 'TEAM_PRO') {
-      ctaLabel = isCurrent ? 'Your Current Plan' : 'Upgrade to Team Pro';
+    } else if (p.id === 'PRO') {
+      ctaLabel = isCurrent ? 'Your Current Plan' : 'Upgrade to Pro';
       ctaVariant = 'brand';
+    } else if (p.id === 'TEAM') {
+      ctaLabel = isCurrent ? 'Your Current Plan' : 'Upgrade to Team';
+      ctaVariant = 'secondary';
     } else if (p.id === 'ENTERPRISE') {
       ctaLabel = isCurrent ? 'Your Current Plan' : 'Talk to Security Team';
       ctaVariant = 'secondary';
@@ -251,7 +254,7 @@ export function adaptPlans(
       annualSavingsText,
       highlighted: isPopular,
       limits: {
-        apps: p.limits.maxVerifiedTargets,
+        apps: p.limits.maxSites,
         scans: p.limits.maxMonthlyScans,
         members: p.limits.maxTeamMembers,
       },
@@ -273,8 +276,8 @@ export function adaptEntitlementError(
     return {
       attempted: 'Register Additional Target',
       reason: errMsg || 'Your current plan has reached its verified target limit.',
-      requiredPlanId: 'TEAM_PRO',
-      benefit: 'Monitor up to 5 verified targets with automated continuous perimeter scanning.',
+      requiredPlanId: 'PRO',
+      benefit: 'Monitor up to 3 verified targets with automated continuous perimeter scanning.',
       severity: 'blocked',
     };
   }
@@ -283,8 +286,8 @@ export function adaptEntitlementError(
     return {
       attempted: 'Launch Vulnerability Scan',
       reason: errMsg || 'You have used all included scans for your current billing cycle.',
-      requiredPlanId: 'TEAM_PRO',
-      benefit: 'Unlock 250 monthly scans, active vulnerability probes, and CI/CD quality gates.',
+      requiredPlanId: 'PRO',
+      benefit: 'Unlock 50 monthly scans, active vulnerability probes, and fix verification.',
       severity: 'blocked',
     };
   }
@@ -292,7 +295,7 @@ export function adaptEntitlementError(
   return {
     attempted: 'Access Advanced Capability',
     reason: errMsg || 'This feature requires an upgraded subscription tier.',
-    requiredPlanId: 'TEAM_PRO',
+    requiredPlanId: 'PRO',
     benefit: 'Get automated multi-framework fix verification, CI/CD gates, and monitoring alerts.',
     severity: 'soft',
   };
@@ -330,9 +333,9 @@ export function adaptSolutionsFromChecks(): SolutionItem[] {
     {
       id: 'sol-secrets',
       eyebrow: 'CREDENTIAL SAFETY',
-      title: 'Exposed Secrets & API Keys in Client Bundles',
-      description: 'Systematically detects raw Stripe secret keys, AWS tokens, and OpenAI credentials baked into client-side JS bundles by AI code tools.',
-      features: ['Client bundle AST scanning', 'Deterministic regex signatures', 'Zero synthetic false positives'],
+      title: 'Exposed Sensitive Files & Configuration Secrets',
+      description: 'Systematically detects plaintext .env configuration files, .git repository metadata, and open API schema documentation exposed publicly on web servers.',
+      features: ['Direct /.env file detection', 'Git repository metadata prober', 'OpenAPI & Swagger exposure checks'],
       badge: 'CRITICAL',
       accent: 'var(--sev-critical)',
       rulePrefix: 'ZX-SEC-*',

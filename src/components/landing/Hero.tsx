@@ -310,38 +310,56 @@ export function Hero() {
           <div
             style={{
               display: 'flex',
-              gap: '2px',
+              alignItems: 'center',
+              justifyContent: 'space-between',
               padding: '8px 12px 0',
               backgroundColor: 'var(--ds-bg-ink-raised)',
               borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
             }}
           >
-            {[
-              { id: 'passive', label: 'Passive audit' },
-              { id: 'verify', label: 'Ownership verify' },
-              { id: 'remediate', label: 'Fix & re-verify' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id as any)}
-                style={{
-                  background: activeTab === tab.id ? 'var(--ds-bg-ink)' : 'transparent',
-                  color: activeTab === tab.id ? 'var(--ds-text-on-ink)' : 'var(--ds-text-on-ink-dim)',
-                  border: 'none',
-                  borderTopLeftRadius: '6px',
-                  borderTopRightRadius: '6px',
-                  padding: '8px 14px',
-                  fontSize: '12px',
-                  fontFamily: 'var(--font-mono)',
-                  cursor: 'pointer',
-                  fontWeight: activeTab === tab.id ? 600 : 400,
-                  transition: 'color 0.15s ease',
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
+            <div style={{ display: 'flex', gap: '2px' }}>
+              {[
+                { id: 'passive', label: 'Passive audit' },
+                { id: 'verify', label: 'Ownership verify' },
+                { id: 'remediate', label: 'Fix & re-verify' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id as any)}
+                  style={{
+                    background: activeTab === tab.id ? 'var(--ds-bg-ink)' : 'transparent',
+                    color: activeTab === tab.id ? 'var(--ds-text-on-ink)' : 'var(--ds-text-on-ink-dim)',
+                    border: 'none',
+                    borderTopLeftRadius: '6px',
+                    borderTopRightRadius: '6px',
+                    padding: '8px 14px',
+                    fontSize: '12px',
+                    fontFamily: 'var(--font-mono)',
+                    cursor: 'pointer',
+                    fontWeight: activeTab === tab.id ? 600 : 400,
+                    transition: 'color 0.15s ease',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            <span
+              style={{
+                fontSize: '10px',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                color: 'var(--ds-text-on-ink-dim)',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                marginBottom: '6px',
+              }}
+            >
+              Sample output
+            </span>
           </div>
 
           {/* Terminal Screen Body */}
@@ -372,7 +390,7 @@ export function Hero() {
             {activeTab === 'passive' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ color: 'var(--ds-text-on-ink-dim)' }}>
-                  &gt; Initializing 14 deterministic passive check engines...
+                  &gt; Initializing deterministic passive check engines...
                 </div>
                 <div style={{ color: 'var(--ds-text-on-ink-dim)' }}>
                   &gt; [TLS/HTTPS] Inspecting handshake, cipher suites &amp; certificate validity...
@@ -381,7 +399,7 @@ export function Hero() {
                   &gt; [HEADERS] Auditing RFC 6797 HSTS, CSP and X-Frame-Options policies...
                 </div>
                 <div style={{ color: 'var(--ds-butter)' }}>
-                  &gt; [SECRETS] Client bundle AST scan flagged 1 potential credential token
+                  &gt; [SECRETS] Exposed sensitive file check flagged /.env configuration exposure
                 </div>
                 <div style={{ color: 'var(--ds-text-on-ink-dim)' }}>
                   &gt; [CORS] Evaluating origin reflection and cookie SameSite attributes...

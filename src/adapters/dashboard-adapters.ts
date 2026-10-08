@@ -659,3 +659,143 @@ export function adaptNavBadges(inputs: {
     unreadAlerts: inputs.unreadAlertsCount || 0,
   };
 }
+
+export interface PersonaDefaults {
+  persona: string;
+  expandedGroups: string[];
+  collapsedGroups: string[];
+  promotedItems: string[];
+  sidebarEmphasis: {
+    promotedGroups: string[];
+    collapsedGroups: string[];
+  };
+  nextBestActionTone: string;
+  surfacedAcademyTrack: string;
+  defaultFrameworkTab: 'nextjs' | 'express' | 'nginx';
+  primaryGoals: string[];
+}
+
+export function adaptPersonaDefaults(
+  input?: string | {
+    persona?: string | null;
+    goals?: string[] | null;
+    stack?: string[] | null;
+  } | null,
+  explicitStack?: string[] | null
+): PersonaDefaults {
+  let persona = 'SOLO_BUILDER';
+  let goals: string[] = [];
+  let rawStack: string[] = [];
+
+  if (typeof input === 'string') {
+    persona = input;
+    rawStack = explicitStack || [];
+  } else if (input && typeof input === 'object') {
+    persona = input.persona || 'SOLO_BUILDER';
+    goals = input.goals || [];
+    rawStack = input.stack || explicitStack || [];
+  } else if (explicitStack) {
+    rawStack = explicitStack;
+  }
+
+  const stack = rawStack.map((s) => s.toUpperCase());
+
+  let defaultFrameworkTab: 'nextjs' | 'express' | 'nginx' = 'nextjs';
+  if (stack.includes('EXPRESS')) defaultFrameworkTab = 'express';
+  else if (stack.includes('NGINX')) defaultFrameworkTab = 'nginx';
+
+  switch (persona) {
+    case 'STUDENT': {
+      const promoted = ['Protect', 'Learn'];
+      const collapsed = ['Organization'];
+      return {
+        persona: 'STUDENT',
+        expandedGroups: promoted,
+        collapsedGroups: collapsed,
+        promotedItems: ['academy'],
+        sidebarEmphasis: {
+          promotedGroups: promoted,
+          collapsedGroups: collapsed,
+        },
+        nextBestActionTone: 'learning-first',
+        surfacedAcademyTrack: 'ai-code-smells',
+        defaultFrameworkTab,
+        primaryGoals: goals,
+      };
+    }
+    case 'FREELANCER_AGENCY': {
+      const promoted = ['Protect', 'Organization', 'Automate'];
+      const collapsed = ['Learn'];
+      return {
+        persona: 'FREELANCER_AGENCY',
+        expandedGroups: promoted,
+        collapsedGroups: collapsed,
+        promotedItems: ['agency'],
+        sidebarEmphasis: {
+          promotedGroups: promoted,
+          collapsedGroups: collapsed,
+        },
+        nextBestActionTone: 'client-focused',
+        surfacedAcademyTrack: 'api-modern-web',
+        defaultFrameworkTab,
+        primaryGoals: goals,
+      };
+    }
+    case 'STARTUP_FOUNDER': {
+      const promoted = ['Protect', 'Automate', 'Organization', 'Billing'];
+      const collapsed = ['Learn'];
+      return {
+        persona: 'STARTUP_FOUNDER',
+        expandedGroups: promoted,
+        collapsedGroups: collapsed,
+        promotedItems: ['ci-cd', 'billing', 'team'],
+        sidebarEmphasis: {
+          promotedGroups: promoted,
+          collapsedGroups: collapsed,
+        },
+        nextBestActionTone: 'compliance and CI prompts',
+        surfacedAcademyTrack: 'api-modern-web',
+        defaultFrameworkTab,
+        primaryGoals: goals,
+      };
+    }
+    case 'COMPANY_TEAM': {
+      const promoted = ['Organization', 'Developer', 'Protect', 'Automate'];
+      const collapsed = ['Learn'];
+      return {
+        persona: 'COMPANY_TEAM',
+        expandedGroups: promoted,
+        collapsedGroups: collapsed,
+        promotedItems: ['audit-vault', 'team', 'api-keys', 'webhooks'],
+        sidebarEmphasis: {
+          promotedGroups: promoted,
+          collapsedGroups: collapsed,
+        },
+        nextBestActionTone: 'compliance and CI prompts',
+        surfacedAcademyTrack: 'identity-rbac-tenancy',
+        defaultFrameworkTab,
+        primaryGoals: goals,
+      };
+    }
+    case 'SOLO_BUILDER':
+    default: {
+      const promoted = ['Protect', 'Automate', 'Learn'];
+      const collapsed = ['Organization'];
+      return {
+        persona: 'SOLO_BUILDER',
+        expandedGroups: promoted,
+        collapsedGroups: collapsed,
+        promotedItems: ['scans', 'automation'],
+        sidebarEmphasis: {
+          promotedGroups: promoted,
+          collapsedGroups: collapsed,
+        },
+        nextBestActionTone: 'action-first',
+        surfacedAcademyTrack: 'ai-code-smells',
+        defaultFrameworkTab,
+        primaryGoals: goals,
+      };
+    }
+  }
+}
+

@@ -80,24 +80,24 @@ describe('Phase 11: Production Polish, Billing & Enterprise Readiness', () => {
       expect(PLANS.FREE_DEVELOPER.pricing.yearlyInr).toBe(0);
     });
 
-    it('defines exact INR pricing for Team Pro (₹3,999/mo, ₹39,990/yr)', () => {
-      expect(PLANS.TEAM_PRO.pricing.monthlyInr).toBe(3999);
-      expect(PLANS.TEAM_PRO.pricing.yearlyInr).toBe(39990);
+    it('defines exact INR pricing for Team (₹4,999/mo, ₹49,990/yr)', () => {
+      expect(PLANS.TEAM.pricing.monthlyInr).toBe(4999);
+      expect(PLANS.TEAM.pricing.yearlyInr).toBe(49990);
     });
 
-    it('defines exact INR pricing for Enterprise (₹19,999/mo, ₹199,990/yr)', () => {
-      expect(PLANS.ENTERPRISE.pricing.monthlyInr).toBe(19999);
-      expect(PLANS.ENTERPRISE.pricing.yearlyInr).toBe(199990);
+    it('defines exact INR pricing for Enterprise (Custom)', () => {
+      expect(PLANS.ENTERPRISE.pricing.monthlyInr).toBe(0);
+      expect(PLANS.ENTERPRISE.pricing.yearlyInr).toBe(0);
     });
 
     it('enforces tier limits matrix', () => {
-      expect(PLANS.FREE_DEVELOPER.limits.maxVerifiedTargets).toBe(1);
-      expect(PLANS.FREE_DEVELOPER.limits.maxMonthlyScans).toBe(10);
-      expect(PLANS.FREE_DEVELOPER.limits.maxTeamMembers).toBe(1);
+      expect(PLANS.STARTER.limits.maxVerifiedTargets).toBe(1);
+      expect(PLANS.STARTER.limits.maxMonthlyScans).toBe(8);
+      expect(PLANS.STARTER.limits.maxTeamMembers).toBe(1);
 
-      expect(PLANS.TEAM_PRO.limits.maxVerifiedTargets).toBe(5);
-      expect(PLANS.TEAM_PRO.limits.maxMonthlyScans).toBe(250);
-      expect(PLANS.TEAM_PRO.limits.maxTeamMembers).toBe(5);
+      expect(PLANS.TEAM.limits.maxVerifiedTargets).toBe(15);
+      expect(PLANS.TEAM.limits.maxMonthlyScans).toBe(250);
+      expect(PLANS.TEAM.limits.maxTeamMembers).toBe(10);
 
       expect(PLANS.ENTERPRISE.limits.maxVerifiedTargets).toBe(999999);
       expect(PLANS.ENTERPRISE.limits.maxMonthlyScans).toBe(999999);
@@ -201,7 +201,7 @@ describe('Phase 11: Production Polish, Billing & Enterprise Readiness', () => {
       const crawlerCheck = await checkFeatureAccess(testOrgId, 'attackSurfaceCrawler', 'USER');
       expect(crawlerCheck.allowed).toBe(true);
 
-      // But compliance vault is still Enterprise only
+      // Compliance vault requires Enterprise
       const vaultCheck = await checkFeatureAccess(testOrgId, 'complianceAuditVault', 'USER');
       expect(vaultCheck.allowed).toBe(false);
 
@@ -222,22 +222,22 @@ describe('Phase 11: Production Polish, Billing & Enterprise Readiness', () => {
     });
 
     it('enforces monthly scan quota limits on standard users', async () => {
-      // Set usage to 10 (which is the Free limit)
+      // Set usage to 8 (which is the Starter limit)
       const { start, end } = getCurrentMonthWindow();
       await query(
         `
         INSERT INTO usage_ledgers (organization_id, metric, period_start, period_end, value, updated_at)
-        VALUES ($1, 'MONTHLY_SCANS', $2, $3, 10, NOW())
+        VALUES ($1, 'MONTHLY_SCANS', $2, $3, 8, NOW())
         ON CONFLICT (organization_id, metric, period_start)
-        DO UPDATE SET value = 10
+        DO UPDATE SET value = 8
         `,
         [testOrgId, start, end]
       );
 
       const quota = await checkScanQuota(testOrgId, 'USER');
       expect(quota.allowed).toBe(false);
-      expect(quota.current).toBe(10);
-      expect(quota.max).toBe(10);
+      expect(quota.current).toBe(8);
+      expect(quota.max).toBe(8);
       expect(quota.isOwnerBypass).toBe(false);
       expect(quota.reason).toContain('reached the monthly scan allocation');
     });

@@ -87,7 +87,8 @@ const NAV_GROUPS: NavGroupConfig[] = [
   {
     title: 'Account',
     items: [
-      { label: 'Profile & Sessions', href: '/dashboard/settings/security', icon: UserRound },
+      { label: 'Profile & Persona', href: '/dashboard/settings/profile', icon: UserRound },
+      { label: 'Security & Sessions', href: '/dashboard/settings/security', icon: UserRound },
       { label: 'Help', href: 'mailto:support@zerivex.com', icon: HelpCircle },
     ],
   },

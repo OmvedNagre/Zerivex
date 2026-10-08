@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     const selectedMode: ScanMode = (scanMode as ScanMode) || 'PUBLIC_PASSIVE';
 
     // 1. Enforce monthly scan quota
-    const quota = await checkScanQuota(orgCtx.organizationId, auth.user.role);
+    const quota = await checkScanQuota(orgCtx.organizationId, auth);
     if (!quota.allowed) {
       return NextResponse.json(
         {
@@ -70,14 +70,14 @@ export async function POST(req: NextRequest) {
     if (selectedMode === 'VERIFIED_ACTIVE') {
       const featureCheck = await checkFeatureAccess(
         orgCtx.organizationId,
-        'deepActiveScans',
-        auth.user.role
+        'activeVerifiedTests',
+        auth
       );
       if (!featureCheck.allowed) {
         return NextResponse.json(
           {
             error: featureCheck.reason,
-            feature: 'deepActiveScans',
+            feature: 'activeVerifiedTests',
             planId: featureCheck.planId,
           },
           { status: 403 }

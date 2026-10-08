@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import SmoothScroll from '@/components/motion/SmoothScroll';
@@ -608,7 +608,7 @@ export default function PricingPage() {
                 </thead>
                 <tbody>
                   {COMPARISON_GROUPS.map((grp) => (
-                    <tbody key={grp.group}>
+                    <Fragment key={grp.group}>
                       <tr style={{ backgroundColor: 'var(--ds-bg-subtle)', borderBottom: '1px solid var(--ds-border-subtle)' }}>
                         <td
                           colSpan={4}
@@ -646,7 +646,7 @@ export default function PricingPage() {
                           </td>
                         </tr>
                       ))}
-                    </tbody>
+                    </Fragment>
                   ))}
                 </tbody>
               </table>
