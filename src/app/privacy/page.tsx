@@ -1,0 +1,13 @@
+import { PolicyDocument } from '@/components/legal/PolicyDocument';
+import { CONTACT_EMAIL } from '@/lib/contact';
+export const dynamic = 'force-dynamic';
+export default function PrivacyPage() {
+  return <PolicyDocument title="Privacy notice">
+    <h2>Information processed</h2><p>Zerivex processes OAuth account identifiers, verified email addresses, display names and profile images; organization membership and role information; hashed session and API-key tokens; session IP addresses and user agents; target URLs and ownership proofs; scan findings, response evidence, comments and audit records; subscription identifiers and invoice amounts and statuses.</p>
+    <h2>Why this information is used</h2><p>Information supports sign-in, access control, target ownership checks, authorized security assessments, reporting, collaboration, billing, abuse prevention and investigation of security incidents. The operator must confirm the legal bases applicable to these activities before public launch.</p>
+    <h2>Providers and destinations</h2><p>Google and GitHub provide sign-in. The configured PostgreSQL host stores application data. Stripe handles payments when enabled; Zerivex does not collect card numbers through its own forms. Scanning sends requests to the targets you configure. Enabled organization webhooks send selected event information to destinations configured by that organization. Hosting, data locations and any additional monitoring providers must be confirmed for the deployment.</p>
+    <h2>Retention and security</h2><p>Credentials are restricted to server configuration, session and API-key values are stored as hashes, and scan evidence passes through a redaction pipeline. Redaction does not guarantee that all personal information is removed. Audit and credit ledger entries are append-only. Backup retention, account closure and anonymization schedules require operator review; no automatic deletion period is promised by this draft.</p>
+    <h2>Your requests</h2><p>Contact <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> to request access, correction, account closure, deletion or other applicable rights. Requests may require identity verification, and security, legal or accounting retention obligations may limit deletion. The rights and complaint routes that apply depend on the operator’s location and the people served.</p>
+    <h2>Browser storage</h2><p>Session cookies support authentication. Browser storage retains interface preferences and onboarding state. External font requests may reveal normal connection information to the font provider. No advertising or analytics consent claim is made by this draft.</p>
+  </PolicyDocument>;
+}

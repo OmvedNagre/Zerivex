@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { query, closeDbPool } from '@/core/db/database';
+import { query } from '@/core/db/database';
 import { redactEvidence, sanitizeString, sanitizeHeaders } from '@/core/scanner/evidence-redactor';
 import { calculateSecurityScore, createScanJob } from '@/core/scanner/scan-runner';
 import { registerTarget } from '@/core/targets/target-service';
@@ -30,6 +30,8 @@ describe('Deterministic Scanner Engine & Security Verification (Phase 4)', () =>
       [userId]
     );
     orgId = orgRes.rows[0]!.id;
+    await query("INSERT INTO memberships (organization_id, user_id, role) VALUES ($1,$2,'ORG_OWNER')", [orgId, userId]);
+    await query("INSERT INTO subscriptions (organization_id, plan_id) VALUES ($1,'PRO')", [orgId]);
 
     const projRes = await query<{ id: string }>(
       "INSERT INTO projects (organization_id, name) VALUES ($1, 'Scanner Target Project') RETURNING id",
@@ -47,14 +49,8 @@ describe('Deterministic Scanner Engine & Security Verification (Phase 4)', () =>
   });
 
   afterAll(async () => {
-    await query("DELETE FROM findings WHERE organization_id = $1", [orgId]);
-    await query("DELETE FROM scan_jobs WHERE organization_id = $1", [orgId]);
-    await query("DELETE FROM targets WHERE hostname LIKE '%scanner-test.local'");
-    await query("DELETE FROM organizations WHERE slug LIKE 'test-org-scanner-%'");
-    await query("DELETE FROM users WHERE email LIKE '%@scanner-test.local'");
-    await closeDbPool();
+    // Isolated schema fixture owns cleanup, including append-only records.
   });
-
   describe('1. Mandatory Multi-Stage Evidence Redaction (ADR-0007)', () => {
     it('redacts OpenAI API keys (legacy and modern project formats)', () => {
       const raw1 = 'OpenAI secret key: sk-1234567890abcdef1234567890abcdef12';

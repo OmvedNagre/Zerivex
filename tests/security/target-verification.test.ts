@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { query, closeDbPool } from '@/core/db/database';
+import { query } from '@/core/db/database';
 import {
   registerTarget,
   getTargetById,
@@ -67,12 +67,8 @@ describe('Target Management, SSRF Defense & Verification Protocols (Phase 3)', (
   });
 
   afterAll(async () => {
-    await query("DELETE FROM targets WHERE hostname LIKE '%zerivex-test.local'");
-    await query("DELETE FROM organizations WHERE slug LIKE 'test-org-targets-%'");
-    await query("DELETE FROM users WHERE email LIKE '%@target-test.local'");
-    await closeDbPool();
+    // Isolated schema fixture owns cleanup, including append-only records.
   });
-
   describe('1. SSRF Defense & URL Validation', () => {
     it('strictly rejects non-HTTP protocols (file, javascript, data, gopher)', () => {
       expect(() => validateTargetUrl('file:///etc/passwd')).toThrow(SecuritySSRFError);

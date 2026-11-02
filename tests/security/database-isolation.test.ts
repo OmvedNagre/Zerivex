@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { query, closeDbPool } from '@/core/db/database';
+import { query } from '@/core/db/database';
 import {
   createTenantTarget,
   getTenantTargetById,
@@ -66,10 +66,8 @@ describe('Multi-Tenant Database Isolation & IDOR Defenses', () => {
   });
 
   afterAll(async () => {
-    await cleanupTestData();
-    await closeDbPool();
+    // Isolated schema fixture owns cleanup, including append-only records.
   });
-
   it('allows Org A to create and access its own targets', async () => {
     const targetA = await createTenantTarget({
       organizationId: orgAId,

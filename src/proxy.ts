@@ -69,12 +69,12 @@ export async function proxy(req: NextRequest) {
 
     // B. Tiered Rate Limiting
     let tier: RateLimitTier = 'API_STANDARD';
-    if (pathname.startsWith('/api/auth/')) {
+    if (pathname.startsWith('/api/auth/') && !(req.method === 'GET' && pathname === '/api/auth/session')) {
       tier = 'AUTH';
     } else if (
-      pathname.startsWith('/api/scans') ||
-      pathname.startsWith('/api/schedules') ||
-      pathname.startsWith('/api/v1/ci/scan')
+      (req.method !== 'GET' && pathname.startsWith('/api/scans')) ||
+      (req.method !== 'GET' && pathname.startsWith('/api/schedules')) ||
+      (req.method !== 'GET' && pathname.startsWith('/api/v1/ci/scan'))
     ) {
       tier = 'SCANS';
     } else if (pathname.startsWith('/api/health')) {

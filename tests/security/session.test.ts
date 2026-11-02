@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { NextRequest } from 'next/server';
-import { query, closeDbPool } from '@/core/db/database';
+import { query } from '@/core/db/database';
 import {
   createSession,
   validateSessionToken,
@@ -24,10 +24,8 @@ describe('Server-Side Session Security & Revocation Controls', () => {
   });
 
   afterAll(async () => {
-    await query("DELETE FROM users WHERE email = 'session-tester@zerivex.local'");
-    await closeDbPool();
+    // Isolated schema fixture owns cleanup, including append-only records.
   });
-
   it('generates an opaque token and stores ONLY the SHA-256 hash in the database', async () => {
     const { rawToken, sessionId } = await createSession({
       userId: testUserId,

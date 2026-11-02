@@ -1,3 +1,4 @@
+import { recordAssessmentRequest } from '@/core/security/assessment-context';
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { query } from '@/core/db/database';
 import { createTenantTarget } from '@/core/db/repositories/tenant-repository';
@@ -35,6 +36,8 @@ import { evaluateScanRegression } from '@/core/monitoring/regression-detector';
 import { defaultCircuitBreaker } from '@/core/scanner/active-rate-limiter';
 import * as safeHttp from '@/core/security/safe-http-client';
 
+const observed = <T,>(value: T) => async () => { recordAssessmentRequest(true); return value; };
+
 describe('Phase 8: Scheduling, Monitoring & Automation Engine', () => {
   let userAId: string;
   let userBId: string;
@@ -71,6 +74,8 @@ describe('Phase 8: Scheduling, Monitoring & Automation Engine', () => {
       RETURNING id
     `, ['Org Schedule A', `org-schedule-a-${testSuffix}`, userAId]);
     orgAId = orgARes.rows[0]!.id;
+    await query("INSERT INTO memberships (organization_id, user_id, role) VALUES ($1,$2,'ORG_OWNER')", [orgAId, userAId]);
+    await query("INSERT INTO subscriptions (organization_id, plan_id) VALUES ($1,'PRO')", [orgAId]);
 
     // 4. Create Org B
     const orgBRes = await query<{ id: string }>(`
@@ -79,6 +84,8 @@ describe('Phase 8: Scheduling, Monitoring & Automation Engine', () => {
       RETURNING id
     `, ['Org Schedule B', `org-schedule-b-${testSuffix}`, userBId]);
     orgBId = orgBRes.rows[0]!.id;
+    await query("INSERT INTO memberships (organization_id, user_id, role) VALUES ($1,$2,'ORG_OWNER')", [orgBId, userBId]);
+    await query("INSERT INTO subscriptions (organization_id, plan_id) VALUES ($1,'PRO')", [orgBId]);
 
     // 5. Create Projects
     const projARes = await query<{ id: string }>(`
@@ -121,18 +128,8 @@ describe('Phase 8: Scheduling, Monitoring & Automation Engine', () => {
   });
 
   afterAll(async () => {
-    if (orgAId) {
-      await query('DELETE FROM monitoring_alerts WHERE organization_id IN ($1, $2)', [orgAId, orgBId]);
-      await query('DELETE FROM scan_schedules WHERE organization_id IN ($1, $2)', [orgAId, orgBId]);
-      await query('DELETE FROM findings WHERE organization_id IN ($1, $2)', [orgAId, orgBId]);
-      await query('DELETE FROM scan_jobs WHERE organization_id IN ($1, $2)', [orgAId, orgBId]);
-      await query('DELETE FROM targets WHERE organization_id IN ($1, $2)', [orgAId, orgBId]);
-      await query('DELETE FROM projects WHERE organization_id IN ($1, $2)', [orgAId, orgBId]);
-      await query('DELETE FROM organizations WHERE id IN ($1, $2)', [orgAId, orgBId]);
-      await query('DELETE FROM users WHERE id IN ($1, $2)', [userAId, userBId]);
-    }
+    // Isolated schema fixture owns cleanup, including append-only records.
   });
-
   describe('1. Deterministic Cron Evaluator & Presets', () => {
     it('normalizes standard frequency presets to valid cron expressions', () => {
       expect(normalizeFrequencyToCron('DAILY')).toBe('0 2 * * *');
@@ -310,13 +307,13 @@ describe('Phase 8: Scheduling, Monitoring & Automation Engine', () => {
       await query("UPDATE targets SET verification_status = 'REVOKED' WHERE id = $1", [targetAId]);
 
       // Mock HTTP requests so scan completes without external network calls
-      vi.spyOn(safeHttp, 'safeFetch').mockResolvedValue({
+      vi.spyOn(safeHttp, 'safeFetch').mockImplementation(observed({
         statusCode: 200,
         headers: { 'content-type': 'text/html' },
         body: '<!DOCTYPE html><html><body>Secure App</body></html>',
         finalUrl: 'https://schedule-target-a.local',
         pinnedIp: '93.184.216.34',
-      });
+      }));
 
       // 4. Trigger schedule run - must detect REVOKED and downgrade
       const { scanJob } = await triggerScheduleNow(activeSchedule.id, orgAId, userAId);
@@ -470,14 +467,17 @@ describe('Phase 8: Scheduling, Monitoring & Automation Engine', () => {
       const matched = due.find((s) => s.id === schedule.id);
       expect(matched).toBeDefined();
 
+      // Release the lease explicitly acquired by this test before testing dispatch.
+      await query('UPDATE scan_schedules SET dispatch_claimed_until = NULL WHERE id = $1', [schedule.id]);
+
       // 3. Mock HTTP for worker dispatch
-      vi.spyOn(safeHttp, 'safeFetch').mockResolvedValue({
+      vi.spyOn(safeHttp, 'safeFetch').mockImplementation(observed({
         statusCode: 200,
         headers: { 'content-type': 'text/html' },
         body: '<!DOCTYPE html><html><body>Worker Safe</body></html>',
         finalUrl: 'https://schedule-target-a.local',
         pinnedIp: '93.184.216.34',
-      });
+      }));
 
       // 4. Dispatch worker
       const executed = await dispatchDueSchedules(5);

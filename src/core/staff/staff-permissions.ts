@@ -9,6 +9,8 @@ export type StaffPermission =
   | 'SUSPEND_ORGS'
   | 'VIEW_QUEUE'
   | 'VIEW_SECURITY_EVENTS'
+  | 'VIEW_BILLING'
+  | 'RECONCILE_BILLING'
   | 'GRANT_CREDITS'
   | 'MANAGE_STAFF'
   | 'SYSTEM_SETTINGS'
@@ -24,6 +26,8 @@ export const STAFF_PERMISSIONS: Record<StaffRole, StaffPermission[]> = {
     'VIEW_QUEUE',
     'VIEW_SECURITY_EVENTS',
     'GRANT_CREDITS',
+    'VIEW_BILLING',
+    'RECONCILE_BILLING',
     'MANAGE_STAFF',
     'SYSTEM_SETTINGS',
     'PLAN_PREVIEW_ANY',
@@ -37,6 +41,8 @@ export const STAFF_PERMISSIONS: Record<StaffRole, StaffPermission[]> = {
     'VIEW_QUEUE',
     'VIEW_SECURITY_EVENTS',
     'GRANT_CREDITS',
+    'VIEW_BILLING',
+    'RECONCILE_BILLING',
     'PLAN_PREVIEW_ANY',
     'PLAN_PREVIEW_PRO',
   ],

@@ -43,3 +43,11 @@ Thumbs.db
 
 # Local visual QA output
 artifacts/screenshots/
+
+# Confidential local database snapshots
+.backups/
+# Browser test output
+playwright-report/
+test-results/
+
+.next-browser/

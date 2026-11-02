@@ -20,7 +20,6 @@ describe('Phase 12: Teams & Agencies (Agency Workflows, Multi-Client Architectur
   let agencyOwnerUserId: string;
   let agencyStaffUserId: string;
   let clientStakeholderUserId: string;
-  let externalUserId: string;
 
   let agencyOrgId: string;
   let clientAOrgId: string;
@@ -53,11 +52,11 @@ describe('Phase 12: Teams & Agencies (Agency Workflows, Multi-Client Architectur
     );
     clientStakeholderUserId = u3.rows[0]!.id;
 
-    const u4 = await query<{ id: string }>(
+    await query<{ id: string }>(
       `INSERT INTO users (email, display_name, role) VALUES ($1, 'External Attacker', 'USER') RETURNING id`,
       [`external-${testSuffix}@unauthorized.local`]
     );
-    externalUserId = u4.rows[0]!.id;
+
 
     // 2. Create Parent Agency Organization
     const o1 = await query<{ id: string }>(
@@ -77,40 +76,8 @@ describe('Phase 12: Teams & Agencies (Agency Workflows, Multi-Client Architectur
   });
 
   afterAll(async () => {
-    // Cleanup created data
-    if (findingAId) {
-      await query('DELETE FROM findings WHERE id = $1', [findingAId]);
-    }
-    if (scanJobAId) {
-      await query('DELETE FROM scan_jobs WHERE id = $1', [scanJobAId]);
-    }
-    if (targetAId) {
-      await query('DELETE FROM targets WHERE id = $1', [targetAId]);
-    }
-    if (agencyOrgId) {
-      await query('DELETE FROM agency_branding WHERE organization_id = $1', [agencyOrgId]);
-      await query('DELETE FROM agency_client_relationships WHERE agency_organization_id = $1', [agencyOrgId]);
-      await query('DELETE FROM memberships WHERE organization_id = $1', [agencyOrgId]);
-    }
-    if (clientAOrgId) {
-      await query('DELETE FROM memberships WHERE organization_id = $1', [clientAOrgId]);
-      await query('DELETE FROM organizations WHERE id = $1', [clientAOrgId]);
-    }
-    if (clientBOrgId) {
-      await query('DELETE FROM memberships WHERE organization_id = $1', [clientBOrgId]);
-      await query('DELETE FROM organizations WHERE id = $1', [clientBOrgId]);
-    }
-    if (agencyOrgId) {
-      await query('DELETE FROM organizations WHERE id = $1', [agencyOrgId]);
-    }
-    await query('DELETE FROM users WHERE id IN ($1, $2, $3, $4)', [
-      agencyOwnerUserId,
-      agencyStaffUserId,
-      clientStakeholderUserId,
-      externalUserId,
-    ]);
+    // Isolated schema fixture owns cleanup, including append-only records.
   });
-
   it('1. enables agency mode on an organization', async () => {
     const initialStatus = await isAgencyOrganization(agencyOrgId);
     expect(initialStatus).toBe(false);

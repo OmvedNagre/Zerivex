@@ -1,5 +1,6 @@
+import { recordAssessmentRequest } from '@/core/security/assessment-context';
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { query, closeDbPool } from '@/core/db/database';
+import { query } from '@/core/db/database';
 import { REMEDIATION_CATALOG, getRemediationForRule } from '@/core/remediation/remediation-catalog';
 import { verifyFindingFix } from '@/core/remediation/fix-verifier';
 import { tlsCheck } from '@/core/scanner/checks/tls-check';
@@ -8,6 +9,8 @@ import {
   generateExecutiveHtmlReport,
 } from '@/core/reporting/report-generator';
 import { registerTarget } from '@/core/targets/target-service';
+
+const observed = <T,>(value: T) => async () => { recordAssessmentRequest(true); return value; };
 
 describe('Remediation Engine, Fix Verification & Security Reporting (Phase 5)', () => {
   let orgAId: string;
@@ -103,14 +106,8 @@ describe('Remediation Engine, Fix Verification & Security Reporting (Phase 5)', 
   });
 
   afterAll(async () => {
-    await query("DELETE FROM findings WHERE organization_id IN ($1, $2)", [orgAId, orgBId]);
-    await query("DELETE FROM scan_jobs WHERE organization_id IN ($1, $2)", [orgAId, orgBId]);
-    await query("DELETE FROM targets WHERE hostname LIKE '%remediation-test.local'");
-    await query("DELETE FROM organizations WHERE slug LIKE 'test-org-remediation-%'");
-    await query("DELETE FROM users WHERE email LIKE '%@remediation-test.local'");
-    await closeDbPool();
+    // Isolated schema fixture owns cleanup, including append-only records.
   });
-
   describe('1. Remediation Knowledge Catalog Coverage', () => {
     it('indexes all 23 deterministic scan rules across TLS, Headers, CORS, Secrets, Cookies, and AI', () => {
       const expectedRules = [
@@ -186,7 +183,7 @@ describe('Remediation Engine, Fix Verification & Security Reporting (Phase 5)', 
 
     it('successfully confirms resolution and transitions finding to FIXED when target is remediated', async () => {
       // Spy on tlsCheck.run to simulate that re-test found no more vulnerabilities
-      const spy = vi.spyOn(tlsCheck, 'run').mockResolvedValue([]);
+      const spy = vi.spyOn(tlsCheck, 'run').mockImplementation(observed([]));
 
       const result = await verifyFindingFix({
         findingId: findingA1Id,

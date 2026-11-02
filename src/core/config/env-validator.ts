@@ -6,7 +6,7 @@ import { z } from 'zod';
  */
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  PORT: z.string().regex(/^\d+$/).transform(Number).default('3000'),
+  PORT: z.string().regex(/^\d+$/).transform(Number).default(3000),
   NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
 
   // Canonical Database URL (PostgreSQL)
@@ -62,10 +62,10 @@ const envSchema = z.object({
       }
     ),
   STAFF_ALLOWED_EMAILS: z.string().optional(),
-  STAFF_SESSION_TTL_MINUTES: z.string().regex(/^\d+$/).transform(Number).default('480'),
-  STAFF_IDLE_TTL_MINUTES: z.string().regex(/^\d+$/).transform(Number).default('30'),
-  STAFF_REAUTH_WINDOW_MINUTES: z.string().regex(/^\d+$/).transform(Number).default('10'),
-  STAFF_PORTAL_ENABLED: z.string().transform((v) => v !== 'false').default('true'),
+  STAFF_SESSION_TTL_MINUTES: z.string().regex(/^\d+$/).transform(Number).default(480),
+  STAFF_IDLE_TTL_MINUTES: z.string().regex(/^\d+$/).transform(Number).default(30),
+  STAFF_REAUTH_WINDOW_MINUTES: z.string().regex(/^\d+$/).transform(Number).default(10),
+  STAFF_PORTAL_ENABLED: z.string().transform((v) => v !== 'false').default(true),
   STAFF_BOOTSTRAP_OWNER_EMAIL: z.string().email().optional(),
 });
 

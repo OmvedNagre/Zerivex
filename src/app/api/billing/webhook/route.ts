@@ -20,9 +20,9 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-    } else if (process.env.NODE_ENV === 'production') {
+    } else {
       return NextResponse.json(
-        { error: 'STRIPE_WEBHOOK_SECRET must be configured in production' },
+        { error: 'STRIPE_WEBHOOK_SECRET must be configured to receive events' },
         { status: 500 }
       );
     }
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('[STRIPE WEBHOOK ERROR]', (error as Error).message);
     return NextResponse.json(
-      { error: (error as Error).message || 'Webhook processing failed' },
+      { error: 'Webhook processing failed; inspect the staff billing event monitor.' },
       { status: (error as { statusCode?: number }).statusCode || 500 }
     );
   }

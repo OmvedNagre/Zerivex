@@ -1,12 +1,14 @@
+import { CONTACT_EMAIL } from '@/lib/contact';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-static';
 
 const SECURITY_TXT_CONTENT = `# RFC 9116 Coordinated Vulnerability Disclosure Policy for ZERIVEX
-Contact: mailto:security@zerivex.com
+Contact: mailto:${CONTACT_EMAIL}
 Expires: 2028-12-31T23:59:59.000Z
 Preferred-Languages: en
 Canonical: https://zerivex.com/.well-known/security.txt
+Policy: https://zerivex.com/security
 `;
 
 export async function GET() {

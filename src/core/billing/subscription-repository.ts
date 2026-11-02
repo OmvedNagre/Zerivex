@@ -1,3 +1,4 @@
+import type { DbExecutor } from '@/core/credits/credit-service';
 import { query } from '@/core/db/database';
 import {
   SubscriptionRecord,
@@ -63,19 +64,9 @@ export async function getSubscriptionByOrgId(organizationId: string): Promise<Su
     };
   }
 
-  // Provision default FREE_DEVELOPER tier lazily
-  const defaultSub = await upsertSubscription({
-    organizationId,
-    planId: 'STARTER',
-    status: 'ACTIVE',
-    billingCycle: 'MONTHLY',
-    currency: 'INR',
-    currentPeriodStart: new Date(),
-    currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year rolling default
-    cancelAtPeriodEnd: false,
-  });
-
-  return defaultSub;
+  // A concurrent checkout must never be downgraded by default provisioning.
+  await query('INSERT INTO subscriptions (organization_id) VALUES ($1) ON CONFLICT (organization_id) DO NOTHING', [organizationId]);
+  return getSubscriptionByOrgId(organizationId);
 }
 
 /**
@@ -92,7 +83,7 @@ export async function upsertSubscription(params: {
   cancelAtPeriodEnd?: boolean;
   stripeCustomerId?: string | null;
   stripeSubscriptionId?: string | null;
-}): Promise<SubscriptionRecord> {
+}, executor: DbExecutor = { query }): Promise<SubscriptionRecord> {
   const planId = resolvePlanId(params.planId);
   const status = params.status || 'ACTIVE';
   const billingCycle = params.billingCycle || 'MONTHLY';
@@ -103,7 +94,7 @@ export async function upsertSubscription(params: {
   const stripeCustId = params.stripeCustomerId ?? null;
   const stripeSubId = params.stripeSubscriptionId ?? null;
 
-  const res = await query<{
+  const res = await executor.query<{
     id: string;
     organization_id: string;
     plan_id: string;
@@ -184,9 +175,9 @@ export async function upsertSubscription(params: {
  * Find subscription by Stripe Customer ID or Subscription ID.
  */
 export async function getSubscriptionByStripeId(
-  stripeSubId: string
+  stripeSubId: string, executor: DbExecutor = { query }
 ): Promise<SubscriptionRecord | null> {
-  const res = await query<{
+  const res = await executor.query<{
     id: string;
     organization_id: string;
     plan_id: string;

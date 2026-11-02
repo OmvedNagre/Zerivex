@@ -4,7 +4,7 @@ import { requireAuth, requirePermission, handleAuthError } from '@/core/rbac/aut
 import { getUserActiveOrganization } from '@/core/auth/organization-context';
 import { getOrganizationEntitlementSummary } from '@/core/billing/entitlement-service';
 import { PLANS } from '@/core/billing/types';
-import { upsertSubscription } from '@/core/billing/subscription-repository';
+import { updateCancellation } from '@/core/billing/billing-operations';
 import { recordAuditEvent } from '@/core/audit/audit-service';
 
 export async function GET(req: NextRequest) {
@@ -43,13 +43,11 @@ export async function PATCH(req: NextRequest) {
 
     const body = await readJsonBody(req);
     const { cancelAtPeriodEnd } = body;
+    if (typeof cancelAtPeriodEnd !== 'boolean') return NextResponse.json({ error: 'cancelAtPeriodEnd must be a boolean' }, { status: 400 });
 
     const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
 
-    const updated = await upsertSubscription({
-      organizationId: orgCtx.organizationId,
-      cancelAtPeriodEnd: Boolean(cancelAtPeriodEnd),
-    });
+    const updated = await updateCancellation(orgCtx.organizationId, cancelAtPeriodEnd);
 
     await recordAuditEvent({
       organizationId: orgCtx.organizationId,

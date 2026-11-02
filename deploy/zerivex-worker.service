@@ -1,0 +1,22 @@
+# Example: replace paths/user to match your host, then install under /etc/systemd/system.
+[Unit]
+Description=Zerivex scan and scheduling worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zerivex
+WorkingDirectory=/srv/zerivex
+Environment=NODE_ENV=production
+EnvironmentFile=/etc/zerivex/environment
+ExecStart=/usr/bin/node --import tsx scripts/worker.ts
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=120
+NoNewPrivileges=true
+PrivateTmp=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

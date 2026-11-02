@@ -1,3 +1,4 @@
+import { recordAssessmentRequest } from '@/core/security/assessment-context';
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import crypto from 'crypto';
 import { query } from '@/core/db/database';
@@ -36,6 +37,8 @@ import {
 import { createScanJob, FindingRecord, ScanJobRecord } from '@/core/scanner/scan-runner';
 import * as safeHttp from '@/core/security/safe-http-client';
 
+const observed = <T,>(value: T) => async () => { recordAssessmentRequest(true); return value; };
+
 describe('Phase 9: CI/CD Security Integration & Developer Workflow', () => {
   let userAId: string;
   let userBId: string;
@@ -70,6 +73,8 @@ describe('Phase 9: CI/CD Security Integration & Developer Workflow', () => {
       RETURNING id
     `, ['Org CI A', `org-ci-a-${testSuffix}`, userAId]);
     orgAId = orgARes.rows[0]!.id;
+    await query("INSERT INTO memberships (organization_id, user_id, role) VALUES ($1,$2,'ORG_OWNER')", [orgAId, userAId]);
+    await query("INSERT INTO subscriptions (organization_id, plan_id) VALUES ($1,'TEAM')", [orgAId]);
 
     // 4. Create Org B
     const orgBRes = await query<{ id: string }>(`
@@ -78,6 +83,8 @@ describe('Phase 9: CI/CD Security Integration & Developer Workflow', () => {
       RETURNING id
     `, ['Org CI B', `org-ci-b-${testSuffix}`, userBId]);
     orgBId = orgBRes.rows[0]!.id;
+    await query("INSERT INTO memberships (organization_id, user_id, role) VALUES ($1,$2,'ORG_OWNER')", [orgBId, userBId]);
+    await query("INSERT INTO subscriptions (organization_id, plan_id) VALUES ($1,'TEAM')", [orgBId]);
 
     // 5. Create Project for Org A
     const projARes = await query<{ id: string }>(`
@@ -99,11 +106,8 @@ describe('Phase 9: CI/CD Security Integration & Developer Workflow', () => {
   });
 
   afterAll(async () => {
-    // Cleanup test artifacts
-    await query('DELETE FROM organizations WHERE id IN ($1, $2)', [orgAId, orgBId]);
-    await query('DELETE FROM users WHERE id IN ($1, $2)', [userAId, userBId]);
+    // Isolated schema fixture owns cleanup, including append-only records.
   });
-
   // ============================================================
   // 1. API KEY LIFECYCLE & CRYPTOGRAPHIC SECURITY
   // ============================================================
@@ -586,13 +590,13 @@ describe('Phase 9: CI/CD Security Integration & Developer Workflow', () => {
     });
 
     it('records successful deliveries with latency and status code', async () => {
-      const fetchSpy = vi.spyOn(safeHttp, 'safeFetch').mockResolvedValueOnce({
+      const fetchSpy = vi.spyOn(safeHttp, 'safeFetch').mockImplementationOnce(observed({
         statusCode: 200,
         headers: {},
         body: '{"received": true}',
         finalUrl: 'https://webhook.site/test',
         pinnedIp: '93.184.216.34',
-      });
+      }));
 
       const webhook = await createWebhook({
         organizationId: orgAId,

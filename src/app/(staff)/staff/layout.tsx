@@ -10,6 +10,8 @@ import {
   ShieldAlert,
   Users,
   ScrollText,
+  Coins,
+  CreditCard,
   LogOut,
   Shield,
   Loader2,
@@ -68,7 +70,7 @@ export default function StaffConsoleLayout({
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/staff/auth/logout', { method: 'POST' });
+      await fetch('/api/staff/auth/logout', { method: 'POST', headers: { 'X-Zerivex-Staff': 'true' } });
       router.push('/staff/login');
     } catch {
       router.push('/staff/login');
@@ -168,6 +170,8 @@ export default function StaffConsoleLayout({
               <span>Security Events</span>
             </Link>
 
+            <Link href="/staff/credits" className={`staff-nav-item ${pathname.startsWith('/staff/credits') ? 'active' : ''}`}><Coins size={16} /><span>Scan credits</span></Link>
+            {user?.role !== 'STAFF_SUPPORT' && <Link href="/staff/billing-events" className={`staff-nav-item ${pathname.startsWith('/staff/billing-events') ? 'active' : ''}`}><CreditCard size={16} /><span>Billing events</span></Link>}
             {isOwner && (
               <Link
                 href="/staff/staff"
@@ -202,7 +206,7 @@ export default function StaffConsoleLayout({
         </aside>
 
         {/* Content Viewport */}
-        <main style={{ flex: 1, padding: '32px 40px', overflowY: 'auto' }}>
+        <main className="staff-main" style={{ flex: 1, minWidth: 0, padding: '32px 40px', overflowY: 'auto' }}>
           <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
             {children}
           </div>

@@ -1,3 +1,4 @@
+import { consumeScanCredit } from '@/core/credits/credit-service';
 import { randomUUID } from 'node:crypto';
 import { resolveEntitlements, resolveEntitlementsFromPlan } from '@/core/billing/entitlement-service';
 import { getCurrentMonthWindow } from '@/core/billing/subscription-repository';
@@ -169,8 +170,8 @@ export async function createScanJob(params: {
       SET value = usage_ledgers.value + 1, updated_at = NOW()
       WHERE usage_ledgers.value < $4 RETURNING value`,
       [params.organizationId, start, end, entitlements.limits.maxMonthlyScans]);
-    if (!usage.rows.length) throw Object.assign(new Error('Monthly scan quota exceeded'), { statusCode: 403 });
-    return client.query<ScanJobRecord>(
+    const needsCredit = usage.rows.length === 0;
+    const created = await client.query<ScanJobRecord>(
     `
     INSERT INTO scan_jobs (
       organization_id,
@@ -199,6 +200,8 @@ export async function createScanJob(params: {
     `,
     [params.organizationId, params.targetId, params.requesterUserId, scanMode, entitlements.planId]
     );
+    if (needsCredit) await consumeScanCredit(client, params.organizationId, params.requesterUserId, created.rows[0]!.id);
+    return created;
   });
 
   const scanJob = res.rows[0]!;

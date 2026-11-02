@@ -26,7 +26,6 @@ import {
 describe('Phase 11: Production Polish, Billing & Enterprise Readiness', () => {
   let testOrgId: string;
   let testUserId: string;
-  let testOwnerUserId: string;
   const testSuffix = Math.random().toString(36).substring(2, 8);
 
   beforeAll(async () => {
@@ -38,11 +37,11 @@ describe('Phase 11: Production Polish, Billing & Enterprise Readiness', () => {
     testUserId = u1.rows[0]!.id;
 
     // 2. Create a platform owner user
-    const u2 = await query<{ id: string }>(
+    await query<{ id: string }>(
       `INSERT INTO users (email, display_name, role) VALUES ($1, 'Platform Owner', 'OWNER') RETURNING id`,
       [`owner-${testSuffix}@zerivex.local`]
     );
-    testOwnerUserId = u2.rows[0]!.id;
+
 
     // 3. Create a test organization
     const org = await query<{ id: string }>(
@@ -59,15 +58,8 @@ describe('Phase 11: Production Polish, Billing & Enterprise Readiness', () => {
   });
 
   afterAll(async () => {
-    // Clean up test data
-    if (testOrgId) {
-      await query(`DELETE FROM organizations WHERE id = $1`, [testOrgId]);
-    }
-    if (testUserId) {
-      await query(`DELETE FROM users WHERE id IN ($1, $2)`, [testUserId, testOwnerUserId]);
-    }
+    // Isolated schema fixture owns cleanup, including append-only records.
   });
-
   describe('1. Canonical INR Pricing & Currency Structure', () => {
     it('enforces currency as strictly INR (₹) across all plan tiers', () => {
       expect(PLANS.FREE_DEVELOPER.pricing.currency).toBe('INR');
@@ -109,7 +101,7 @@ describe('Phase 11: Production Polish, Billing & Enterprise Readiness', () => {
     it('provisions default FREE_DEVELOPER tier in INR on first access', async () => {
       const sub = await getSubscriptionByOrgId(testOrgId);
       expect(sub).toBeDefined();
-      expect(sub.planId).toBe('FREE_DEVELOPER');
+      expect(sub.planId).toBe('STARTER');
       expect(sub.status).toBe('ACTIVE');
       expect(sub.currency).toBe('INR');
       expect(sub.organizationId).toBe(testOrgId);
@@ -118,29 +110,29 @@ describe('Phase 11: Production Polish, Billing & Enterprise Readiness', () => {
     it('upserts subscription on plan upgrade', async () => {
       const upgraded = await upsertSubscription({
         organizationId: testOrgId,
-        planId: 'TEAM_PRO',
+        planId: 'TEAM',
         billingCycle: 'YEARLY',
         currency: 'INR',
       });
 
-      expect(upgraded.planId).toBe('TEAM_PRO');
+      expect(upgraded.planId).toBe('TEAM');
       expect(upgraded.billingCycle).toBe('YEARLY');
       expect(upgraded.currency).toBe('INR');
 
       const fetched = await getSubscriptionByOrgId(testOrgId);
-      expect(fetched.planId).toBe('TEAM_PRO');
+      expect(fetched.planId).toBe('TEAM');
     });
 
     it('resets subscription back to FREE_DEVELOPER cleanly', async () => {
       await upsertSubscription({
         organizationId: testOrgId,
-        planId: 'FREE_DEVELOPER',
+        planId: 'STARTER',
         billingCycle: 'MONTHLY',
         currency: 'INR',
       });
 
       const fetched = await getSubscriptionByOrgId(testOrgId);
-      expect(fetched.planId).toBe('FREE_DEVELOPER');
+      expect(fetched.planId).toBe('STARTER');
     });
   });
 
@@ -175,14 +167,14 @@ describe('Phase 11: Production Polish, Billing & Enterprise Readiness', () => {
       // Ensure testOrgId is on FREE_DEVELOPER
       await upsertSubscription({
         organizationId: testOrgId,
-        planId: 'FREE_DEVELOPER',
+        planId: 'STARTER',
       });
     });
 
     it('blocks feature access not included in Free Developer (Compliance Vault, Deep Scans)', async () => {
       const vaultCheck = await checkFeatureAccess(testOrgId, 'complianceAuditVault', 'USER');
       expect(vaultCheck.allowed).toBe(false);
-      expect(vaultCheck.planId).toBe('FREE_DEVELOPER');
+      expect(vaultCheck.planId).toBe('STARTER');
       expect(vaultCheck.isOwnerBypass).toBe(false);
 
       const deepScanCheck = await checkFeatureAccess(testOrgId, 'deepActiveScans', 'USER');
@@ -192,7 +184,7 @@ describe('Phase 11: Production Polish, Billing & Enterprise Readiness', () => {
     it('permits feature access when upgraded to Team Pro or Enterprise', async () => {
       await upsertSubscription({
         organizationId: testOrgId,
-        planId: 'TEAM_PRO',
+        planId: 'TEAM',
       });
 
       const deepScanCheck = await checkFeatureAccess(testOrgId, 'deepActiveScans', 'USER');
@@ -217,7 +209,7 @@ describe('Phase 11: Production Polish, Billing & Enterprise Readiness', () => {
       // Reset back to FREE_DEVELOPER
       await upsertSubscription({
         organizationId: testOrgId,
-        planId: 'FREE_DEVELOPER',
+        planId: 'STARTER',
       });
     });
 
@@ -268,7 +260,7 @@ describe('Phase 11: Production Polish, Billing & Enterprise Readiness', () => {
     it('summary reflects owner bypass while preserving tenant subscription record', async () => {
       const summary = await getOrganizationEntitlementSummary(testOrgId, 'OWNER');
       expect(summary.isOwnerBypass).toBe(true);
-      expect(summary.subscription.planId).toBe('FREE_DEVELOPER'); // Tenant DB unmutated
+      expect(summary.subscription.planId).toBe('STARTER'); // Tenant DB unmutated
       expect(summary.usage.monthlyScans.max).toBe(999999);
       expect(summary.features.complianceAuditVault).toBe(true);
     });
@@ -339,14 +331,17 @@ describe('Phase 11: Production Polish, Billing & Enterprise Readiness', () => {
       const subId = `sub_test_${Math.random().toString(36).substring(2, 8)}`;
       const event = {
         id: `evt_${Math.random().toString(36).substring(2, 8)}`,
-        type: 'checkout.session.completed',
+        type: 'customer.subscription.created',
         data: {
           object: {
             customer: `cus_${Math.random().toString(36).substring(2, 8)}`,
-            subscription: subId,
+            id: subId,
+            status: 'active',
+            current_period_start: Math.floor(Date.now()/1000),
+            current_period_end: Math.floor(Date.now()/1000) + 365*86400,
             metadata: {
               organizationId: testOrgId,
-              planId: 'TEAM_PRO',
+              planId: 'TEAM',
               billingCycle: 'YEARLY',
             },
           },
@@ -355,10 +350,10 @@ describe('Phase 11: Production Polish, Billing & Enterprise Readiness', () => {
 
       const result = await handleStripeWebhookEvent(event);
       expect(result.handled).toBe(true);
-      expect(result.action).toBe('checkout.session.completed');
+      expect(result.action).toBe('customer.subscription.created');
 
       const updatedSub = await getSubscriptionByOrgId(testOrgId);
-      expect(updatedSub.planId).toBe('TEAM_PRO');
+      expect(updatedSub.planId).toBe('TEAM');
       expect(updatedSub.billingCycle).toBe('YEARLY');
       expect(updatedSub.currency).toBe('INR');
       expect(updatedSub.stripeSubscriptionId).toBe(subId);
@@ -382,7 +377,7 @@ describe('Phase 11: Production Polish, Billing & Enterprise Readiness', () => {
       expect(result.handled).toBe(true);
 
       const downgradedSub = await getSubscriptionByOrgId(testOrgId);
-      expect(downgradedSub.planId).toBe('FREE_DEVELOPER');
+      expect(downgradedSub.planId).toBe('STARTER');
       expect(downgradedSub.status).toBe('CANCELED');
     });
   });

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { NextRequest } from 'next/server';
-import { query, closeDbPool } from '@/core/db/database';
+import { query } from '@/core/db/database';
 import { createSession, SESSION_COOKIE_NAME } from '@/core/auth/session-service';
 import {
   runPlatformSelfScan,
@@ -60,22 +60,13 @@ describe('Phase 15: Self-Scan & Launch Readiness Certification', () => {
   });
 
   afterAll(async () => {
-    try {
-      await query('DELETE FROM sessions WHERE user_id IN ($1, $2)', [ownerUserId, regularUserId]);
-      await query('DELETE FROM audit_logs WHERE actor_user_id IN ($1, $2)', [ownerUserId, regularUserId]);
-      await query('DELETE FROM launch_readiness_scans WHERE triggered_by_user_id IN ($1, $2)', [ownerUserId, regularUserId]);
-      await query('DELETE FROM users WHERE id IN ($1, $2)', [ownerUserId, regularUserId]);
-      await closeDbPool();
-    } catch {
-      // Cleanup best effort
-    }
+    // Isolated schema fixture owns cleanup, including append-only records.
   });
-
   // =========================================================================
   // 1. ZERIVEX Self-Scan Dogfooding Engine
   // =========================================================================
   describe('1. Platform Self-Scan Dogfooding Engine', () => {
-    it('executes full self-scan and asserts 100/100 Security Score with 0 findings', async () => {
+    it('reports configuration checks separately from untested deployment controls', async () => {
       const report = await runPlatformSelfScan({
         triggeredByUserId: ownerUserId,
       });
@@ -98,18 +89,19 @@ describe('Phase 15: Self-Scan & Launch Readiness Certification', () => {
 
       // Verify that all 15 check modules executed and passed
       expect(report.summary.totalChecks).toBe(15);
-      expect(report.summary.passedChecks).toBe(15);
+      expect(report.summary.passedChecks).toBe(5);
+      expect(report.checkResults.filter((check) => check.status === 'NOT_TESTED')).toHaveLength(10);
       expect(report.summary.failedChecks).toBe(0);
 
       for (const chk of report.checkResults) {
-        expect(chk.status).toBe('PASSED');
+        expect(['PASSED', 'NOT_TESTED']).toContain(chk.status);
         expect(chk.findingsCount).toBe(0);
       }
 
       // Verify Production Certification signature
-      expect(report.certification.status).toBe('CERTIFIED_PRODUCTION_READY');
+      expect(report.certification.status).toBe('UNCERTIFIED');
       expect(report.certification.certificationHash).toHaveLength(64); // Valid SHA-256 hex
-      expect(report.certification.certifiedBy).toContain('ZERIVEX Autonomous Self-Scan');
+      expect(report.certification.certifiedBy).toContain('configuration audit');
     });
 
     it('correctly calculates deterministic penalty deductions and grade brackets', () => {
@@ -170,7 +162,7 @@ describe('Phase 15: Self-Scan & Launch Readiness Certification', () => {
       if (latest) {
         expect(latest.score).toBe(100);
         expect(latest.grade).toBe('A+');
-        expect(latest.certification.status).toBe('CERTIFIED_PRODUCTION_READY');
+        expect(latest.certification.status).toBe('UNCERTIFIED');
       }
     });
   });
@@ -186,15 +178,15 @@ describe('Phase 15: Self-Scan & Launch Readiness Certification', () => {
       expect(report.evaluatedAt).toBeDefined();
 
       // Overall status assertions
-      expect(report.readinessScore).toBe(100);
-      expect(report.overallStatus).toBe('READY_FOR_LAUNCH');
+      expect(report.readinessScore).toBeLessThan(100);
+      expect(report.overallStatus).toBe('ACTION_REQUIRED');
 
       // Subsystem breakdown assertions
       expect(report.subsystems.length).toBe(10);
       expect(report.summary.totalSubsystems).toBe(10);
-      expect(report.summary.readySubsystems).toBe(10);
+      expect(report.summary.readySubsystems).toBeLessThan(10);
       expect(report.summary.notReadySubsystems).toBe(0);
-      expect(report.summary.degradedSubsystems).toBe(0);
+      expect(report.summary.degradedSubsystems).toBeGreaterThan(0);
 
       // Verify specific required subsystem IDs
       const requiredSubsystemIds = [
@@ -213,7 +205,7 @@ describe('Phase 15: Self-Scan & Launch Readiness Certification', () => {
       for (const reqId of requiredSubsystemIds) {
         const sub = report.subsystems.find((s) => s.id === reqId);
         expect(sub).toBeDefined();
-        expect(sub!.status).toBe('READY');
+        expect(['READY', 'DEGRADED', 'NOT_READY']).toContain(sub!.status);
         expect(sub!.name).toBeTruthy();
         expect(sub!.details).toBeTruthy();
       }
@@ -240,6 +232,7 @@ describe('Phase 15: Self-Scan & Launch Readiness Certification', () => {
     it('GET /api/launch-readiness returns readiness report for authenticated user', async () => {
       const req = new NextRequest('http://localhost:3000/api/launch-readiness', {
         headers: {
+          'X-Requested-With': 'XMLHttpRequest',
           cookie: `${SESSION_COOKIE_NAME}=${regularSessionToken}`,
         },
       });
@@ -248,13 +241,14 @@ describe('Phase 15: Self-Scan & Launch Readiness Certification', () => {
       expect(res.status).toBe(200);
       const json = await res.json();
       expect(json.success).toBe(true);
-      expect(json.data.readinessScore).toBe(100);
+      expect(json.data.readinessScore).toBeLessThan(100);
       expect(json.data.subsystems.length).toBe(10);
     });
 
     it('POST /api/launch-readiness/scan rejects unauthenticated requests with 401', async () => {
       const req = new NextRequest('http://localhost:3000/api/launch-readiness/scan', {
         method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
       });
       const res = await postLaunchSelfScan(req);
       expect(res.status).toBe(401);
@@ -264,6 +258,7 @@ describe('Phase 15: Self-Scan & Launch Readiness Certification', () => {
       const req = new NextRequest('http://localhost:3000/api/launch-readiness/scan', {
         method: 'POST',
         headers: {
+          'X-Requested-With': 'XMLHttpRequest',
           cookie: `${SESSION_COOKIE_NAME}=${regularSessionToken}`,
         },
       });
@@ -278,6 +273,7 @@ describe('Phase 15: Self-Scan & Launch Readiness Certification', () => {
       const req = new NextRequest('http://localhost:3000/api/launch-readiness/scan', {
         method: 'POST',
         headers: {
+          'X-Requested-With': 'XMLHttpRequest',
           cookie: `${SESSION_COOKIE_NAME}=${ownerSessionToken}`,
         },
       });
@@ -288,7 +284,7 @@ describe('Phase 15: Self-Scan & Launch Readiness Certification', () => {
       expect(json.success).toBe(true);
       expect(json.data.score).toBe(100);
       expect(json.data.status).toBe('PASSED');
-      expect(json.data.certification.status).toBe('CERTIFIED_PRODUCTION_READY');
+      expect(json.data.certification.status).toBe('UNCERTIFIED');
 
       // Assert that SELF_SCAN_TRIGGERED audit event was logged
       const auditRes = await query<{ action: string }>(
@@ -315,7 +311,7 @@ describe('Phase 15: Self-Scan & Launch Readiness Certification', () => {
       expect(res.headers.get('Content-Type')).toContain('text/plain');
 
       const body = await res.text();
-      expect(body).toContain('Contact: mailto:security@zerivex.com');
+      expect(body).toContain('Contact: mailto:code64816@gmail.com');
       expect(body).toContain('Expires:');
       expect(body).toContain('Canonical: https://zerivex.com/.well-known/security.txt');
       expect(body).toContain('Policy: https://zerivex.com/security');

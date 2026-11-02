@@ -72,7 +72,7 @@ export async function seedStaffOwner() {
   await closeDbPool();
 }
 
-if (require.main === module) {
+if (process.argv[1]?.endsWith('seed-staff-owner.ts')) {
   try { process.loadEnvFile('.env.local'); } catch { /* environment may be supplied */ }
 seedStaffOwner().catch(async (err) => {
   console.error('[STAFF BOOTSTRAP FATAL]', err);

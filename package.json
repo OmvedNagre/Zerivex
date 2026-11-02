@@ -4,7 +4,7 @@
   "private": true,
   "description": "Security for software built with AI. Verify. Detect. Defend.",
   "scripts": {
-    "dev": "next dev",
+    "dev": "tsx scripts/dev.ts",
     "build": "next build",
     "start": "next start",
     "test": "vitest run",
@@ -14,7 +14,13 @@
     "admin:bootstrap": "tsx scripts/admin-bootstrap.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "worker": "tsx scripts/worker.ts",
-    "test:postgres": "node --import tsx scripts/check-postgres.ts"
+    "test:postgres": "node --import tsx scripts/check-postgres.ts",
+    "dev:web": "next dev",
+    "staff:bootstrap": "tsx scripts/seed-staff-owner.ts",
+    "db:backup": "tsx scripts/backup-database.ts",
+    "project:status": "tsx scripts/project-status.ts",
+    "test:integration": "tsx scripts/test-integration.ts",
+    "test:e2e": "tsx scripts/test-browser.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -38,9 +44,11 @@
     "react-dom": "^18.3.1",
     "sonner": "^2.0.8",
     "vaul": "^1.1.2",
-    "zod": "^3.23.8"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.64.1",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.11.10",
     "@types/react": "^18.3.10",

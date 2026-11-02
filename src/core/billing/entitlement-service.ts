@@ -1,3 +1,4 @@
+import { getCreditLedger } from '@/core/credits/credit-service';
 import {
   PLANS,
   PlanDefinition,
@@ -30,6 +31,7 @@ export interface ResolvedEntitlements {
 }
 
 export interface OrgEntitlementSummary {
+  scanCredits: number;
   subscription: SubscriptionRecord;
   plan: PlanDefinition;
   isOwnerBypass: boolean;
@@ -177,6 +179,7 @@ export async function getOrganizationEntitlementSummary(
   const memberLimit = ownerBypass ? 999999 : entitlements.limits.maxTeamMembers;
 
   return {
+    scanCredits: (await getCreditLedger(organizationId)).balance,
     subscription,
     plan: entitlements.plan,
     isOwnerBypass: ownerBypass,

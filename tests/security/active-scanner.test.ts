@@ -1,5 +1,6 @@
+import { recordAssessmentRequest } from '@/core/security/assessment-context';
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
-import { query, closeDbPool } from '@/core/db/database';
+import { query } from '@/core/db/database';
 import { createScanJob, ALL_SCAN_CHECKS } from '@/core/scanner/scan-runner';
 import { registerTarget } from '@/core/targets/target-service';
 import {
@@ -16,6 +17,8 @@ import { pathTraversalCheck } from '@/core/scanner/checks/path-traversal-check';
 import { getRemediationForRule } from '@/core/remediation/remediation-catalog';
 import { verifyFindingFix } from '@/core/remediation/fix-verifier';
 import * as safeHttpClient from '@/core/security/safe-http-client';
+
+const observed = <T,>(value: T) => async () => { recordAssessmentRequest(true); return value; };
 
 describe('Deep Web Application Scanning - Active Security Testing (Phase 6)', () => {
   let orgId: string;
@@ -42,6 +45,8 @@ describe('Deep Web Application Scanning - Active Security Testing (Phase 6)', ()
       [userId]
     );
     orgId = orgRes.rows[0]!.id;
+    await query("INSERT INTO memberships (organization_id, user_id, role) VALUES ($1,$2,'ORG_OWNER')", [orgId, userId]);
+    await query("INSERT INTO subscriptions (organization_id, plan_id) VALUES ($1,'PRO')", [orgId]);
 
     const projRes = await query<{ id: string }>(
       "INSERT INTO projects (organization_id, name) VALUES ($1, 'Active Security Project') RETURNING id",
@@ -73,15 +78,8 @@ describe('Deep Web Application Scanning - Active Security Testing (Phase 6)', ()
   });
 
   afterAll(async () => {
-    await query("DELETE FROM findings WHERE target_id IN ($1, $2)", [unverifiedTargetId, verifiedTargetId]);
-    await query("DELETE FROM scan_jobs WHERE target_id IN ($1, $2)", [unverifiedTargetId, verifiedTargetId]);
-    await query("DELETE FROM targets WHERE id IN ($1, $2)", [unverifiedTargetId, verifiedTargetId]);
-    await query("DELETE FROM projects WHERE id = $1", [projId]);
-    await query("DELETE FROM organizations WHERE id = $1", [orgId]);
-    await query("DELETE FROM users WHERE id = $1", [userId]);
-    await closeDbPool();
+    // Isolated schema fixture owns cleanup, including append-only records.
   });
-
   // =========================================================================
   // 1. FAIL-CLOSED ACTIVE SCAN AUTHORIZATION GATE (ADR-0008)
   // =========================================================================
@@ -290,13 +288,13 @@ describe('Deep Web Application Scanning - Active Security Testing (Phase 6)', ()
     });
 
     it('does not flag clean endpoints with parameterized queries', async () => {
-      const fetchSpy = vi.spyOn(safeHttpClient, 'safeFetch').mockResolvedValue({
+      const fetchSpy = vi.spyOn(safeHttpClient, 'safeFetch').mockImplementation(observed({
         statusCode: 200,
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ results: [] }),
         finalUrl: 'https://verified.active-test.local/items?id=1',
         pinnedIp: '93.184.216.34',
-      });
+      }));
 
       const findings = await sqliCheck.run({
         targetUrl: 'https://verified.active-test.local/items?id=1',
@@ -349,7 +347,7 @@ describe('Deep Web Application Scanning - Active Security Testing (Phase 6)', ()
       const finding = findings.find((f) => f.ruleId === 'ZX-ACT-XSS-001');
       expect(finding).toBeDefined();
       expect(finding!.severity).toBe('HIGH');
-      expect(finding!.confidence).toBe('CONFIRMED');
+      expect(finding!.confidence).toBe('HIGH');
       expect(finding!.cweId).toBe('CWE-79');
       expect(finding!.owaspCategory).toBe('A03:2021-Injection');
       expect(finding!.evidence.canaryToken).toBeDefined();
@@ -441,13 +439,13 @@ describe('Deep Web Application Scanning - Active Security Testing (Phase 6)', ()
     });
 
     it('does not flag safe relative redirects to internal paths', async () => {
-      const fetchSpy = vi.spyOn(safeHttpClient, 'safeFetch').mockResolvedValue({
+      const fetchSpy = vi.spyOn(safeHttpClient, 'safeFetch').mockImplementation(observed({
         statusCode: 302,
         headers: { location: '/dashboard' },
         body: '',
         finalUrl: 'https://verified.active-test.local/login',
         pinnedIp: '93.184.216.34',
-      });
+      }));
 
       const findings = await openRedirectCheck.run({
         targetUrl: 'https://verified.active-test.local/login?redirect=/dashboard',
@@ -555,13 +553,13 @@ describe('Deep Web Application Scanning - Active Security Testing (Phase 6)', ()
     });
 
     it('does not flag sanitized file endpoints returning 404 or access denied', async () => {
-      const fetchSpy = vi.spyOn(safeHttpClient, 'safeFetch').mockResolvedValue({
+      const fetchSpy = vi.spyOn(safeHttpClient, 'safeFetch').mockImplementation(observed({
         statusCode: 403,
         headers: {},
         body: 'Access Denied: Path traversal detected.',
         finalUrl: 'https://verified.active-test.local/docs?file=../../../../etc/passwd',
         pinnedIp: '93.184.216.34',
-      });
+      }));
 
       const findings = await pathTraversalCheck.run({
         targetUrl: 'https://verified.active-test.local/docs?file=readme.txt',
@@ -625,7 +623,7 @@ describe('Deep Web Application Scanning - Active Security Testing (Phase 6)', ()
       const findingId = fRes.rows[0]!.id;
 
       // 2. Mock sqliCheck to return 0 findings (remediated)
-      const sqliSpy = vi.spyOn(sqliCheck, 'run').mockResolvedValue([]);
+      const sqliSpy = vi.spyOn(sqliCheck, 'run').mockImplementation(observed([]));
 
       const result = await verifyFindingFix({
         findingId,

@@ -33,6 +33,7 @@ async function main() {
       } catch {
         console.error('[WORKER] Dispatch failed; retrying shortly');
       }
+      if (process.argv.includes('--once')) break;
       if (!stopping) await pause(1000);
     }
   } finally {

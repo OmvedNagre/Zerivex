@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { query, closeDbPool } from '@/core/db/database';
+import { query } from '@/core/db/database';
 import {
   isBootstrapCompleted,
   verifySoleOwnerProtection,
@@ -14,7 +14,6 @@ describe('Authentication & RBAC Security Controls', () => {
   const testOwnerEmail = 'owner@zerivex-test.local';
   const testUserEmail = 'regular-user@zerivex-test.local';
   const attackerEmail = 'attacker@zerivex-test.local';
-  const originalOwnerEmail = process.env.INITIAL_OWNER_EMAIL;
 
   async function cleanupTestData() {
     await query('DELETE FROM platform_bootstraps WHERE bootstrap_key = $1', [BOOTSTRAP_KEY]);
@@ -35,12 +34,8 @@ describe('Authentication & RBAC Security Controls', () => {
   });
 
   afterAll(async () => {
-    process.env.INITIAL_OWNER_EMAIL = originalOwnerEmail;
-    _resetConfigForTesting();
-    await cleanupTestData();
-    await closeDbPool();
+    // Isolated schema fixture owns cleanup, including append-only records.
   });
-
   it('verifies that initial bootstrap is not yet completed', async () => {
     const completed = await isBootstrapCompleted();
     expect(completed).toBe(false);

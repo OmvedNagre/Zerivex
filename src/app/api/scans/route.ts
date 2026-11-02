@@ -9,7 +9,6 @@ import {
 } from '@/core/scanner/scan-runner';
 import { ScanMode } from '@/core/scanner/checks/types';
 import {
-  checkScanQuota,
   checkFeatureAccess,
 } from '@/core/billing/entitlement-service';
 
@@ -50,21 +49,7 @@ export async function POST(req: NextRequest) {
     const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
     const selectedMode: ScanMode = (scanMode as ScanMode) || 'PUBLIC_PASSIVE';
 
-    // 1. Enforce monthly scan quota
-    const quota = await checkScanQuota(orgCtx.organizationId, auth);
-    if (!quota.allowed) {
-      return NextResponse.json(
-        {
-          error: quota.reason,
-          quota: {
-            current: quota.current,
-            max: quota.max,
-            planId: quota.planId,
-          },
-        },
-        { status: 403 }
-      );
-    }
+    // Included quota and additional credits are reserved atomically by createScanJob.
 
     // 2. Enforce active scanning feature access
     if (selectedMode === 'VERIFIED_ACTIVE') {

@@ -1,5 +1,7 @@
 'use client';
 
+import { CONTACT_EMAIL } from '@/lib/contact';
+
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CircleDot, ExternalLink, Terminal } from 'lucide-react';
@@ -53,7 +55,10 @@ const FOOTER_COLUMNS = [
   {
     title: 'Legal',
     links: [
-      { label: 'Policy Enquiries', href: 'mailto:security@zerivex.com' },
+      { label: 'Terms of Service (draft)', href: '/terms' },
+      { label: 'Privacy notice (draft)', href: '/privacy' },
+      { label: 'Acceptable use', href: '/acceptable-use' },
+      { label: 'Policy enquiries', href: `mailto:${CONTACT_EMAIL}` },
       { label: 'Responsible Disclosure', href: '/.well-known/security.txt' },
     ],
   },

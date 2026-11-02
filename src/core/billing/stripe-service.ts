@@ -1,7 +1,6 @@
 import crypto from 'crypto';
-import { PlanId, BillingCycle, PLANS, SubscriptionStatus } from './types';
-import { upsertSubscription, getSubscriptionByStripeId } from './subscription-repository';
-import { recordAuditEvent } from '@/core/audit/audit-service';
+import { stripeRequest } from './stripe-client';
+import { PlanId, BillingCycle, PLANS } from './types';
 
 export interface StripeCheckoutParams {
   organizationId: string;
@@ -125,6 +124,11 @@ export async function createStripeCheckoutSession(
     };
   }
 
+  if (process.env.NODE_ENV === 'production' &&
+      (process.env.LEGAL_POLICIES_APPROVED !== 'true' || !process.env.LEGAL_OPERATOR_NAME?.trim() || !process.env.LEGAL_JURISDICTION?.trim())) {
+    throw new Error('Public paid checkout requires reviewed policies and operator details');
+  }
+
   // Live Stripe API Integration using native HTTPS
   const priceInr =
     params.billingCycle === 'YEARLY' ? plan.pricing.yearlyInr : plan.pricing.monthlyInr;
@@ -155,23 +159,7 @@ export async function createStripeCheckoutSession(
     bodyData.set('customer_email', params.customerEmail);
   }
 
-  const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${stripeSecretKey}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: bodyData.toString(),
-  });
-
-  if (!response.ok) {
-    const errorJson = await response.json().catch(() => ({}));
-    throw new Error(
-      `Stripe checkout creation failed (${response.status}): ${JSON.stringify(errorJson)}`
-    );
-  }
-
-  const session = await response.json();
+  const session = await stripeRequest('checkout/sessions', { method: 'POST', body: bodyData });
   return {
     sessionId: session.id,
     url: session.url,
@@ -202,21 +190,7 @@ export async function createStripePortalSession(
     return_url: params.returnUrl,
   });
 
-  const response = await fetch('https://api.stripe.com/v1/billing_portal/sessions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${stripeSecretKey}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: bodyData.toString(),
-  });
-
-  if (!response.ok) {
-    const errorJson = await response.json().catch(() => ({}));
-    throw new Error(`Stripe portal session failed: ${JSON.stringify(errorJson)}`);
-  }
-
-  const portal = await response.json();
+  const portal = await stripeRequest('billing_portal/sessions', { method: 'POST', body: bodyData });
   return {
     url: portal.url,
     isSimulated: false,
@@ -227,175 +201,8 @@ export async function createStripePortalSession(
  * Process verified Stripe Webhook event.
  */
 export async function handleStripeWebhookEvent(event: {
-  id: string;
-  type: string;
-  data: { object: Record<string, unknown> };
-}): Promise<{ handled: boolean; action?: string }> {
-  const obj = event.data.object;
-
-  switch (event.type) {
-    case 'checkout.session.completed': {
-      const metadata = (obj.metadata as Record<string, string>) || {};
-      const organizationId = metadata.organizationId;
-      const planId = (metadata.planId as PlanId) || 'TEAM_PRO';
-      const billingCycle = (metadata.billingCycle as BillingCycle) || 'MONTHLY';
-      const customerId = (obj.customer as string) || null;
-      const subscriptionId = (obj.subscription as string) || null;
-
-      if (organizationId) {
-        await upsertSubscription({
-          organizationId,
-          planId,
-          status: 'ACTIVE',
-          billingCycle,
-          currency: 'INR',
-          stripeCustomerId: customerId,
-          stripeSubscriptionId: subscriptionId,
-          currentPeriodStart: new Date(),
-          currentPeriodEnd: new Date(
-            Date.now() + (billingCycle === 'YEARLY' ? 365 : 30) * 24 * 60 * 60 * 1000
-          ),
-          cancelAtPeriodEnd: false,
-        });
-
-        await recordAuditEvent({
-          organizationId,
-          actorUserId: null,
-          action: 'SUBSCRIPTION_UPGRADED',
-          resourceType: 'SUBSCRIPTION',
-          resourceId: subscriptionId || organizationId,
-          metadata: {
-            planId,
-            billingCycle,
-            currency: 'INR',
-            stripeEventId: event.id,
-          },
-        });
-      }
-      return { handled: true, action: 'checkout.session.completed' };
-    }
-
-    case 'customer.subscription.updated': {
-      const subscriptionId = obj.id as string;
-      const statusRaw = obj.status as string;
-      const cancelAtPeriodEnd = (obj.cancel_at_period_end as boolean) ?? false;
-      const currentPeriodStart = obj.current_period_start
-        ? new Date((obj.current_period_start as number) * 1000)
-        : undefined;
-      const currentPeriodEnd = obj.current_period_end
-        ? new Date((obj.current_period_end as number) * 1000)
-        : undefined;
-
-      const subRecord = await getSubscriptionByStripeId(subscriptionId);
-      if (subRecord) {
-        let status: SubscriptionStatus = 'ACTIVE';
-        if (statusRaw === 'past_due') status = 'PAST_DUE';
-        else if (statusRaw === 'canceled') status = 'CANCELED';
-        else if (statusRaw === 'trialing') status = 'TRIALING';
-        else if (statusRaw === 'incomplete') status = 'INCOMPLETE';
-
-        await upsertSubscription({
-          organizationId: subRecord.organizationId,
-          planId: subRecord.planId,
-          status,
-          cancelAtPeriodEnd,
-          currentPeriodStart,
-          currentPeriodEnd,
-          stripeSubscriptionId: subscriptionId,
-        });
-
-        await recordAuditEvent({
-          organizationId: subRecord.organizationId,
-          actorUserId: null,
-          action: 'SUBSCRIPTION_RENEWED',
-          resourceType: 'SUBSCRIPTION',
-          resourceId: subscriptionId,
-          metadata: {
-            status,
-            cancelAtPeriodEnd,
-            stripeEventId: event.id,
-          },
-        });
-      }
-      return { handled: true, action: 'customer.subscription.updated' };
-    }
-
-    case 'customer.subscription.deleted': {
-      const subscriptionId = obj.id as string;
-      const subRecord = await getSubscriptionByStripeId(subscriptionId);
-
-      if (subRecord) {
-        await upsertSubscription({
-          organizationId: subRecord.organizationId,
-          planId: 'FREE_DEVELOPER',
-          status: 'CANCELED',
-          stripeSubscriptionId: null,
-        });
-
-        await recordAuditEvent({
-          organizationId: subRecord.organizationId,
-          actorUserId: null,
-          action: 'SUBSCRIPTION_CANCELED',
-          resourceType: 'SUBSCRIPTION',
-          resourceId: subscriptionId,
-          metadata: {
-            previousPlanId: subRecord.planId,
-            stripeEventId: event.id,
-          },
-        });
-      }
-      return { handled: true, action: 'customer.subscription.deleted' };
-    }
-
-    case 'invoice.payment_succeeded': {
-      const subscriptionId = obj.subscription as string | null;
-      if (subscriptionId) {
-        const subRecord = await getSubscriptionByStripeId(subscriptionId);
-        if (subRecord) {
-          await recordAuditEvent({
-            organizationId: subRecord.organizationId,
-            actorUserId: null,
-            action: 'INVOICE_PAYMENT_SUCCEEDED',
-            resourceType: 'INVOICE',
-            resourceId: (obj.id as string) || subscriptionId,
-            metadata: {
-              amountPaid: obj.amount_paid,
-              currency: obj.currency || 'inr',
-              stripeEventId: event.id,
-            },
-          });
-        }
-      }
-      return { handled: true, action: 'invoice.payment_succeeded' };
-    }
-
-    case 'invoice.payment_failed': {
-      const subscriptionId = obj.subscription as string | null;
-      if (subscriptionId) {
-        const subRecord = await getSubscriptionByStripeId(subscriptionId);
-        if (subRecord) {
-          await upsertSubscription({
-            organizationId: subRecord.organizationId,
-            status: 'PAST_DUE',
-          });
-
-          await recordAuditEvent({
-            organizationId: subRecord.organizationId,
-            actorUserId: null,
-            action: 'INVOICE_PAYMENT_FAILED',
-            resourceType: 'INVOICE',
-            resourceId: (obj.id as string) || subscriptionId,
-            metadata: {
-              attemptCount: obj.attempt_count,
-              stripeEventId: event.id,
-            },
-          });
-        }
-      }
-      return { handled: true, action: 'invoice.payment_failed' };
-    }
-
-    default:
-      return { handled: false, action: event.type };
-  }
+  id: string; type: string; created?: number; livemode?: boolean; data: { object: Record<string, unknown> };
+}) {
+  const { processStripeEvent } = await import('./billing-operations');
+  return processStripeEvent(event);
 }

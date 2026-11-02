@@ -128,15 +128,8 @@ describe('Phase 10: Enterprise Teams, Audit Vault & Collaboration', () => {
   });
 
   afterAll(async () => {
-    await query('DELETE FROM organizations WHERE id IN ($1, $2)', [orgAId, orgBId]);
-    await query('DELETE FROM users WHERE id IN ($1, $2, $3, $4)', [
-      userOwnerAId,
-      userEngineerAId,
-      userAuditorAId,
-      userOwnerBId,
-    ]);
+    // Isolated schema fixture owns cleanup, including append-only records.
   });
-
   // ============================================================
   // 1. MULTI-TENANT ROSTER & SOLE OWNER PROTECTION
   // ============================================================

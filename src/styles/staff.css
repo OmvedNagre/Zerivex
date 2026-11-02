@@ -187,3 +187,30 @@
 .staff-table tr:hover td {
   background-color: rgba(255, 255, 255, 0.015);
 }
+
+.staff-operations { display: grid; gap: 20px; max-width: 1200px; }
+.staff-operations h1 { font-size: clamp(24px, 4vw, 32px); margin: 0 0 12px; }
+.staff-operations h2 { font-size: 20px; margin: 0 0 16px; }
+.staff-operations p { color: var(--staff-text-secondary); line-height: 1.6; }
+.staff-operations .staff-card { padding: clamp(16px, 3vw, 28px); min-width: 0; }
+.staff-operations select, .staff-operations input, .staff-operations textarea { background: var(--staff-bg-card, #191b24); color: var(--staff-text-primary, #fff); border: 1px solid var(--staff-border, #484e64); border-radius: 8px; padding: 12px; font: inherit; width: 100%; max-width: 600px; }
+.staff-operations :focus-visible { outline: 2px solid #ab6cfe; outline-offset: 3px; }
+.staff-operation-form { display: grid; gap: 12px; }
+.staff-operation-form button { justify-self: start; }
+.staff-operation-table { overflow-x: auto; }
+.staff-operations .staff-operation-error { color: #ffb4b4; border-left: 3px solid #ff6161; padding: 12px; }
+.staff-operations .staff-operation-balance { color: var(--staff-text-primary, #fff); font: 600 40px var(--font-mono, monospace); margin: 0; }
+.staff-operations button:disabled { opacity: .6; cursor: wait; }
+
+@media (max-width: 767px) {
+  .staff-sidebar { width: 72px; }
+  .staff-sidebar .staff-nav-item { padding: 12px; margin: 2px 4px; justify-content: center; }
+  .staff-sidebar .staff-nav-item span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .staff-main { padding: 20px 16px !important; }
+  .staff-sidebar > div { padding: 8px !important; }
+  .staff-stripe { font-size: 9px; padding: 0 8px; gap: 8px; }
+}
+
+/* Maintain AA contrast for operational controls and ledger headings. */
+.staff-operations .staff-btn-brand { background: #7637c9; color: #ffffff; }
+.staff-operations th { color: #b9c0d0; }

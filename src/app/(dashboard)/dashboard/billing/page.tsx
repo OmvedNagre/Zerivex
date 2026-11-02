@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { PLANS, type PlanId } from '@/core/billing/types';
+import { CONTACT_EMAIL } from '@/lib/contact';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { Check, X, CreditCard, AlertTriangle, Shield } from 'lucide-react';
+import { Check, CreditCard, AlertTriangle, Shield } from 'lucide-react';
 
 interface PlanPricing {
   monthlyInr: number;
@@ -27,7 +29,7 @@ interface PlanFeatures {
 }
 
 interface PlanDefinition {
-  id: 'FREE_DEVELOPER' | 'TEAM_PRO' | 'ENTERPRISE';
+  id: PlanId;
   name: string;
   tagline: string;
   badge?: string;
@@ -38,7 +40,7 @@ interface PlanDefinition {
 
 interface SubscriptionRecord {
   id: string;
-  planId: 'FREE_DEVELOPER' | 'TEAM_PRO' | 'ENTERPRISE';
+  planId: PlanId;
   status: 'ACTIVE' | 'TRIALING' | 'PAST_DUE' | 'CANCELED' | 'INCOMPLETE';
   billingCycle: 'MONTHLY' | 'YEARLY';
   currency: string;
@@ -53,6 +55,7 @@ interface OrgEntitlementSummary {
   subscription: SubscriptionRecord;
   plan: PlanDefinition;
   isOwnerBypass: boolean;
+  scanCredits: number;
   usage: {
     targets: { current: number; max: number; percentage: number };
     monthlyScans: { current: number; max: number; percentage: number };
@@ -96,12 +99,10 @@ export default function BillingPage() {
     // Check query params for checkout / portal redirects
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('session_id') || urlParams.get('mock_checkout') === 'success') {
-        const upgradedPlan = urlParams.get('plan') || 'TEAM_PRO';
-        setFeedback({
-          type: 'success',
-          message: `Subscription successfully updated to ${upgradedPlan}! Your enterprise quotas are active.`,
-        });
+      if (urlParams.get('simulated') === 'true' || urlParams.get('mock_checkout') === 'success') {
+        setFeedback({ type: 'success', message: 'Local checkout simulation completed. No payment was taken or subscription changed.' });
+      } else if (urlParams.get('session_id')) {
+        setFeedback({ type: 'success', message: 'Checkout returned. Subscription changes appear after the signed payment event is verified.' });
       } else if (urlParams.get('canceled') === 'true') {
         setFeedback({
           type: 'error',
@@ -110,13 +111,13 @@ export default function BillingPage() {
       } else if (urlParams.get('portal_simulated') === 'true') {
         setFeedback({
           type: 'success',
-          message: 'Simulated Customer Portal: Invoices, payment methods, and billing details managed.',
+          message: 'Local billing portal simulation. No payment details were changed.',
         });
       }
     }
   }, []);
 
-  const handleUpgrade = async (planId: 'TEAM_PRO' | 'ENTERPRISE') => {
+  const handleUpgrade = async (planId: 'PRO' | 'TEAM') => {
     try {
       setActionLoading(`upgrade-${planId}`);
       setFeedback(null);
@@ -460,453 +461,36 @@ export default function BillingPage() {
         </button>
       </div>
 
-      {/* Pricing Matrix in INR (₹) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
-        {/* FREE DEVELOPER */}
-        <div
-          style={{
-            backgroundColor: 'var(--bg-card)',
-            border: currentSub?.planId === 'FREE_DEVELOPER' ? '2px solid #3b82f6' : '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '1.75rem',
-            display: 'flex',
-            flexDirection: 'column',
-            position: 'relative',
-          }}
-        >
-          {currentSub?.planId === 'FREE_DEVELOPER' && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '-12px',
-                right: '24px',
-                backgroundColor: '#3b82f6',
-                color: '#fff',
-                fontSize: '0.7rem',
-                fontWeight: 700,
-                padding: '0.2rem 0.6rem',
-                borderRadius: '4px',
-                letterSpacing: '0.05em',
-              }}
-            >
-              CURRENT PLAN
-            </div>
-          )}
-
-          <div style={{ marginBottom: '1.25rem' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Free Developer
-            </h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.35rem', minHeight: '38px' }}>
-              Essential perimeter reconnaissance for individual developers & security enthusiasts.
-            </p>
-          </div>
-
-          <div style={{ marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem' }}>
-              <span style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>₹0</span>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>/ month</span>
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-              Free forever • No credit card required
-            </div>
-          </div>
-
-          <div style={{ flex: 1, borderTop: '1px solid var(--border-subtle)', paddingTop: '1.25rem', marginBottom: '1.5rem' }}>
-            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-              INCLUDED QUOTAS:
-            </div>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> 1 Verified Target
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> 10 Monthly Scans
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> 1 Team Member Seat
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> Public Passive Scans
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)' }}>
-                <X size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} /> Deep Active Vulnerability Scanning
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)' }}>
-                <X size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} /> Attack Surface Route Crawler
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)' }}>
-                <X size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} /> CI/CD & API Keys
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> 7-Day Log Retention
-              </li>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+        Additional scan credits: <strong>{entitlements?.scanCredits ?? 0}</strong>. Credits apply after your monthly allowance and do not unlock other plan features.
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '1.5rem' }}>
+        {(['STARTER', 'PRO', 'TEAM', 'ENTERPRISE'] as const).map((id) => {
+          const plan = PLANS[id];
+          const current = currentSub?.planId === id;
+          const custom = id === 'ENTERPRISE';
+          const amount = billingCycle === 'YEARLY' ? plan.pricing.yearlyInr : plan.pricing.monthlyInr;
+          return <section key={id} style={{ padding: '1.5rem', border: `1px solid ${current ? 'var(--accent-primary)' : 'var(--border-subtle)'}`, borderRadius: '12px', background: 'var(--bg-card)' }}>
+            <h2>{plan.name}</h2>
+            <p>{plan.tagline}</p>
+            <p style={{ fontSize: '1.5rem', fontWeight: 700 }}>{custom ? 'Custom pricing' : formatRupees(amount)}{!custom && amount > 0 ? (billingCycle === 'YEARLY' ? ' / year' : ' / month') : ''}</p>
+            <ul style={{ paddingLeft: '1.25rem', lineHeight: 2 }}>
+              <li>{plan.limits.maxSites} targets</li>
+              <li>{plan.limits.maxMonthlyScans} scans each month</li>
+              <li>{plan.limits.maxTeamMembers} team members</li>
+              <li>{plan.limits.historyDays} days of history</li>
+              <li>{plan.features.activeVerifiedTests ? 'Active tests on verified targets' : 'Passive security checks'}</li>
+              {plan.features.ciGates && <li>CI quality gates and SARIF</li>}
+              {plan.features.scheduledScans && <li>Scheduled scanning</li>}
             </ul>
-          </div>
-
-          <button
-            disabled={currentSub?.planId === 'FREE_DEVELOPER'}
-            style={{
-              backgroundColor: currentSub?.planId === 'FREE_DEVELOPER' ? 'rgba(255, 255, 255, 0.05)' : 'var(--accent-primary)',
-              color: currentSub?.planId === 'FREE_DEVELOPER' ? 'var(--text-muted)' : '#fff',
-              border: 'none',
-              borderRadius: 'var(--radius-sm)',
-              padding: '0.75rem',
-              fontWeight: 600,
-              fontSize: '0.9rem',
-              cursor: currentSub?.planId === 'FREE_DEVELOPER' ? 'default' : 'pointer',
-            }}
-          >
-            {currentSub?.planId === 'FREE_DEVELOPER' ? 'Current Tier' : 'Downgrade to Free'}
-          </button>
-        </div>
-
-        {/* TEAM PRO */}
-        <div
-          style={{
-            backgroundColor: 'var(--bg-card)',
-            border: currentSub?.planId === 'TEAM_PRO' ? '2px solid #10b981' : '1px solid rgba(59, 130, 246, 0.4)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '1.75rem',
-            display: 'flex',
-            flexDirection: 'column',
-            position: 'relative',
-            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              top: '-12px',
-              left: '24px',
-              backgroundColor: '#10b981',
-              color: '#fff',
-              fontSize: '0.7rem',
-              fontWeight: 700,
-              padding: '0.2rem 0.6rem',
-              borderRadius: '4px',
-              letterSpacing: '0.05em',
-            }}
-          >
-            MOST POPULAR
-          </div>
-
-          {currentSub?.planId === 'TEAM_PRO' && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '-12px',
-                right: '24px',
-                backgroundColor: '#10b981',
-                color: '#fff',
-                fontSize: '0.7rem',
-                fontWeight: 700,
-                padding: '0.2rem 0.6rem',
-                borderRadius: '4px',
-                letterSpacing: '0.05em',
-              }}
-            >
-              CURRENT PLAN
-            </div>
-          )}
-
-          <div style={{ marginBottom: '1.25rem' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Team Pro
-            </h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.35rem', minHeight: '38px' }}>
-              Deep active scanning, automated crawlers, and CI/CD quality gates for agile security teams.
-            </p>
-          </div>
-
-          <div style={{ marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem' }}>
-              <span style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {billingCycle === 'YEARLY' ? formatRupees(39990) : formatRupees(3999)}
-              </span>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                {billingCycle === 'YEARLY' ? '/ year' : '/ month'}
-              </span>
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#34d399', marginTop: '0.25rem' }}>
-              {billingCycle === 'YEARLY' ? '₹3,332/mo billed annually (Save ₹7,998/yr)' : 'Billed monthly in INR'}
-            </div>
-          </div>
-
-          <div style={{ flex: 1, borderTop: '1px solid var(--border-subtle)', paddingTop: '1.25rem', marginBottom: '1.5rem' }}>
-            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-              EVERYTHING IN FREE, PLUS:
-            </div>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> <strong>5 Verified Targets</strong>
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> <strong>250 Monthly Scans</strong>
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> <strong>5 Team Member Seats</strong>
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> Deep Active Scanning (SQLi, XSS, CSRF, SSRF)
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> Attack Surface Route Crawler & Tech Fingerprinting
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> CI/CD Integrations, API Keys & Webhooks
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> Finding Collaboration (Comments & Assignees)
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#10b981', flexShrink: 0 }} /> 30-Day Audit & Finding Retention
-              </li>
-            </ul>
-          </div>
-
-          <button
-            onClick={() => handleUpgrade('TEAM_PRO')}
-            disabled={currentSub?.planId === 'TEAM_PRO' || actionLoading === 'upgrade-TEAM_PRO'}
-            style={{
-              backgroundColor: currentSub?.planId === 'TEAM_PRO' ? 'rgba(255, 255, 255, 0.05)' : '#3b82f6',
-              color: currentSub?.planId === 'TEAM_PRO' ? 'var(--text-muted)' : '#fff',
-              border: 'none',
-              borderRadius: 'var(--radius-sm)',
-              padding: '0.75rem',
-              fontWeight: 600,
-              fontSize: '0.9rem',
-              cursor: currentSub?.planId === 'TEAM_PRO' ? 'default' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-            }}
-          >
-            {actionLoading === 'upgrade-TEAM_PRO'
-              ? 'Opening Checkout...'
-              : currentSub?.planId === 'TEAM_PRO'
-              ? 'Current Tier'
-              : 'Upgrade to Team Pro'}
-          </button>
-        </div>
-
-        {/* ENTERPRISE */}
-        <div
-          style={{
-            backgroundColor: 'var(--bg-card)',
-            border: currentSub?.planId === 'ENTERPRISE' ? '2px solid #8b5cf6' : '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '1.75rem',
-            display: 'flex',
-            flexDirection: 'column',
-            position: 'relative',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              top: '-12px',
-              left: '24px',
-              backgroundColor: '#8b5cf6',
-              color: '#fff',
-              fontSize: '0.7rem',
-              fontWeight: 700,
-              padding: '0.2rem 0.6rem',
-              borderRadius: '4px',
-              letterSpacing: '0.05em',
-            }}
-          >
-            ENTERPRISE COMPLIANCE
-          </div>
-
-          {currentSub?.planId === 'ENTERPRISE' && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '-12px',
-                right: '24px',
-                backgroundColor: '#8b5cf6',
-                color: '#fff',
-                fontSize: '0.7rem',
-                fontWeight: 700,
-                padding: '0.2rem 0.6rem',
-                borderRadius: '4px',
-                letterSpacing: '0.05em',
-              }}
-            >
-              CURRENT PLAN
-            </div>
-          )}
-
-          <div style={{ marginBottom: '1.25rem' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Enterprise
-            </h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.35rem', minHeight: '38px' }}>
-              Continuous monitoring, cryptographic audit vaults, and unlimited scale for mission-critical security.
-            </p>
-          </div>
-
-          <div style={{ marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem' }}>
-              <span style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {billingCycle === 'YEARLY' ? formatRupees(199990) : formatRupees(19999)}
-              </span>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                {billingCycle === 'YEARLY' ? '/ year' : '/ month'}
-              </span>
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#c084fc', marginTop: '0.25rem' }}>
-              {billingCycle === 'YEARLY' ? '₹16,665/mo billed annually (Save ₹39,998/yr)' : 'Billed monthly in INR'}
-            </div>
-          </div>
-
-          <div style={{ flex: 1, borderTop: '1px solid var(--border-subtle)', paddingTop: '1.25rem', marginBottom: '1.5rem' }}>
-            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-              EVERYTHING IN TEAM PRO, PLUS:
-            </div>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#8b5cf6', flexShrink: 0 }} /> <strong>Unlimited Verified Targets</strong>
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#8b5cf6', flexShrink: 0 }} /> <strong>Unlimited Monthly Scans</strong>
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#8b5cf6', flexShrink: 0 }} /> <strong>Unlimited Team Members</strong>
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#8b5cf6', flexShrink: 0 }} /> Continuous Security Monitoring & Score Regression
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#8b5cf6', flexShrink: 0 }} /> Cryptographic Compliance Audit Vault (CSV/SIEM)
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#8b5cf6', flexShrink: 0 }} /> Monotonic SHA-256 Chain Verification
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#8b5cf6', flexShrink: 0 }} /> Priority Remediation SLAs & Dedicated Support
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Check size={14} style={{ color: '#8b5cf6', flexShrink: 0 }} /> 365-Day Extended Log Retention
-              </li>
-            </ul>
-          </div>
-
-          <button
-            onClick={() => handleUpgrade('ENTERPRISE')}
-            disabled={currentSub?.planId === 'ENTERPRISE' || actionLoading === 'upgrade-ENTERPRISE'}
-            style={{
-              backgroundColor: currentSub?.planId === 'ENTERPRISE' ? 'rgba(255, 255, 255, 0.05)' : '#8b5cf6',
-              color: currentSub?.planId === 'ENTERPRISE' ? 'var(--text-muted)' : '#fff',
-              border: 'none',
-              borderRadius: 'var(--radius-sm)',
-              padding: '0.75rem',
-              fontWeight: 600,
-              fontSize: '0.9rem',
-              cursor: currentSub?.planId === 'ENTERPRISE' ? 'default' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-            }}
-          >
-            {actionLoading === 'upgrade-ENTERPRISE'
-              ? 'Opening Checkout...'
-              : currentSub?.planId === 'ENTERPRISE'
-              ? 'Current Tier'
-              : 'Upgrade to Enterprise'}
-          </button>
-        </div>
-      </div>
-
-      {/* Feature Comparison Table */}
-      <div
-        style={{
-          backgroundColor: 'var(--bg-card)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-lg)',
-          overflow: 'hidden',
-        }}
-      >
-        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-subtle)' }}>
-          <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-            Feature & Capability Comparison
-          </h3>
-          <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            Transparent specifications for every tier. All pricing calculated in Indian Rupees (₹).
-          </p>
-        </div>
-
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
-                <th style={{ padding: '0.9rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600 }}>Capability / Resource</th>
-                <th style={{ padding: '0.9rem 1.5rem', color: 'var(--text-primary)', fontWeight: 600 }}>Free Developer (₹0)</th>
-                <th style={{ padding: '0.9rem 1.5rem', color: '#60a5fa', fontWeight: 600 }}>Team Pro (₹3,999/mo)</th>
-                <th style={{ padding: '0.9rem 1.5rem', color: '#c084fc', fontWeight: 600 }}>Enterprise (₹19,999/mo)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-primary)', fontWeight: 500 }}>Verified Targets</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-secondary)' }}>1 Target</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-secondary)' }}>5 Targets</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-secondary)' }}>Unlimited</td>
-              </tr>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-primary)', fontWeight: 500 }}>Monthly Scans</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-secondary)' }}>10 / mo</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-secondary)' }}>250 / mo</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-secondary)' }}>Unlimited</td>
-              </tr>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-primary)', fontWeight: 500 }}>Team Members</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-secondary)' }}>1 Seat</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-secondary)' }}>5 Seats</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-secondary)' }}>Unlimited</td>
-              </tr>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-primary)', fontWeight: 500 }}>Scan Modes</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-secondary)' }}>Passive Recon</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-secondary)' }}>Passive + Deep Active</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-secondary)' }}>All Modes + Custom Profiles</td>
-              </tr>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-primary)', fontWeight: 500 }}>Attack Surface Crawler</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-muted)' }}>—</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: '#10b981' }}>Included</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: '#10b981' }}>Included</td>
-              </tr>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-primary)', fontWeight: 500 }}>CI/CD Quality Gates & API Keys</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-muted)' }}>—</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: '#10b981' }}>Included</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: '#10b981' }}>Included</td>
-              </tr>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-primary)', fontWeight: 500 }}>Continuous Security Monitoring</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-muted)' }}>—</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-secondary)' }}>Weekly Cadence</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: '#10b981' }}>Hourly / Daily + Regression Alerts</td>
-              </tr>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-primary)', fontWeight: 500 }}>Cryptographic Compliance Audit Vault</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-muted)' }}>—</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-muted)' }}>—</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: '#10b981' }}>RFC 4180 CSV & SIEM JSON</td>
-              </tr>
-              <tr>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-primary)', fontWeight: 500 }}>Log & Audit Retention</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-secondary)' }}>7 Days</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-secondary)' }}>30 Days</td>
-                <td style={{ padding: '0.8rem 1.5rem', color: 'var(--text-secondary)' }}>365 Days</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+            {current ? <p><strong>Current tier</strong></p> : id === 'PRO' || id === 'TEAM' ?
+              <button type="button" disabled={actionLoading !== null} onClick={() => handleUpgrade(id)} style={{ padding: '10px 16px', borderRadius: 8, cursor: 'pointer' }}>
+                {actionLoading === `upgrade-${id}` ? 'Opening checkout…' : `Choose ${plan.name}`}
+              </button> : <a href={custom ? `mailto:${CONTACT_EMAIL}?subject=Enterprise%20plan` : '#'} onClick={custom ? undefined : (event) => { event.preventDefault(); handleOpenPortal(); }}>
+                {custom ? 'Discuss Enterprise' : 'Manage plan in billing portal'}
+              </a>}
+          </section>;
+        })}
       </div>
     </div>
   );

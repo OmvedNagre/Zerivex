@@ -1,3 +1,4 @@
+import { recordAssessmentRequest } from '@/core/security/assessment-context';
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import { detectTechnologies } from '@/core/surface/tech-detector';
 import { crawlAttackSurface } from '@/core/surface/crawler';
@@ -16,6 +17,8 @@ import { query } from '@/core/db/database';
 import { createTenantTarget } from '@/core/db/repositories/tenant-repository';
 import * as safeHttpClient from '@/core/security/safe-http-client';
 import { defaultCircuitBreaker } from '@/core/scanner/active-rate-limiter';
+
+const observed = <T,>(value: T) => async () => { recordAssessmentRequest(true); return value; };
 
 describe('Phase 7: Comprehensive Security Testing & Attack Surface Engine', () => {
   let orgAId: string;
@@ -73,17 +76,8 @@ describe('Phase 7: Comprehensive Security Testing & Attack Surface Engine', () =
   });
 
   afterAll(async () => {
-    // Cleanup DB
-    if (orgAId) {
-      await query('DELETE FROM discovered_endpoints WHERE organization_id IN ($1, $2)', [orgAId, orgBId]);
-      await query('DELETE FROM technology_fingerprints WHERE organization_id IN ($1, $2)', [orgAId, orgBId]);
-      await query('DELETE FROM targets WHERE organization_id IN ($1, $2)', [orgAId, orgBId]);
-      await query('DELETE FROM projects WHERE organization_id IN ($1, $2)', [orgAId, orgBId]);
-      await query('DELETE FROM organizations WHERE id IN ($1, $2)', [orgAId, orgBId]);
-      await query('DELETE FROM users WHERE id = $1', [userAId]);
-    }
+    // Isolated schema fixture owns cleanup, including append-only records.
   });
-
   describe('1. Technology Detection Engine (Heuristics & Fingerprinting)', () => {
     it('detects Next.js and React from HTTP headers, scripts, and DOM markers', () => {
       const techs = detectTechnologies({
@@ -244,13 +238,13 @@ describe('Phase 7: Comprehensive Security Testing & Attack Surface Engine', () =
     });
 
     it('security.txt: flags missing security.txt when endpoint returns 404', async () => {
-      vi.spyOn(safeHttpClient, 'safeFetch').mockResolvedValue({
+      vi.spyOn(safeHttpClient, 'safeFetch').mockImplementation(observed({
         statusCode: 404,
         headers: {},
         body: 'Not Found',
         finalUrl: 'https://surface-target.local/.well-known/security.txt',
         pinnedIp: '93.184.216.34',
-      });
+      }));
 
       const findings = await securityTxtCheck.run({
         targetUrl: 'https://surface-target.local',
@@ -300,13 +294,13 @@ describe('Phase 7: Comprehensive Security Testing & Attack Surface Engine', () =
     });
 
     it('Stack Trace Prober: detects detailed Node.js stack trace leakage', async () => {
-      vi.spyOn(safeHttpClient, 'safeFetch').mockResolvedValue({
+      vi.spyOn(safeHttpClient, 'safeFetch').mockImplementation(observed({
         statusCode: 500,
         headers: { 'content-type': 'text/html' },
         body: '<html><body><h1>Error</h1><pre>TypeError: Cannot read properties of undefined\n    at Object.<anonymous> (/var/app/node_modules/pg/lib/client.js:14:12)</pre></body></html>',
         finalUrl: 'https://surface-target.local',
         pinnedIp: '93.184.216.34',
-      });
+      }));
 
       const findings = await stackTraceCheck.run({
         targetUrl: 'https://surface-target.local',
@@ -323,13 +317,13 @@ describe('Phase 7: Comprehensive Security Testing & Attack Surface Engine', () =
     });
 
     it('Stack Trace Prober: does not flag safe generic error messages', async () => {
-      vi.spyOn(safeHttpClient, 'safeFetch').mockResolvedValue({
+      vi.spyOn(safeHttpClient, 'safeFetch').mockImplementation(observed({
         statusCode: 500,
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ error: 'Internal Server Error', referenceId: 'err-123' }),
         finalUrl: 'https://surface-target.local',
         pinnedIp: '93.184.216.34',
-      });
+      }));
 
       const findings = await stackTraceCheck.run({
         targetUrl: 'https://surface-target.local',
