@@ -34,12 +34,16 @@ export function TopBar() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [planChipText, setPlanChipText] = useState('Loading plan…');
 
-  // Derive breadcrumbs
+  const labels: Record<string, string> = { dashboard: 'Dashboard', targets: 'Targets', scans: 'Scans', findings: 'Findings',
+    automation: 'Automation', team: 'Team', agency: 'Agency', 'audit-vault': 'Audit Vault', billing: 'Billing', settings: 'Settings',
+    profile: 'Profile', security: 'Security & Sessions', 'api-keys': 'API Keys', webhooks: 'Webhooks', 'ci-cd': 'CI/CD',
+    monitoring: 'Monitoring', surface: 'Attack Surface', academy: 'Academy', 'launch-readiness': 'Launch Readiness' };
   const pathSegments = pathname.split('/').filter(Boolean);
   const breadcrumbs = pathSegments.map((segment, idx) => {
-    const href = '/' + pathSegments.slice(0, idx + 1).join('/');
-    const label = segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');
-    return { href, label, isLast: idx === pathSegments.length - 1 };
+    const isId = /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(segment);
+    const href = segment === 'settings' ? '/dashboard/settings/profile' : '/' + pathSegments.slice(0, idx + 1).join('/');
+    const label = labels[segment] || (isId ? pathSegments[idx - 1] === 'targets' ? 'Target details' : 'Scan result' : segment.replace(/-/g, ' '));
+    return { key: pathSegments.slice(0, idx + 1).join('/'), href, label, isLast: idx === pathSegments.length - 1 };
   });
 
   // Fetch billing summary for plan chip
@@ -58,7 +62,9 @@ export function TopBar() {
             setPlanChipText('Plan unavailable'); return;
           }
           const remaining = Math.max(maxScans - usedScans, 0);
-          setPlanChipText(`${planName} · ${remaining} scan${remaining === 1 ? '' : 's'} left`);
+          if (e.isOwnerBypass) { setPlanChipText(`${planName} · No monthly scan cap`); return; }
+          const credits = typeof e.scanCredits === 'number' ? e.scanCredits : 0;
+          setPlanChipText(`${planName} · ${remaining} included scan${remaining === 1 ? '' : 's'} left${credits > 0 ? ` · ${credits} extra credit${credits === 1 ? '' : 's'}` : ''}`);
         }
       } catch {
         // Fallback default
@@ -66,7 +72,11 @@ export function TopBar() {
       }
     }
     loadPlanInfo();
-  }, []);
+    const timer = setInterval(loadPlanInfo, 30000);
+    window.addEventListener('focus', loadPlanInfo);
+    window.addEventListener('zerivex:billing-updated', loadPlanInfo);
+    return () => { clearInterval(timer); window.removeEventListener('focus', loadPlanInfo); window.removeEventListener('zerivex:billing-updated', loadPlanInfo); };
+  }, [pathname]);
 
   // Fetch alerts
   const fetchAlerts = async () => {
@@ -124,7 +134,7 @@ export function TopBar() {
             Dashboard
           </Link>
           {breadcrumbs.slice(1).map((b) => (
-            <React.Fragment key={b.href}>
+            <React.Fragment key={b.key}>
               <ChevronRight size={14} className="zx-breadcrumb-sep" />
               {b.isLast ? (
                 <span className="zx-breadcrumb-current" aria-current="page">

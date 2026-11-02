@@ -46,9 +46,9 @@ describe('Billing lifecycle regressions', () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('STRIPE_SECRET_KEY', '');
     await expect(createStripeCheckoutSession({ organizationId: 'org', planId: 'PRO', billingCycle: 'MONTHLY',
-      successUrl: 'https://example.com/success', cancelUrl: 'https://example.com/cancel' })).rejects.toThrow('production');
+      successUrl: 'https://example.com/success', cancelUrl: 'https://example.com/cancel' })).rejects.toThrow('Stripe is not configured');
     await expect(createStripePortalSession({ organizationId: 'org', stripeCustomerId: 'cus',
-      returnUrl: 'https://example.com/' })).rejects.toThrow('production');
+      returnUrl: 'https://example.com/' })).rejects.toThrow('Stripe is not configured');
   });
 
   it('maps legacy plans and fails closed for unknown identifiers', () => {

@@ -214,3 +214,33 @@
 /* Maintain AA contrast for operational controls and ledger headings. */
 .staff-operations .staff-btn-brand { background: #7637c9; color: #ffffff; }
 .staff-operations th { color: #b9c0d0; }
+
+/* Shared operational controls retain the staff console palette. */
+:root { --staff-text-muted: #a0a8bd; }
+.staff-root { min-width: 0; }
+.staff-stripe { height: auto; min-height: 28px; padding-block: 6px; gap: 12px; flex-wrap: wrap; }
+.staff-main h1 { font-size: clamp(24px,3vw,28px) !important; overflow-wrap: anywhere; }
+.staff-main h2 { line-height: 1.35; }
+.staff-main > div, .staff-main section { min-width: 0; }
+.staff-main .staff-card:has(> table) { overflow-x: auto !important; }
+.staff-main table { min-width: 650px; }
+.staff-main :focus-visible, .staff-dialog :focus-visible { outline: 2px solid #c695ff; outline-offset: 3px; }
+.staff-main input, .staff-main select, .staff-dialog input, .staff-dialog select, .staff-dialog textarea { min-height: 40px; max-width: 100%; }
+.staff-btn-brand { background: #7637c9; color: #fff; }
+.staff-btn-brand:hover { background: #6429b2; }
+.staff-dialog { background: var(--staff-bg-card); color: var(--staff-text-primary); padding: 24px; overflow-y: auto; }
+.staff-portal-compact { display: none; }
+.staff-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.staff-error { border: 1px solid #fb7185; background: #30141e; color: #ffc6d0; padding: 16px; border-radius: 12px; }
+@media(max-width:767px) {
+ .staff-portal-expanded { display: none; }
+ .staff-portal-compact { display: block; padding: 12px 0; }
+ .staff-stripe > div { min-width: 0; overflow-wrap: anywhere; }
+ .staff-main > div > div > div:first-child { flex-wrap: wrap; gap: 12px; }
+ .staff-sidebar .staff-btn-secondary { padding: 10px; }
+}
+
+.staff-dialog .zx-btn--brand { background: #7637c9; color: #fff; }
+.staff-dialog .zmd-header { background: transparent; padding: 0 0 20px; }
+.staff-dialog .zmd-body { padding: 20px 0 0; }
+.staff-dialog .zmd-title { color: var(--staff-text-primary); }

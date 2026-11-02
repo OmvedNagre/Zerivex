@@ -24,7 +24,7 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: { invitation: invite },
-    });
+    }, {headers:{'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || 'Failed to inspect invitation' },

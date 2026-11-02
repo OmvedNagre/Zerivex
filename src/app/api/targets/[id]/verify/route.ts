@@ -30,19 +30,13 @@ export async function POST(
       // Empty body is acceptable
     }
 
-    const isAuthorizedForBypass =
-      auth.user.role === 'OWNER' ||
-      auth.user.role === 'ADMIN' ||
-      process.env.NODE_ENV !== 'production';
-
-    const shouldBypass = (bypass || preferredMethod === 'MANUAL_BYPASS') && isAuthorizedForBypass;
+    if (bypass || preferredMethod === 'MANUAL_BYPASS') return NextResponse.json({ error: 'Manual verification bypasses are disabled' }, { status: 403 });
 
     const result = await verifyTarget({
       targetId,
       organizationId: orgCtx.organizationId,
       actorUserId: auth.user.id,
-      preferredMethod: shouldBypass ? 'MANUAL_BYPASS' : preferredMethod as VerificationMethod | undefined,
-      bypass: shouldBypass,
+      preferredMethod: preferredMethod as VerificationMethod | undefined,
     });
 
     return NextResponse.json({

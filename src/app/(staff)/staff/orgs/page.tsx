@@ -1,4 +1,7 @@
 'use client';
+import { useConfirmation } from '@/components/ui/ConfirmationProvider';
+
+import { Modal } from '@/components/ui/Modal';
 
 import { toast } from '@/components/ui/Toast';
 
@@ -26,6 +29,7 @@ interface OrgItem {
 }
 
 export default function StaffOrgsPage() {
+  const { requestReason } = useConfirmation();
   const [orgs, setOrgs] = useState<OrgItem[]>([]);
   const [currentUserRole, setCurrentUserRole] = useState<string>('STAFF_SUPPORT');
   const [loading, setLoading] = useState(true);
@@ -97,7 +101,7 @@ export default function StaffOrgsPage() {
   };
 
   const handleUnsuspend = async (org: OrgItem) => {
-    const reason = prompt(`Enter reason to unsuspend "${org.name}":`, 'Operational remediation verified');
+    const reason = (await requestReason(`Enter reason to unsuspend "${org.name}":`, 'Operational remediation verified'));
     if (!reason) return;
 
     try {
@@ -172,12 +176,12 @@ export default function StaffOrgsPage() {
               color: '#FFFFFF',
               fontSize: '13px',
             }}
-          />
+           aria-label="Search" />
         </div>
       </div>
 
       {/* Organizations Table Card */}
-      <div className="staff-card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="staff-card zx-table-scroll" style={{ padding: 0, overflow: 'hidden' }} tabIndex={0} role="region" aria-label="Staff records" >
         <table className="staff-table">
           <thead>
             <tr>
@@ -284,27 +288,7 @@ export default function StaffOrgsPage() {
 
       {/* Suspend Confirmation Modal */}
       {selectedOrgForSuspend && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10000,
-            padding: '20px',
-          }}
-        >
-          <div
-            className="staff-card"
-            style={{
-              width: '100%',
-              maxWidth: '480px',
-              padding: '24px',
-              border: '1px solid #EF4444',
-            }}
-          >
+        <Modal isOpen onClose={() => setSelectedOrgForSuspend(null)} ariaLabel="Suspend organization" className="staff-dialog" size="md">
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#EF4444', marginBottom: '12px' }}>
               <AlertTriangle size={20} />
               <h2 style={{ fontSize: '17px', fontWeight: 800, margin: 0, color: '#FFFFFF' }}>
@@ -332,7 +316,7 @@ export default function StaffOrgsPage() {
             )}
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#E9EAF0', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#E9EAF0', marginBottom: '6px' }} htmlFor="field-src-app--staff--staff-orgs-page-tsx-0" >
                 Operational Justification / Reason *
               </label>
               <textarea
@@ -349,7 +333,7 @@ export default function StaffOrgsPage() {
                   color: '#FFFFFF',
                   fontSize: '13px',
                 }}
-              />
+               id="field-src-app--staff--staff-orgs-page-tsx-0" />
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
@@ -370,8 +354,7 @@ export default function StaffOrgsPage() {
                 <span>{actionLoading ? 'Suspending...' : 'Confirm Suspension'}</span>
               </button>
             </div>
-          </div>
-        </div>
+          </Modal>
       )}
     </div>
   );

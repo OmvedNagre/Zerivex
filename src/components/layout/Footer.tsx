@@ -1,5 +1,6 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { CONTACT_EMAIL } from '@/lib/contact';
 
 import { useState, useEffect } from 'react';
@@ -123,6 +124,7 @@ export function Footer() {
         marginTop: 'auto',
       }}
     >
+      <div style={{padding:"24px 32px"}}><BrandLogo /></div>
       <div
         style={{
           maxWidth: '1200px',
@@ -227,7 +229,7 @@ export function Footer() {
             >
               <Terminal size={12} style={{ color: 'var(--ds-action-brand)' }} />
               <span style={{ color: 'var(--ds-text-on-ink-dim)' }}>$</span>
-              <span>curl -I https://zerivex.com/.well-known/security.txt</span>
+              <span>curl -I https://zerivex.tech/.well-known/security.txt</span>
             </div>
           </div>
         </div>

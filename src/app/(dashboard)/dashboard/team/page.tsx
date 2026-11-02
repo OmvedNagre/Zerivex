@@ -1,8 +1,12 @@
 'use client';
+import { useConfirmation } from '@/components/ui/ConfirmationProvider';
+
+import { getOrgRoleLabel } from '@/lib/labels';
+import { Modal } from '@/components/ui/Modal';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { X, Check } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface Member {
   userId: string;
@@ -21,6 +25,8 @@ interface Invitation {
   expiresAt: string;
   createdAt: string;
   inviterEmail?: string;
+  deliveryStatus?: string;
+  deliveryError?: string | null;
 }
 
 interface RoleStyle {
@@ -31,19 +37,20 @@ interface RoleStyle {
 
 const DEFAULT_ROLE_STYLE: RoleStyle = {
   bg: 'rgba(16, 185, 129, 0.15)',
-  text: '#34d399',
+  text: 'var(--ds-success)',
   border: 'rgba(16, 185, 129, 0.3)',
 };
 
 const ROLE_COLORS: Record<string, RoleStyle> = {
-  ORG_OWNER: { bg: 'rgba(234, 179, 8, 0.15)', text: '#fbbf24', border: 'rgba(234, 179, 8, 0.3)' },
-  ORG_ADMIN: { bg: 'rgba(59, 130, 246, 0.15)', text: '#60a5fa', border: 'rgba(59, 130, 246, 0.3)' },
+  ORG_OWNER: { bg: 'rgba(234, 179, 8, 0.15)', text: 'var(--ds-warning)', border: 'rgba(234, 179, 8, 0.3)' },
+  ORG_ADMIN: { bg: 'rgba(59, 130, 246, 0.15)', text: 'var(--ds-text-link)', border: 'rgba(59, 130, 246, 0.3)' },
   ORG_MEMBER: DEFAULT_ROLE_STYLE,
   ORG_VIEWER: { bg: 'rgba(148, 163, 184, 0.15)', text: '#94a3b8', border: 'rgba(148, 163, 184, 0.3)' },
   ORG_AUDITOR: { bg: 'rgba(168, 85, 247, 0.15)', text: '#c084fc', border: 'rgba(168, 85, 247, 0.3)' },
 };
 
 export default function TeamManagementPage() {
+  const { confirm } = useConfirmation();
   const { user } = useAuth();
   const [members, setMembers] = useState<Member[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
@@ -52,12 +59,11 @@ export default function TeamManagementPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Invite Modal State
+  const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'ORG_ADMIN' | 'ORG_MEMBER' | 'ORG_VIEWER' | 'ORG_AUDITOR'>('ORG_MEMBER');
   const [inviting, setInviting] = useState(false);
-  const [createdInviteUrl, setCreatedInviteUrl] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   // Transfer Ownership Modal State
   const [isTransferOpen, setIsTransferOpen] = useState(false);
@@ -66,6 +72,8 @@ export default function TeamManagementPage() {
 
   useEffect(() => {
     fetchTeamData();
+    const timer = setInterval(fetchTeamData, 15000);
+    return () => clearInterval(timer);
   }, []);
 
   async function fetchTeamData() {
@@ -88,6 +96,7 @@ export default function TeamManagementPage() {
 
       if (invitesData.success) {
         setInvitations(invitesData.data.invitations);
+        setEmailAvailable(invitesData.data.emailDelivery?.available === true);
       }
     } catch (err: any) {
       setError(err?.message || 'Error communicating with server');
@@ -118,7 +127,7 @@ export default function TeamManagementPage() {
   }
 
   async function handleRemoveMember(targetUserId: string, targetEmail: string) {
-    if (!window.confirm(`Are you sure you want to remove ${targetEmail} from this organization?`)) {
+    if (!(await confirm(`Are you sure you want to remove ${targetEmail} from this organization?`))) {
       return;
     }
     setError(null);
@@ -140,7 +149,7 @@ export default function TeamManagementPage() {
   }
 
   async function handleRevokeInvitation(invitationId: string) {
-    if (!window.confirm('Revoke this invitation?')) return;
+    if (!(await confirm('Revoke this invitation?'))) return;
     setError(null);
     try {
       const res = await fetch(`/api/teams/invitations/${invitationId}`, {
@@ -175,13 +184,9 @@ export default function TeamManagementPage() {
         return;
       }
 
-      const rawUrl = data.data.inviteUrl;
-      const fullUrl = rawUrl.startsWith('http')
-        ? rawUrl
-        : `${window.location.origin}${rawUrl}`;
-
-      setCreatedInviteUrl(fullUrl);
-      setSuccessMsg('Invitation created successfully!');
+      setIsInviteOpen(false);
+      setInviteEmail('');
+      setSuccessMsg('Invitation queued. Email status will update below.');
       fetchTeamData();
     } catch (err: any) {
       setError(err?.message || 'Error generating invitation');
@@ -194,9 +199,7 @@ export default function TeamManagementPage() {
     e.preventDefault();
     if (!transferTargetUserId) return;
     if (
-      !window.confirm(
-        'Are you sure you want to transfer primary ownership? You will be demoted to ORG_ADMIN.'
-      )
+      !(await confirm('Are you sure you want to transfer primary ownership? You will be demoted to ORG_ADMIN.'))
     ) {
       return;
     }
@@ -230,25 +233,25 @@ export default function TeamManagementPage() {
   const canManageMembers = isOrgOwner || currentUserMembership?.role === 'ORG_ADMIN';
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1.5rem' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1.5rem' }} className="zx-page" >
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }} data-responsive-row >
         <div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            Enterprise Team Management
+            Team Management
           </h1>
           <p style={{ color: 'var(--text-secondary)', marginTop: '0.4rem', fontSize: '0.95rem' }}>
             Manage organization members, assign role-based permissions, and invite collaborators.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem' }} data-responsive-row >
           {isOrgOwner && members.length > 1 && (
             <button
               onClick={() => setIsTransferOpen(true)}
               style={{
                 backgroundColor: 'rgba(234, 179, 8, 0.1)',
-                color: '#fbbf24',
+                color: 'var(--ds-warning)',
                 border: '1px solid rgba(234, 179, 8, 0.3)',
                 padding: '0.6rem 1.1rem',
                 borderRadius: 'var(--radius-md)',
@@ -266,23 +269,11 @@ export default function TeamManagementPage() {
               id="invite-member-btn"
               onClick={() => {
                 setInviteEmail('');
-                setCreatedInviteUrl(null);
+
                 setIsInviteOpen(true);
               }}
-              style={{
-                backgroundColor: 'var(--accent-primary)',
-                color: '#fff',
-                border: 'none',
-                padding: '0.6rem 1.25rem',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-              }}
-            >
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+             className="zx-btn zx-btn--brand zx-btn--md" >
               <span>+</span>
               <span>Invite Member</span>
             </button>
@@ -296,7 +287,7 @@ export default function TeamManagementPage() {
           style={{
             backgroundColor: 'rgba(239, 68, 68, 0.1)',
             border: '1px solid rgba(239, 68, 68, 0.3)',
-            color: '#f87171',
+            color: 'var(--ds-danger)',
             padding: '0.85rem 1.25rem',
             borderRadius: 'var(--radius-md)',
             marginBottom: '1.5rem',
@@ -312,7 +303,7 @@ export default function TeamManagementPage() {
           style={{
             backgroundColor: 'rgba(16, 185, 129, 0.1)',
             border: '1px solid rgba(16, 185, 129, 0.3)',
-            color: '#34d399',
+            color: 'var(--ds-success)',
             padding: '0.85rem 1.25rem',
             borderRadius: 'var(--radius-md)',
             marginBottom: '1.5rem',
@@ -341,7 +332,7 @@ export default function TeamManagementPage() {
             justifyContent: 'space-between',
             alignItems: 'center',
           }}
-        >
+         data-responsive-row >
           <div style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
             Active Members ({members.length})
           </div>
@@ -355,7 +346,7 @@ export default function TeamManagementPage() {
             Loading organization roster...
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div style={{ overflowX: 'auto' }} tabIndex={0} role="region" aria-label="Scrollable records"  className="zx-table-scroll" >
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-subtle)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
@@ -381,21 +372,21 @@ export default function TeamManagementPage() {
                       }}
                     >
                       <td style={{ padding: '1rem 1.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }} data-responsive-row >
                           <div
                             style={{
                               width: '36px',
                               height: '36px',
                               borderRadius: '50%',
                               backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                              color: '#60a5fa',
+                              color: 'var(--ds-text-link)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               fontWeight: 700,
                               fontSize: '0.9rem',
                             }}
-                          >
+                           data-responsive-row >
                             {((m.displayName || m.email || 'U')[0] ?? 'U').toUpperCase()}
                           </div>
                           <div>
@@ -437,12 +428,12 @@ export default function TeamManagementPage() {
                               cursor: 'pointer',
                               outline: 'none',
                             }}
-                          >
-                            <option value="ORG_OWNER">ORG_OWNER</option>
-                            <option value="ORG_ADMIN">ORG_ADMIN</option>
-                            <option value="ORG_MEMBER">ORG_MEMBER</option>
-                            <option value="ORG_VIEWER">ORG_VIEWER</option>
-                            <option value="ORG_AUDITOR">ORG_AUDITOR</option>
+                           aria-label="Role" >
+                            <option value="ORG_OWNER">Workspace owner</option>
+                            <option value="ORG_ADMIN">Admin</option>
+                            <option value="ORG_MEMBER">Member</option>
+                            <option value="ORG_VIEWER">Viewer</option>
+                            <option value="ORG_AUDITOR">Auditor</option>
                           </select>
                         ) : (
                           <span
@@ -477,7 +468,7 @@ export default function TeamManagementPage() {
                             disabled={m.role === 'ORG_OWNER' && members.filter(x => x.role === 'ORG_OWNER').length <= 1}
                             style={{
                               backgroundColor: 'transparent',
-                              color: '#f87171',
+                              color: 'var(--ds-danger)',
                               border: '1px solid rgba(239, 68, 68, 0.3)',
                               padding: '0.35rem 0.75rem',
                               borderRadius: 'var(--radius-sm)',
@@ -528,12 +519,12 @@ export default function TeamManagementPage() {
             justifyContent: 'space-between',
             alignItems: 'center',
           }}
-        >
+         data-responsive-row >
           <div style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
             Pending Invitations ({invitations.length})
           </div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            SHA-256 Hashed Tokens (7-day TTL)
+            Invitations expire after 7 days
           </div>
         </div>
 
@@ -542,7 +533,7 @@ export default function TeamManagementPage() {
             No pending invitations. Click &quot;Invite Member&quot; to invite engineers.
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div style={{ overflowX: 'auto' }} tabIndex={0} role="region" aria-label="Scrollable records"  className="zx-table-scroll" >
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-subtle)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
@@ -566,6 +557,7 @@ export default function TeamManagementPage() {
                     <tr key={inv.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                       <td style={{ padding: '1rem 1.5rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                         {inv.email}
+                        <div style={{fontSize:12,marginTop:6,fontWeight:400}}>{inv.deliveryStatus === 'SENT' ? 'Sent · accepted by Gmail' : inv.deliveryStatus === 'FAILED' ? 'Email failed · resend to retry' : inv.deliveryStatus === 'QUEUED' || inv.deliveryStatus === 'SENDING' ? 'Queued for delivery' : 'Link invitation'}</div>
                       </td>
                       <td style={{ padding: '1rem 1.5rem' }}>
                         <span
@@ -575,25 +567,30 @@ export default function TeamManagementPage() {
                             padding: '0.2rem 0.5rem',
                             borderRadius: '4px',
                             backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            color: '#60a5fa',
+                            color: 'var(--ds-text-link)',
                           }}
                         >
-                          {inv.role}
+                          {getOrgRoleLabel(inv.role)}
                         </span>
                       </td>
                       <td style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                         {inv.inviterEmail || 'Unknown'}
                       </td>
-                      <td style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', color: daysLeft <= 1 ? '#f87171' : 'var(--text-secondary)' }}>
+                      <td style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', color: daysLeft <= 1 ? 'var(--ds-danger)' : 'var(--text-secondary)' }}>
                         {daysLeft} days left
                       </td>
                       {canManageMembers && (
                         <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
+                          <button className="zx-btn zx-btn--secondary" onClick={async () => {
+                            const res = await fetch('/api/teams/invitations', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email:inv.email,role:inv.role}) });
+                            const data = await res.json();
+                            if (!res.ok) setError(data.error || 'Resend failed'); else { setSuccessMsg('New invitation queued; the previous link is invalid.'); fetchTeamData(); }
+                          }}>Resend</button>
                           <button
                             onClick={() => handleRevokeInvitation(inv.id)}
                             style={{
                               backgroundColor: 'transparent',
-                              color: '#f87171',
+                              color: 'var(--ds-danger)',
                               border: '1px solid rgba(239, 68, 68, 0.3)',
                               padding: '0.35rem 0.75rem',
                               borderRadius: 'var(--radius-sm)',
@@ -617,45 +614,26 @@ export default function TeamManagementPage() {
 
       {/* Invite Member Modal */}
       {isInviteOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            backdropFilter: 'blur(4px)',
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-lg)',
-              width: '100%',
-              maxWidth: '520px',
-              padding: '2rem',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <Modal isOpen onClose={() => setIsInviteOpen(false)} ariaLabel="Invite team member" className="zx-customer-dialog" size="md">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }} data-responsive-row >
               <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 Invite Team Member
               </h2>
               <button
-                onClick={() => setIsInviteOpen(false)}
+                aria-label="Close invitation" onClick={() => setIsInviteOpen(false)}
                 style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
               >
                 <X size={18} />
               </button>
             </div>
 
-            {!createdInviteUrl ? (
+              <p>Recipients do not need an existing Zerivex account. They sign in with the invited email, then accept their role.</p>
+              {emailAvailable === false && <p role="status">Invitation email is temporarily unavailable. The Zerivex owner needs to connect the sender account before email invitations can be sent.</p>}
+              {emailAvailable === null && <p role="status">Checking invitation email availability…</p>}
+              {error && <p role="alert">{error}</p>}
               <form onSubmit={handleCreateInvitation}>
                 <div style={{ marginBottom: '1.25rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontWeight: 500 }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontWeight: 500 }} htmlFor="invite-email-input" >
                     Email Address
                   </label>
                   <input
@@ -663,6 +641,7 @@ export default function TeamManagementPage() {
                     type="email"
                     required
                     placeholder="engineer@company.com"
+                    maxLength={254}
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
                     style={{
@@ -679,7 +658,7 @@ export default function TeamManagementPage() {
                 </div>
 
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontWeight: 500 }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontWeight: 500 }} htmlFor="invite-role-select" >
                     Organization Role
                   </label>
                   <select
@@ -697,17 +676,17 @@ export default function TeamManagementPage() {
                       outline: 'none',
                     }}
                   >
-                    <option value="ORG_ADMIN">ORG_ADMIN - Full target, scan, policy and invitation controls</option>
-                    <option value="ORG_MEMBER">ORG_MEMBER - Launch scans, evaluate findings, write comments</option>
-                    <option value="ORG_VIEWER">ORG_VIEWER - Read-only dashboard and findings access</option>
-                    <option value="ORG_AUDITOR">ORG_AUDITOR - Compliance auditor with SIEM / Audit Vault export</option>
+                    <option value="ORG_ADMIN">Admin - Full target, scan, policy and invitation controls</option>
+                    <option value="ORG_MEMBER">Member - Launch scans, evaluate findings, write comments</option>
+                    <option value="ORG_VIEWER">Viewer - Read-only dashboard and findings access</option>
+                    <option value="ORG_AUDITOR">Auditor - Compliance auditor with SIEM / Audit Vault export</option>
                   </select>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }} data-responsive-row >
                   <button
                     type="button"
-                    onClick={() => setIsInviteOpen(false)}
+                    aria-label="Close invitation" onClick={() => setIsInviteOpen(false)}
                     style={{
                       backgroundColor: 'transparent',
                       border: '1px solid var(--border-subtle)',
@@ -723,146 +702,30 @@ export default function TeamManagementPage() {
                   <button
                     id="submit-invite-btn"
                     type="submit"
-                    disabled={inviting}
-                    style={{
-                      backgroundColor: 'var(--accent-primary)',
-                      border: 'none',
-                      color: '#fff',
-                      padding: '0.6rem 1.25rem',
-                      borderRadius: 'var(--radius-md)',
-                      cursor: inviting ? 'not-allowed' : 'pointer',
-                      fontWeight: 600,
-                      fontSize: '0.9rem',
-                    }}
-                  >
-                    {inviting ? 'Generating...' : 'Generate Invitation'}
+                    disabled={inviting || emailAvailable !== true}
+                    style={{ cursor: inviting ? 'not-allowed' : 'pointer' }}
+                   className="zx-btn zx-btn--brand zx-btn--md" >
+                    {inviting ? 'Queuing...' : 'Send invitation'}
                   </button>
                 </div>
               </form>
-            ) : (
-              <div>
-                <div
-                  style={{
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    border: '1px solid rgba(16, 185, 129, 0.3)',
-                    color: '#34d399',
-                    padding: '0.85rem 1rem',
-                    borderRadius: 'var(--radius-md)',
-                    marginBottom: '1.25rem',
-                    fontSize: '0.9rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.4rem',
-                  }}
-                >
-                  <Check size={16} /> <span>Secure single-use invitation generated! The raw 256-bit token is not stored in our database.</span>
-                </div>
-
-                <div style={{ marginBottom: '1.25rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontWeight: 500 }}>
-                    Invitation Link
-                  </label>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <input
-                      id="invite-link-output"
-                      readOnly
-                      value={createdInviteUrl}
-                      style={{
-                        flex: 1,
-                        padding: '0.65rem 0.85rem',
-                        backgroundColor: 'var(--bg-main)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: 'var(--radius-md)',
-                        color: 'var(--text-primary)',
-                        fontSize: '0.85rem',
-                        fontFamily: 'monospace',
-                      }}
-                    />
-                    <button
-                      id="copy-invite-btn"
-                      onClick={() => {
-                        navigator.clipboard.writeText(createdInviteUrl);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2500);
-                      }}
-                      style={{
-                        backgroundColor: copied ? '#10b981' : 'rgba(255, 255, 255, 0.1)',
-                        color: '#fff',
-                        border: 'none',
-                        padding: '0.65rem 1rem',
-                        borderRadius: 'var(--radius-md)',
-                        cursor: 'pointer',
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {copied ? 'Copied!' : 'Copy'}
-                    </button>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <button
-                    onClick={() => {
-                      setIsInviteOpen(false);
-                      setCreatedInviteUrl(null);
-                    }}
-                    style={{
-                      backgroundColor: 'var(--accent-primary)',
-                      border: 'none',
-                      color: '#fff',
-                      padding: '0.6rem 1.25rem',
-                      borderRadius: 'var(--radius-md)',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem',
-                      fontWeight: 600,
-                    }}
-                  >
-                    Done
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+          </Modal>
       )}
 
       {/* Transfer Ownership Modal */}
       {isTransferOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            backdropFilter: 'blur(4px)',
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-lg)',
-              width: '100%',
-              maxWidth: '520px',
-              padding: '2rem',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
-            }}
-          >
+        <Modal isOpen onClose={() => setIsTransferOpen(false)} ariaLabel="Transfer organization ownership" className="zx-customer-dialog" size="md">
             <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, marginBottom: '0.85rem' }}>
               Transfer Primary Organization Ownership
             </h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.25rem', lineHeight: 1.5 }}>
-              Assign another team member to become the primary <strong style={{ color: '#fbbf24' }}>ORG_OWNER</strong>.
-              Your account will automatically transition to <strong style={{ color: '#60a5fa' }}>ORG_ADMIN</strong>.
+              Assign another team member to become the primary <strong style={{ color: 'var(--ds-warning)' }}>ORG_OWNER</strong>.
+              Your account will automatically transition to <strong style={{ color: 'var(--ds-text-link)' }}>ORG_ADMIN</strong>.
             </p>
 
             <form onSubmit={handleTransferOwnership}>
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontWeight: 500 }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontWeight: 500 }} htmlFor="field-src-app--dashboard--dashboard-team-page-tsx-0" >
                   Select Successor Owner
                 </label>
                 <select
@@ -879,7 +742,7 @@ export default function TeamManagementPage() {
                     fontSize: '0.9rem',
                     outline: 'none',
                   }}
-                >
+                 id="field-src-app--dashboard--dashboard-team-page-tsx-0" >
                   <option value="">-- Choose member --</option>
                   {members
                     .filter((m) => m.userId !== user?.id)
@@ -891,7 +754,7 @@ export default function TeamManagementPage() {
                 </select>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }} data-responsive-row >
                 <button
                   type="button"
                   onClick={() => setIsTransferOpen(false)}
@@ -925,8 +788,7 @@ export default function TeamManagementPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </Modal>
       )}
     </div>
   );

@@ -266,7 +266,7 @@ export function QuickScanLauncher({ onSuccess, className = '' }: QuickScanLaunch
 
         <div className="zql-telemetry-badge" aria-label="Target intake telemetry: Gate Armed">
           <span className="zql-telemetry-dot" aria-hidden="true" />
-          <span className="zql-telemetry-text">GATE ARMED</span>
+          <span className="zql-telemetry-text">SCAN LAUNCHER</span>
         </div>
       </div>
 

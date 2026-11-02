@@ -67,7 +67,7 @@ describe('Component 13 — Shared Modal / Dialog System', () => {
     );
 
     expect(html).toContain('role="alertdialog"');
-    expect(html).toContain('class="zmd-dialog zmd-size-sm "');
+    expect(html).toMatch(/class="zmd-dialog zmd-size-sm[^"]*zx-customer-dialog/);
   });
 
   it('5. Supports all standard size variants (sm, md, lg, xl, full)', () => {

@@ -137,7 +137,7 @@ export default function StaffOrgDetailPage() {
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginTop: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '16px', marginTop: '24px' }}>
           <div style={{ padding: '16px', background: '#0E1015', borderRadius: '6px', border: '1px solid var(--staff-border)' }}>
             <span style={{ fontSize: '12px', color: 'var(--staff-text-muted)' }}>Created Date</span>
             <div style={{ fontSize: '14px', fontWeight: 600, color: '#FFFFFF', marginTop: '4px' }}>

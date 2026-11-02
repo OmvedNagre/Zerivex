@@ -73,7 +73,7 @@ export default function AcademyPage() {
 
   return (
     <SmoothScroll>
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--ds-bg-page)' }}>
+      <div className="zx-customer-root" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--ds-bg-page)' }}>
         <AnnouncementBar
           id="zx-academy-banner"
           message="Security Academy: 10 interactive playbooks engineered for software built with AI tools."

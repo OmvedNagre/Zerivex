@@ -244,25 +244,16 @@ describe('Target Management, SSRF Defense & Verification Protocols (Phase 3)', (
       expect(candidates).toContain('omved.live');
     });
 
-    it('supports instant verification bypass for platform owners and development sandbox', async () => {
+    it('rejects instant verification bypass and leaves target unverified', async () => {
       const targetA = (await query<{ id: string }>('SELECT id FROM targets WHERE organization_id = $1 LIMIT 1', [orgAId])).rows[0]!;
 
       // Reset to unverified
       await query("UPDATE targets SET verification_status = 'UNVERIFIED', verified_at = NULL WHERE id = $1", [targetA.id]);
 
-      const bypassResult = await verifyTarget({
-        targetId: targetA.id,
-        organizationId: orgAId,
-        actorUserId: userAId,
-        bypass: true,
-      });
-
-      expect(bypassResult.success).toBe(true);
-      expect(bypassResult.diagnostic).toContain('Sandbox authorization');
-
+      await expect(verifyTarget({ targetId: targetA.id, organizationId: orgAId, actorUserId: userAId, bypass: true })).rejects.toThrow();
       const updatedTarget = await getTargetById(targetA.id, orgAId);
-      expect(updatedTarget.verificationStatus).toBe('VERIFIED');
-      expect(updatedTarget.verifiedAt).not.toBeNull();
+      expect(updatedTarget.verificationStatus).toBe('UNVERIFIED');
+      expect(updatedTarget.verifiedAt).toBeNull();
     });
   });
 });

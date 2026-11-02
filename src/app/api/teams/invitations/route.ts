@@ -1,3 +1,4 @@
+import { isMailConfigured } from '@/core/mail/gmail-service';
 import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import {
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: { invitations },
+      data: { invitations, emailDelivery: { available: isMailConfigured() } },
     });
   } catch (error) {
     return handleAuthError(error);
@@ -60,14 +61,15 @@ export async function POST(req: NextRequest) {
       email,
       role,
       actorUserId: auth.userId,
+      deliverEmail: true,
     });
 
     return NextResponse.json({
       success: true,
       data: {
         invitation: result.invitation,
-        rawToken: result.rawToken,
-        inviteUrl: result.inviteUrl,
+        deliveryStatus: 'QUEUED',
+        message: 'Invitation queued for email delivery',
       },
     });
   } catch (error: any) {

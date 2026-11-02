@@ -1,9 +1,11 @@
+> Historical checklist: DONE entries below are legacy assertions, not evidence of current production acceptance. Use the current launch audit.
+
 # ZERIVEX Official Platform Launch Checklist & Runbook
 
-> **Document Version:** 1.0 (Phase 15 Production Release)  
-> **Platform Version:** 1.0.0-PROD  
-> **Status:** READY FOR LAUNCH  
-> **Brand Principle:** *"Security for software built with AI. Verify. Detect. Defend."*  
+> **Document Version:** 1.0 (Phase 15 Production Release)
+> **Platform Version:** 1.0.0-PROD
+> **Status:** NOT APPROVED — see [current launch audit](LAUNCH_READINESS.md)
+> **Brand Principle:** *"Security for software built with AI. Verify. Detect. Defend."*
 
 ---
 

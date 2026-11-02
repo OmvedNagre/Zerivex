@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { PLANS, type PlanId } from '@/core/billing/types';
 import { CONTACT_EMAIL } from '@/lib/contact';
-import { useAuth } from '@/components/auth/AuthProvider';
-import { Check, CreditCard, AlertTriangle, Shield } from 'lucide-react';
+import { Check, CreditCard, AlertTriangle } from 'lucide-react';
 
 interface PlanPricing {
   monthlyInr: number;
@@ -65,7 +64,6 @@ interface OrgEntitlementSummary {
 }
 
 export default function BillingPage() {
-  const { isOwner } = useAuth();
   const [entitlements, setEntitlements] = useState<OrgEntitlementSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -99,20 +97,14 @@ export default function BillingPage() {
     // Check query params for checkout / portal redirects
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('simulated') === 'true' || urlParams.get('mock_checkout') === 'success') {
-        setFeedback({ type: 'success', message: 'Local checkout simulation completed. No payment was taken or subscription changed.' });
-      } else if (urlParams.get('session_id')) {
+      if (urlParams.get('success') === 'true' && urlParams.get('session_id')?.startsWith('cs_') && !urlParams.get('session_id')?.startsWith('cs_sim_')) {
         setFeedback({ type: 'success', message: 'Checkout returned. Subscription changes appear after the signed payment event is verified.' });
       } else if (urlParams.get('canceled') === 'true') {
         setFeedback({
           type: 'error',
           message: 'Checkout was canceled. Your current subscription tier remains unchanged.',
         });
-      } else if (urlParams.get('portal_simulated') === 'true') {
-        setFeedback({
-          type: 'success',
-          message: 'Local billing portal simulation. No payment details were changed.',
-        });
+
       }
     }
   }, []);
@@ -176,7 +168,7 @@ export default function BillingPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: '3rem 1.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+      <div style={{ padding: '3rem 1.5rem', textAlign: 'center', color: 'var(--text-muted)' }} className="zx-page" >
         <div style={{ display: 'inline-block', width: '32px', height: '32px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         <div style={{ marginTop: '1rem', fontSize: '0.95rem' }}>Loading subscription ledger & quotas...</div>
       </div>
@@ -184,13 +176,12 @@ export default function BillingPage() {
   }
 
   const currentSub = entitlements?.subscription;
-  const isBypass = entitlements?.isOwnerBypass || isOwner;
 
   return (
-    <div style={{ padding: '2rem 1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ padding: '2rem 1.5rem', maxWidth: '1200px', margin: '0 auto' }} className="zx-page" >
       {/* Header */}
       <div style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }} data-responsive-row >
           <div>
             <h1 style={{ fontSize: '1.85rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
               <span>Subscription & Billing</span>
@@ -200,7 +191,7 @@ export default function BillingPage() {
                   padding: '0.2rem 0.6rem',
                   borderRadius: '999px',
                   backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                  color: '#60a5fa',
+                  color: 'var(--ds-text-link)',
                   border: '1px solid rgba(59, 130, 246, 0.3)',
                   fontWeight: 600,
                   letterSpacing: '0.05em',
@@ -214,7 +205,7 @@ export default function BillingPage() {
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }} data-responsive-row >
             <button
               onClick={handleOpenPortal}
               disabled={actionLoading === 'portal'}
@@ -248,61 +239,19 @@ export default function BillingPage() {
             marginBottom: '1.75rem',
             backgroundColor: feedback.type === 'success' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
             border: `1px solid ${feedback.type === 'success' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-            color: feedback.type === 'success' ? '#34d399' : '#f87171',
+            color: feedback.type === 'success' ? 'var(--ds-success)' : 'var(--ds-danger)',
             fontSize: '0.9rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.6rem',
           }}
-        >
+         data-responsive-row >
           {feedback.type === 'success' ? <Check size={16} /> : <AlertTriangle size={16} />}
           <span>{feedback.message}</span>
         </div>
       )}
 
-      {/* Platform Owner Override Banner */}
-      {isBypass && (
-        <div
-          style={{
-            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.18) 0%, rgba(168, 85, 247, 0.15) 100%)',
-            border: '1px solid rgba(168, 85, 247, 0.4)',
-            borderRadius: 'var(--radius-md)',
-            padding: '1.25rem 1.5rem',
-            marginBottom: '2rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem',
-          }}
-        >
-          <div
-            style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(168, 85, 247, 0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.25rem',
-              color: '#c084fc',
-              flexShrink: 0,
-            }}
-          >
-            <Shield size={20} />
-          </div>
-          <div>
-            <div style={{ color: '#e9d5ff', fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span>Platform Owner Mode Active</span>
-              <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '4px', backgroundColor: '#9333ea', color: '#fff' }}>
-                OVERRIDE
-              </span>
-            </div>
-            <div style={{ color: '#c4b5fd', fontSize: '0.85rem', marginTop: '0.2rem' }}>
-              All target bounds, scan allocations, and enterprise feature gates (Compliance Audit Vault, Deep Scans, Crawlers) are automatically unlocked without customer record mutation.
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Real-time Usage & Allocation Ledgers */}
       <div style={{ marginBottom: '2.5rem' }}>
@@ -310,7 +259,7 @@ export default function BillingPage() {
           Current Allocation & Real-Time Usage
         </h2>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1.25rem' }}>
           {/* Target Quota */}
           <div
             style={{
@@ -320,7 +269,7 @@ export default function BillingPage() {
               padding: '1.25rem',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }} data-responsive-row >
               <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                 VERIFIED TARGETS
               </span>
@@ -335,10 +284,10 @@ export default function BillingPage() {
                   height: '100%',
                   backgroundColor:
                     (entitlements?.usage.targets.percentage || 0) >= 100
-                      ? '#ef4444'
+                      ? 'var(--ds-danger)'
                       : (entitlements?.usage.targets.percentage || 0) >= 80
-                      ? '#f59e0b'
-                      : '#10b981',
+                      ? 'var(--ds-warning)'
+                      : 'var(--ds-success)',
                   transition: 'width 0.3s ease',
                 }}
               />
@@ -357,7 +306,7 @@ export default function BillingPage() {
               padding: '1.25rem',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }} data-responsive-row >
               <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                 MONTHLY SCANS (UTC)
               </span>
@@ -372,9 +321,9 @@ export default function BillingPage() {
                   height: '100%',
                   backgroundColor:
                     (entitlements?.usage.monthlyScans.percentage || 0) >= 100
-                      ? '#ef4444'
+                      ? 'var(--ds-danger)'
                       : (entitlements?.usage.monthlyScans.percentage || 0) >= 80
-                      ? '#f59e0b'
+                      ? 'var(--ds-warning)'
                       : '#3b82f6',
                   transition: 'width 0.3s ease',
                 }}
@@ -394,7 +343,7 @@ export default function BillingPage() {
               padding: '1.25rem',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }} data-responsive-row >
               <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                 TEAM MEMBERS
               </span>
@@ -420,12 +369,12 @@ export default function BillingPage() {
       </div>
 
       {/* Plan Switcher Toggle */}
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginBottom: '2.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginBottom: '2.5rem' }} data-responsive-row >
         <button
           onClick={() => setBillingCycle('MONTHLY')}
           style={{
             backgroundColor: billingCycle === 'MONTHLY' ? 'var(--accent-primary)' : 'rgba(255, 255, 255, 0.05)',
-            color: '#fff',
+            color: billingCycle === 'MONTHLY' ? '#fff' : 'var(--ds-text-primary)',
             border: 'none',
             padding: '0.6rem 1.25rem',
             borderRadius: '999px',
@@ -441,7 +390,7 @@ export default function BillingPage() {
           onClick={() => setBillingCycle('YEARLY')}
           style={{
             backgroundColor: billingCycle === 'YEARLY' ? 'var(--accent-primary)' : 'rgba(255, 255, 255, 0.05)',
-            color: '#fff',
+            color: billingCycle === 'YEARLY' ? '#fff' : 'var(--ds-text-primary)',
             border: 'none',
             padding: '0.6rem 1.25rem',
             borderRadius: '999px',
@@ -455,7 +404,7 @@ export default function BillingPage() {
           }}
         >
           <span>Annual Billing</span>
-          <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem', backgroundColor: '#10b981', color: '#fff', borderRadius: '4px' }}>
+          <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem', backgroundColor: 'var(--ds-success)', color: '#fff', borderRadius: '4px' }}>
             SAVE ~17%
           </span>
         </button>
@@ -484,7 +433,7 @@ export default function BillingPage() {
               {plan.features.scheduledScans && <li>Scheduled scanning</li>}
             </ul>
             {current ? <p><strong>Current tier</strong></p> : id === 'PRO' || id === 'TEAM' ?
-              <button type="button" disabled={actionLoading !== null} onClick={() => handleUpgrade(id)} style={{ padding: '10px 16px', borderRadius: 8, cursor: 'pointer' }}>
+              <button type="button" disabled={actionLoading !== null} onClick={() => handleUpgrade(id)} style={{ cursor: 'pointer' }} className="zx-btn zx-btn--brand zx-btn--md" >
                 {actionLoading === `upgrade-${id}` ? 'Opening checkout…' : `Choose ${plan.name}`}
               </button> : <a href={custom ? `mailto:${CONTACT_EMAIL}?subject=Enterprise%20plan` : '#'} onClick={custom ? undefined : (event) => { event.preventDefault(); handleOpenPortal(); }}>
                 {custom ? 'Discuss Enterprise' : 'Manage plan in billing portal'}

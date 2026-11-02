@@ -20,7 +20,10 @@
     "db:backup": "tsx scripts/backup-database.ts",
     "project:status": "tsx scripts/project-status.ts",
     "test:integration": "tsx scripts/test-integration.ts",
-    "test:e2e": "tsx scripts/test-browser.ts"
+    "test:e2e": "tsx scripts/test-browser.ts",
+    "mail:connect": "tsx scripts/connect-gmail.ts",
+    "owner:provision": "tsx scripts/provision-zerivex-owner.ts",
+    "launch:check": "tsx scripts/launch-check.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

@@ -36,7 +36,11 @@ export async function GET(req: NextRequest) {
       authenticated: true,
       user: context.user,
       organizationId: context.organizationId,
+      organizationName: context.organizationName,
       organizationRole: context.organizationRole,
+      viaStaffPortal: context.viaStaffPortal === true,
+      previewPlanId: context.previewPlanId || null,
+      staffRole: context.staffRole || null,
       expiresAt: context.expiresAt.toISOString(),
     },
     {

@@ -94,7 +94,7 @@ export function verifyStripeWebhookSignature(
 
 /**
  * Initiate Stripe Checkout session in INR.
- * Falls back safely to hermetic local simulation when no live STRIPE_SECRET_KEY is configured.
+ * Missing Stripe credentials fail closed in every environment; no payment simulation.
  */
 export async function createStripeCheckoutSession(
   params: StripeCheckoutParams
@@ -105,24 +105,7 @@ export async function createStripeCheckoutSession(
     throw new Error(`Invalid plan specified: ${params.planId}`);
   }
 
-  // Simulated mode (for local dev, tests, or environments without live Stripe keys)
-  if (!stripeSecretKey || !stripeSecretKey.startsWith('sk_')) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('Stripe is not configured for production');
-    }
-    const simulatedSessionId = `cs_sim_${crypto.randomBytes(12).toString('hex')}`;
-    const redirectUrl = new URL(params.successUrl);
-    redirectUrl.searchParams.set('session_id', simulatedSessionId);
-    redirectUrl.searchParams.set('simulated', 'true');
-    redirectUrl.searchParams.set('plan', params.planId);
-    redirectUrl.searchParams.set('cycle', params.billingCycle);
-
-    return {
-      sessionId: simulatedSessionId,
-      url: redirectUrl.toString(),
-      isSimulated: true,
-    };
-  }
+  if (!stripeSecretKey?.startsWith('sk_')) throw Object.assign(new Error('Stripe is not configured'), { statusCode: 503 });
 
   if (process.env.NODE_ENV === 'production' &&
       (process.env.LEGAL_POLICIES_APPROVED !== 'true' || !process.env.LEGAL_OPERATOR_NAME?.trim() || !process.env.LEGAL_JURISDICTION?.trim())) {
@@ -175,15 +158,7 @@ export async function createStripePortalSession(
 ): Promise<StripePortalResult> {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
-  if (!stripeSecretKey || !stripeSecretKey.startsWith('sk_')) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('Stripe is not configured for production');
-    }
-    return {
-      url: `${params.returnUrl}?portal_simulated=true`,
-      isSimulated: true,
-    };
-  }
+  if (!stripeSecretKey?.startsWith('sk_')) throw Object.assign(new Error('Stripe is not configured'), { statusCode: 503 });
 
   const bodyData = new URLSearchParams({
     customer: params.stripeCustomerId,

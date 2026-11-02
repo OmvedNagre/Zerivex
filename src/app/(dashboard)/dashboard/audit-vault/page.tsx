@@ -1,5 +1,8 @@
 'use client';
 
+import { UpgradeNudge } from '@/components/ui/UpgradeNudge';
+import { Modal } from '@/components/ui/Modal';
+
 import { useState, useEffect, useCallback } from 'react';
 import { Shield, Check, AlertTriangle, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -31,6 +34,7 @@ export default function AuditVaultPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [restricted, setRestricted] = useState(false);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -64,6 +68,8 @@ export default function AuditVaultPage() {
       const res = await fetch(`/api/audit-vault?${params.toString()}`);
       const data = await res.json();
 
+      if (res.status === 403) { setRestricted(true); setEntries([]); setTotal(0); return; }
+      setRestricted(false);
       if (!res.ok || !data.success) {
         setError(data.error || 'Failed to retrieve audit logs');
         return;
@@ -121,8 +127,12 @@ export default function AuditVaultPage() {
     setOffset(0);
   }
 
+  if (restricted) return <div className="zx-page"><h1>Audit Vault</h1><UpgradeNudge
+    attempted="Audit history and exports" reason="This feature requires Enterprise access and an authorized organization role."
+    requiredPlanId="ENTERPRISE" benefit="Review audit history, check integrity, and export records." severity="blocked" /></div>;
+
   return (
-    <div style={{ maxWidth: '1300px', margin: '0 auto', padding: '2rem 1.5rem' }}>
+    <div style={{ maxWidth: '1300px', margin: '0 auto', padding: '2rem 1.5rem' }} className="zx-page" >
       {/* Header */}
       <div
         style={{
@@ -133,16 +143,16 @@ export default function AuditVaultPage() {
           flexWrap: 'wrap',
           gap: '1rem',
         }}
-      >
+       data-responsive-row >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }} data-responsive-row >
             <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
               Enterprise Compliance Audit Vault
             </h1>
             <span
               style={{
                 backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                color: '#34d399',
+                color: 'var(--ds-success)',
                 border: '1px solid rgba(16, 185, 129, 0.3)',
                 padding: '0.2rem 0.6rem',
                 borderRadius: '999px',
@@ -151,7 +161,7 @@ export default function AuditVaultPage() {
                 letterSpacing: '0.05em',
               }}
             >
-              SOC 2 / ISO 27001 READY
+              AUDIT HISTORY
             </span>
           </div>
           <p style={{ color: 'var(--text-secondary)', marginTop: '0.4rem', fontSize: '0.95rem' }}>
@@ -159,14 +169,14 @@ export default function AuditVaultPage() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }} data-responsive-row >
           <button
             id="verify-vault-btn"
             onClick={handleVerifyIntegrity}
             disabled={checkingIntegrity}
             style={{
               backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              color: '#60a5fa',
+              color: 'var(--ds-text-link)',
               border: '1px solid rgba(59, 130, 246, 0.3)',
               padding: '0.6rem 1rem',
               borderRadius: 'var(--radius-md)',
@@ -224,7 +234,7 @@ export default function AuditVaultPage() {
           style={{
             backgroundColor: integrityStatus.verified ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
             border: `1px solid ${integrityStatus.verified ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-            color: integrityStatus.verified ? '#34d399' : '#f87171',
+            color: integrityStatus.verified ? 'var(--ds-success)' : 'var(--ds-danger)',
             padding: '1rem 1.25rem',
             borderRadius: 'var(--radius-md)',
             marginBottom: '1.5rem',
@@ -233,7 +243,7 @@ export default function AuditVaultPage() {
             alignItems: 'center',
             fontSize: '0.9rem',
           }}
-        >
+         data-responsive-row >
           <div>
             <strong>{integrityStatus.verified ? (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -260,7 +270,7 @@ export default function AuditVaultPage() {
           style={{
             backgroundColor: 'rgba(239, 68, 68, 0.1)',
             border: '1px solid rgba(239, 68, 68, 0.3)',
-            color: '#f87171',
+            color: 'var(--ds-danger)',
             padding: '0.85rem 1.25rem',
             borderRadius: 'var(--radius-md)',
             marginBottom: '1.5rem',
@@ -280,13 +290,13 @@ export default function AuditVaultPage() {
           padding: '1.25rem',
           marginBottom: '1.5rem',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
           gap: '1rem',
           alignItems: 'end',
         }}
       >
         <div>
-          <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem', fontWeight: 600 }}>
+          <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem', fontWeight: 600 }} htmlFor="audit-search-input" >
             SEARCH KEYWORD
           </label>
           <input
@@ -309,7 +319,7 @@ export default function AuditVaultPage() {
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem', fontWeight: 600 }}>
+          <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem', fontWeight: 600 }} htmlFor="audit-action-select" >
             AUDIT ACTION
           </label>
           <select
@@ -345,7 +355,7 @@ export default function AuditVaultPage() {
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem', fontWeight: 600 }}>
+          <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem', fontWeight: 600 }} htmlFor="field-src-app--dashboard--dashboard-audit-vault-page-tsx-0" >
             START DATE
           </label>
           <input
@@ -362,11 +372,11 @@ export default function AuditVaultPage() {
               fontSize: '0.85rem',
               outline: 'none',
             }}
-          />
+           id="field-src-app--dashboard--dashboard-audit-vault-page-tsx-0" />
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem', fontWeight: 600 }}>
+          <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem', fontWeight: 600 }} htmlFor="field-src-app--dashboard--dashboard-audit-vault-page-tsx-1" >
             END DATE
           </label>
           <input
@@ -383,10 +393,10 @@ export default function AuditVaultPage() {
               fontSize: '0.85rem',
               outline: 'none',
             }}
-          />
+           id="field-src-app--dashboard--dashboard-audit-vault-page-tsx-1" />
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem' }} data-responsive-row >
           <button
             onClick={fetchVaultLogs}
             style={{
@@ -437,12 +447,12 @@ export default function AuditVaultPage() {
             justifyContent: 'space-between',
             alignItems: 'center',
           }}
-        >
+         data-responsive-row >
           <div style={{ fontWeight: 600, fontSize: '1rem', color: 'var(--text-primary)' }}>
             Showing {entries.length} of {total} Records
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }} data-responsive-row >
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Page Size:</span>
             <select
               value={limit}
@@ -458,7 +468,7 @@ export default function AuditVaultPage() {
                 padding: '0.2rem 0.5rem',
                 fontSize: '0.8rem',
               }}
-            >
+             aria-label="Limit" >
               <option value="25">25</option>
               <option value="50">50</option>
               <option value="100">100</option>
@@ -475,7 +485,7 @@ export default function AuditVaultPage() {
             No audit records match the selected filter criteria.
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div style={{ overflowX: 'auto' }} tabIndex={0} role="region" aria-label="Scrollable records"  className="zx-table-scroll" >
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-subtle)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
@@ -511,7 +521,7 @@ export default function AuditVaultPage() {
                             entry.action.includes('INVITATION') || entry.action.includes('ROLE')
                               ? '#c084fc'
                               : entry.action.includes('COMMENT') || entry.action.includes('ASSIGN')
-                              ? '#60a5fa'
+                              ? 'var(--ds-text-link)'
                               : 'var(--text-primary)',
                         }}
                       >
@@ -577,7 +587,7 @@ export default function AuditVaultPage() {
             justifyContent: 'space-between',
             alignItems: 'center',
           }}
-        >
+         data-responsive-row >
           <button
             disabled={offset === 0}
             onClick={() => setOffset(Math.max(0, offset - limit))}
@@ -624,30 +634,8 @@ export default function AuditVaultPage() {
 
       {/* Metadata Inspector Modal */}
       {selectedEntry && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.75)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            backdropFilter: 'blur(4px)',
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-lg)',
-              width: '100%',
-              maxWidth: '650px',
-              padding: '1.75rem',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <Modal isOpen onClose={() => setSelectedEntry(null)} ariaLabel="Audit entry details" className="zx-customer-dialog" size="md">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }} data-responsive-row >
               <div>
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                   Audit Event Details
@@ -664,7 +652,7 @@ export default function AuditVaultPage() {
               </button>
             </div>
 
-            <div style={{ marginBottom: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.85rem' }}>
+            <div style={{ marginBottom: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.85rem' }} data-responsive-grid >
               <div>
                 <span style={{ color: 'var(--text-muted)' }}>Action: </span>
                 <strong style={{ color: 'var(--text-primary)' }}>{selectedEntry.action}</strong>
@@ -695,7 +683,7 @@ export default function AuditVaultPage() {
                   padding: '1rem',
                   fontSize: '0.8rem',
                   fontFamily: 'monospace',
-                  color: '#34d399',
+                  color: 'var(--ds-success)',
                   overflowX: 'auto',
                   maxHeight: '260px',
                 }}
@@ -704,7 +692,7 @@ export default function AuditVaultPage() {
               </pre>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }} data-responsive-row >
               <button
                 onClick={() => setSelectedEntry(null)}
                 style={{
@@ -721,8 +709,7 @@ export default function AuditVaultPage() {
                 Close
               </button>
             </div>
-          </div>
-        </div>
+          </Modal>
       )}
     </div>
   );

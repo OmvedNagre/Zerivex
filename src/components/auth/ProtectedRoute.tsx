@@ -11,7 +11,7 @@ export function ProtectedRoute({
   children: React.ReactNode;
   requiredRole?: PlatformRole;
 }) {
-  const { status, user, isOwner } = useAuth();
+  const { status, user, isOwner, refreshSession } = useAuth();
 
   if (status === 'AUTH_LOADING') {
     return (
@@ -61,6 +61,7 @@ export function ProtectedRoute({
         <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
           Unable to verify your session. Please check your connection or sign in again.
         </p>
+        <button type="button" className="zx-btn zx-btn--secondary" onClick={() => refreshSession()}>Retry connection</button>
         <a
           href="/login"
           style={{

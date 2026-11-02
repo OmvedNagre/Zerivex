@@ -1,4 +1,5 @@
 'use client';
+import { getStatusLabel } from '@/lib/labels';
 
 import { useState, useEffect } from 'react';
 import {
@@ -23,20 +24,26 @@ interface QueueItem {
 }
 
 export default function StaffQueuePage() {
+  const [workerHealth, setWorkerHealth] = useState<{online:boolean;overdue:number;workers:Array<{id:string;heartbeatAt:string;online:boolean}>} | null>(null);
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadQueue = async () => {
     try {
       setLoading(true);
+      setLoadError(null);
       const res = await fetch('/api/staff/queue');
+      if (!res.ok) throw new Error('Unable to load current records. Refresh to retry.');
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
           setQueue(data.data.queue || []);
+          setWorkerHealth(data.data.workerHealth || null);
         }
       }
     } catch {
+      setLoadError('Unable to load current records. Refresh to retry.');
       // Handle error
     } finally {
       setLoading(false);
@@ -45,6 +52,7 @@ export default function StaffQueuePage() {
 
   useEffect(() => {
     loadQueue();
+    const timer=setInterval(loadQueue,15000); return () => clearInterval(timer);
   }, []);
 
   return (
@@ -69,7 +77,9 @@ export default function StaffQueuePage() {
         </button>
       </div>
 
-      <div className="staff-card" style={{ padding: 0, overflow: 'hidden' }}>
+      {!loadError && workerHealth && <section className="staff-card" aria-label="Scanner worker health"><h2 style={{fontSize:18}}>Scanner worker: {workerHealth.online ? 'Online' : 'Offline'}</h2><p>{workerHealth.overdue} scans queued for more than 2 minutes.</p>{workerHealth.workers.map(w => <p key={w.id}>{w.online ? 'Online' : 'Stale'} · {w.id.slice(0,12)} · Last heartbeat {new Date(w.heartbeatAt).toLocaleString()}</p>)}{!workerHealth.online && <p role="alert">No live worker heartbeat. Scans and invitation delivery require a running worker.</p>}</section>}
+      {loadError && <p role="alert" className="staff-error">{loadError}</p>}
+      <div className="staff-card zx-table-scroll" style={{ padding: 0, overflow: 'hidden' }} tabIndex={0} role="region" aria-label="Staff records" >
         <table className="staff-table">
           <thead>
             <tr>
@@ -85,7 +95,7 @@ export default function StaffQueuePage() {
             {queue.length === 0 ? (
               <tr>
                 <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--staff-text-muted)' }}>
-                  {loading ? 'Polling orchestrator...' : 'Scan queue is currently clear. Zero active failures.'}
+                  {loading ? 'Polling orchestrator...' : loadError ? 'Queue state unavailable.' : 'No queued, running or failed scans in the current view.'}
                 </td>
               </tr>
             ) : (
@@ -122,7 +132,7 @@ export default function StaffQueuePage() {
                             color: isFailed ? '#EF4444' : isRunning ? '#38BDF8' : '#F59E0B',
                           }}
                         >
-                          {item.status}
+                          {getStatusLabel(item.status)}
                         </span>
                       </div>
                     </td>

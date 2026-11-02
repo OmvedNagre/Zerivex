@@ -89,3 +89,15 @@ export function getFindingSeverityLabel(sev: string): string {
 export function getFindingStatusLabel(status: string): string {
   return FINDING_STATUS_LABELS[status] || status;
 }
+
+export function getStaffRoleLabel(role?: string | null): string {
+  return ({ STAFF_OWNER: 'Staff owner', STAFF_ADMIN: 'Staff admin', STAFF_SUPPORT: 'Support' } as Record<string,string>)[role || ''] || 'Staff';
+}
+
+/** Display labels never change the enum values sent to APIs. */
+export function getStatusLabel(status: string): string {
+  return SCAN_STATUS_LABELS[status] || FINDING_STATUS_LABELS[status] || ({
+    NOT_TESTED: 'Not tested', READY: 'Ready', DEGRADED: 'Needs attention', NOT_READY: 'Not ready',
+    RECEIVED: 'Received', PROCESSED: 'Processed', IGNORED: 'Ignored', ACTIVE: 'Active', PAST_DUE: 'Payment overdue',
+  } as Record<string,string>)[status] || status.toLowerCase().replace(/_/g, ' ').replace(/^./, (letter) => letter.toUpperCase());
+}

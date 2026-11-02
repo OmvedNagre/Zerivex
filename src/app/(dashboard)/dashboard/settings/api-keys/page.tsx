@@ -1,13 +1,17 @@
 'use client';
+import { useConfirmation } from '@/components/ui/ConfirmationProvider';
+
+import { Modal } from '@/components/ui/Modal';
 
 import { toast } from '@/components/ui/Toast';
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { ApiKeyRecord } from '@/core/auth/api-key-service';
-import { ArrowLeft, Key, Zap, Lock, Check, Plus } from 'lucide-react';
+import { Key, Zap, Lock, Check, Plus } from 'lucide-react';
 
 export default function ApiKeysSettingsPage() {
+  const { confirm } = useConfirmation();
   const [apiKeys, setApiKeys] = useState<ApiKeyRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +81,7 @@ export default function ApiKeysSettingsPage() {
   };
 
   const handleRevoke = async (id: string, keyName: string) => {
-    if (!confirm(`Are you sure you want to revoke API key "${keyName}"? Any automated pipeline using it will immediately fail.`)) {
+    if (!(await confirm(`Are you sure you want to revoke API key "${keyName}"? Any automated pipeline using it will immediately fail.`))) {
       return;
     }
 
@@ -94,10 +98,12 @@ export default function ApiKeysSettingsPage() {
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { toast.error('Could not copy. Select the text and copy it manually.'); }
   };
 
   const toggleScope = (scope: string) => {
@@ -107,20 +113,10 @@ export default function ApiKeysSettingsPage() {
   };
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }} className="zx-page" >
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }} data-responsive-row >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-            <Link
-              href="/dashboard/targets"
-              style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
-            >
-              <ArrowLeft size={14} /> Dashboard
-            </Link>
-            <span style={{ color: 'var(--text-tertiary)' }}>/</span>
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Developer Settings</span>
-          </div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}>
             API Keys & Automation Tokens
           </h1>
@@ -131,27 +127,14 @@ export default function ApiKeysSettingsPage() {
 
         <button
           onClick={() => setShowCreateModal(true)}
-          style={{
-            padding: '0.65rem 1.25rem',
-            backgroundColor: 'var(--primary)',
-            color: '#fff',
-            borderRadius: 'var(--radius-md)',
-            border: 'none',
-            fontWeight: 600,
-            fontSize: '0.9rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          }}
-        >
+          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+         className="zx-btn zx-btn--brand zx-btn--md" >
           <Plus size={16} /> Generate New API Key
         </button>
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }} data-responsive-row >
         <Link
           href="/dashboard/settings/api-keys"
           style={{
@@ -195,7 +178,7 @@ export default function ApiKeysSettingsPage() {
 
       {/* API Keys Table */}
       <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--card-bg)', overflow: 'hidden' }}>
-        <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} data-responsive-row >
           <div>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>Active API Keys</h2>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.2rem 0 0 0' }}>
@@ -230,7 +213,7 @@ export default function ApiKeysSettingsPage() {
             </button>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div style={{ overflowX: 'auto' }} tabIndex={0} role="region" aria-label="Scrollable records"  className="zx-table-scroll" >
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
               <thead>
                 <tr style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
@@ -262,7 +245,7 @@ export default function ApiKeysSettingsPage() {
                         {key.keyPrefix}••••••••
                       </td>
                       <td style={{ padding: '0.9rem 1.25rem' }}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }} data-responsive-row >
                           {key.scopes.map((s) => (
                             <span
                               key={s}
@@ -294,7 +277,7 @@ export default function ApiKeysSettingsPage() {
                             fontSize: '0.75rem',
                             fontWeight: 600,
                             backgroundColor: isRevoked ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                            color: isRevoked ? 'var(--danger)' : '#10b981',
+                            color: isRevoked ? 'var(--danger)' : 'var(--ds-success)',
                           }}
                         >
                           {key.status}
@@ -331,8 +314,7 @@ export default function ApiKeysSettingsPage() {
 
       {/* Modal: Generate Key */}
       {showCreateModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
-          <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', width: '100%', maxWidth: '520px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)' }}>
+        <Modal isOpen onClose={() => setShowCreateModal(false)} ariaLabel="Generate API Key" className="zx-customer-dialog" size="md">
             <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: 600 }}>Generate API Key</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0 0 1.25rem 0' }}>
               Create a machine-to-machine token for CI/CD pipelines. You will only be shown this key once.
@@ -340,7 +322,7 @@ export default function ApiKeysSettingsPage() {
 
             <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }} htmlFor="field-src-app--dashboard--dashboard-settings-api-keys-page-tsx-0" >
                   Key Name / Purpose
                 </label>
                 <input
@@ -358,7 +340,7 @@ export default function ApiKeysSettingsPage() {
                     color: 'var(--text-primary)',
                     fontSize: '0.9rem',
                   }}
-                />
+                 id="field-src-app--dashboard--dashboard-settings-api-keys-page-tsx-0" />
               </div>
 
               <div>
@@ -386,7 +368,7 @@ export default function ApiKeysSettingsPage() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }} htmlFor="field-src-app--dashboard--dashboard-settings-api-keys-page-tsx-1" >
                   Expiration
                 </label>
                 <select
@@ -401,7 +383,7 @@ export default function ApiKeysSettingsPage() {
                     color: 'var(--text-primary)',
                     fontSize: '0.9rem',
                   }}
-                >
+                 id="field-src-app--dashboard--dashboard-settings-api-keys-page-tsx-1" >
                   <option value={30}>30 Days</option>
                   <option value={90}>90 Days (Recommended)</option>
                   <option value={180}>180 Days</option>
@@ -410,7 +392,7 @@ export default function ApiKeysSettingsPage() {
                 </select>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }} data-responsive-row >
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
@@ -430,41 +412,30 @@ export default function ApiKeysSettingsPage() {
                 <button
                   type="submit"
                   disabled={submitting || !name.trim()}
-                  style={{
-                    padding: '0.6rem 1.25rem',
-                    borderRadius: 'var(--radius-md)',
-                    border: 'none',
-                    backgroundColor: 'var(--primary)',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                  }}
-                >
+                  style={{ cursor: 'pointer' }}
+                 className="zx-btn zx-btn--brand zx-btn--md" >
                   {submitting ? 'Generating...' : 'Create Key'}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </Modal>
       )}
 
       {/* Modal: Single Reveal Display */}
       {createdRawKey && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '1rem' }}>
-          <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid #10b981', borderRadius: 'var(--radius-lg)', width: '100%', maxWidth: '580px', padding: '1.75rem', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.3)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-              <Lock size={20} style={{ color: '#10b981' }} />
+        <Modal isOpen onClose={() => setCreatedRawKey(null)} ariaLabel="Save your API key" className="zx-customer-dialog" size="md">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }} data-responsive-row >
+              <Lock size={20} style={{ color: 'var(--ds-success)' }} />
               <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                 API Key Successfully Created
               </h3>
             </div>
 
-            <div style={{ padding: '0.85rem', backgroundColor: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: 'var(--radius-md)', color: '#f59e0b', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+            <div style={{ padding: '0.85rem', backgroundColor: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: 'var(--radius-md)', color: 'var(--ds-warning)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
               <strong>Important Security Notice:</strong> Make sure to copy your API key now. For your security, this key is hashed in our database and will <strong>never be shown to you again</strong>.
             </div>
 
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }} data-responsive-row >
               <input
                 type="text"
                 readOnly
@@ -479,12 +450,12 @@ export default function ApiKeysSettingsPage() {
                   backgroundColor: 'var(--bg-secondary)',
                   color: 'var(--text-primary)',
                 }}
-              />
+               aria-label="Created Raw Key" />
               <button
                 onClick={() => copyToClipboard(createdRawKey)}
                 style={{
                   padding: '0.75rem 1.25rem',
-                  backgroundColor: copied ? '#10b981' : 'var(--primary)',
+                  backgroundColor: copied ? 'var(--ds-success)' : 'var(--primary)',
                   color: '#fff',
                   border: 'none',
                   borderRadius: 'var(--radius-md)',
@@ -502,7 +473,7 @@ export default function ApiKeysSettingsPage() {
               </button>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }} data-responsive-row >
               <button
                 onClick={() => setCreatedRawKey(null)}
                 style={{
@@ -519,8 +490,7 @@ export default function ApiKeysSettingsPage() {
                 I have securely saved my key
               </button>
             </div>
-          </div>
-        </div>
+          </Modal>
       )}
     </div>
   );

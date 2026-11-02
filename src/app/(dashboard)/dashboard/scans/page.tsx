@@ -102,7 +102,7 @@ export default function ScansPage() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }} className="zx-page" >
       {/* Page Header (eyebrow -> H1 -> subtitle -> brand CTA) */}
       <div
         style={{
@@ -112,7 +112,7 @@ export default function ScansPage() {
           gap: '24px',
           flexWrap: 'wrap',
         }}
-      >
+       data-responsive-row >
         <div>
           <div
             style={{
@@ -150,7 +150,7 @@ export default function ScansPage() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px' }} data-responsive-row >
           <Button
             variant="secondary"
             onClick={() => fetchData(false)}

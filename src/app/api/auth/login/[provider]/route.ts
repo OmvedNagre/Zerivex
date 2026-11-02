@@ -13,7 +13,7 @@ export async function GET(
   const { provider: rawProvider } = await params;
   const provider = rawProvider as OAuthProvider;
 
-  if (!['google', 'github', 'mock'].includes(provider)) {
+  if (!['google', 'github'].includes(provider)) {
     return NextResponse.json({ error: 'Unsupported authentication provider' }, { status: 400 });
   }
 

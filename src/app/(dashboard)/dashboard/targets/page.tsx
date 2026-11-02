@@ -167,7 +167,7 @@ export default function TargetsPage() {
   const pendingCount = rawTargets.filter((t) => t.verificationStatus !== 'VERIFIED').length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }} className="zx-page" >
       <Suspense fallback={null}>
         <TargetParamWatcher onPrefill={handlePrefill} />
       </Suspense>
@@ -181,7 +181,7 @@ export default function TargetsPage() {
           gap: '24px',
           flexWrap: 'wrap',
         }}
-      >
+       data-responsive-row >
         <div>
           <div
             style={{
@@ -219,7 +219,7 @@ export default function TargetsPage() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px' }} data-responsive-row >
           <Button variant="secondary" onClick={fetchData} icon={<RefreshCw size={14} />}>
             Refresh
           </Button>
@@ -234,7 +234,7 @@ export default function TargetsPage() {
       </div>
 
       {/* KPI Stats Strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '16px' }}>
         <div
           style={{
             padding: '20px 24px',
@@ -335,7 +335,7 @@ export default function TargetsPage() {
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ds-text-primary)' }}>
+            <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ds-text-primary)' }} htmlFor="field-src-app--dashboard--dashboard-targets-page-tsx-0" >
               Target URL or Hostname
             </label>
             <input
@@ -353,11 +353,11 @@ export default function TargetsPage() {
                 fontSize: '13.5px',
                 outline: 'none',
               }}
-            />
+             id="field-src-app--dashboard--dashboard-targets-page-tsx-0" />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ds-text-primary)' }}>
+            <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ds-text-primary)' }} htmlFor="field-src-app--dashboard--dashboard-targets-page-tsx-1" >
               Verification Method
             </label>
             <select
@@ -372,7 +372,7 @@ export default function TargetsPage() {
                 fontSize: '13.5px',
                 outline: 'none',
               }}
-            >
+             id="field-src-app--dashboard--dashboard-targets-page-tsx-1" >
               <option value="DNS_TXT">DNS TXT Record (Recommended for apex/subdomains)</option>
               <option value="HTTP_HEADER">HTTP Custom Header (X-Zerivex-Verify)</option>
               <option value="HTML_META">HTML Meta Tag (zerivex-verification)</option>
@@ -381,7 +381,7 @@ export default function TargetsPage() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ds-text-primary)' }}>
+            <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ds-text-primary)' }} htmlFor="field-src-app--dashboard--dashboard-targets-page-tsx-2" >
               Verification Scope
             </label>
             <select
@@ -396,14 +396,14 @@ export default function TargetsPage() {
                 fontSize: '13.5px',
                 outline: 'none',
               }}
-            >
+             id="field-src-app--dashboard--dashboard-targets-page-tsx-2" >
               <option value="EXACT_HOST">Exact Host Only (e.g., api.example.com)</option>
               <option value="DOMAIN">Apex Domain &amp; Subdomains (*.example.com)</option>
               <option value="URL_PATH">URL Path Prefix</option>
             </select>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }} data-responsive-row >
             <Button
               variant="secondary"
               type="button"

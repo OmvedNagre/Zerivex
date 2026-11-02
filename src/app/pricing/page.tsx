@@ -1,5 +1,8 @@
 'use client';
 
+import { PLAN_COMPARISON, PUBLIC_PLAN_IDS } from '@/core/billing/plan-comparison';
+import { PLANS } from '@/core/billing/types';
+import { CONTACT_EMAIL } from '@/lib/contact';
 import { useState, useEffect, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -33,8 +36,8 @@ export default function PricingPage() {
       fetch('/api/billing')
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (data?.data?.entitlements?.planId) {
-            setCurrentPlanId(data.data.entitlements.planId);
+          if (data?.data?.entitlements?.plan?.id) {
+            setCurrentPlanId(data.data.entitlements.plan.id);
           }
         })
         .catch(() => {});
@@ -44,18 +47,18 @@ export default function PricingPage() {
   const plans = adaptPlans(currentPlanId, isAnnual);
 
   const handlePlanAction = async (planId: string) => {
+    if (planId === 'ENTERPRISE') {
+      window.location.href = `mailto:${CONTACT_EMAIL}?subject=Enterprise%20Security%20Plan%20Inquiry`;
+      return;
+    }
+
     if (!user) {
       router.push(`/login?returnTo=${encodeURIComponent(`/pricing?plan=${planId}`)}`);
       return;
     }
 
-    if (planId === 'FREE_DEVELOPER') {
+    if (planId === 'STARTER') {
       router.push('/dashboard/targets');
-      return;
-    }
-
-    if (planId === 'ENTERPRISE') {
-      window.location.href = 'mailto:security@zerivex.com?subject=Enterprise%20Security%20Plan%20Inquiry';
       return;
     }
 
@@ -79,7 +82,7 @@ export default function PricingPage() {
       if (data.data?.url) {
         window.location.href = data.data.url;
       } else {
-        router.push('/dashboard/billing?success=true');
+        throw new Error('Checkout did not return a payment URL. Please retry.');
       }
     } catch (err: any) {
       setCheckoutError(err.message || 'Checkout failed');
@@ -88,54 +91,10 @@ export default function PricingPage() {
     }
   };
 
-  const COMPARISON_GROUPS = [
-    {
-      group: 'Perimeter & Scanning',
-      rows: [
-        { name: 'Monitored Verified Targets', free: '1 Target', pro: '5 Targets', ent: 'Unlimited' },
-        { name: 'Monthly Scan Allocation', free: '1 Scan / week', pro: '250 Scans / mo', ent: 'Custom Limits' },
-        { name: 'Deterministic Check Engines', free: '14 Engines', pro: '14 Engines', ent: '14 Engines' },
-        { name: 'Passive Header & AST Audits', free: true, pro: true, ent: true },
-        { name: 'Active Non-Destructive Probes', free: 'Basic', pro: 'Full Battery', ent: 'Full Battery + Priority' },
-        { name: 'Authenticated Scanning', free: 'soon', pro: 'soon', ent: 'soon' },
-        { name: 'Repository & Dependency Scan', free: 'soon', pro: 'soon', ent: 'soon' },
-      ],
-    },
-    {
-      group: 'Fixes & Remediation',
-      rows: [
-        { name: 'Multi-Framework Code Patches', free: 'Next.js, Express, Nginx', pro: 'Next.js, Express, Nginx', ent: 'Custom Stacks' },
-        { name: 'Targeted "Verify Fix Now"', free: true, pro: true, ent: true },
-        { name: 'Continuous Monitoring & Alerts', free: false, pro: true, ent: true },
-        { name: 'Score-Regression Webhooks', free: false, pro: true, ent: true },
-      ],
-    },
-    {
-      group: 'CI/CD & Integrations',
-      rows: [
-        { name: 'CI/CD Build-Breaker Gates', free: false, pro: true, ent: true },
-        { name: 'OASIS SARIF v2.1.0 Export', free: false, pro: true, ent: true },
-        { name: 'Pull Request Summary Comments', free: false, pro: true, ent: true },
-        { name: 'API Key Access (zx_live_*)', free: false, pro: true, ent: true },
-        { name: 'HMAC SHA-256 Webhooks', free: false, pro: true, ent: true },
-      ],
-    },
-    {
-      group: 'Team & Governance',
-      rows: [
-        { name: 'Included Team Members', free: '1 Member', pro: '10 Members', ent: 'Unlimited' },
-        { name: '5-Tier RBAC Role Permissions', free: false, pro: true, ent: true },
-        { name: 'Tamper-Evident Audit Vault', free: false, pro: true, ent: true },
-        { name: 'CSV & SIEM JSON Audit Export', free: false, pro: true, ent: true },
-        { name: 'Agency White-Label Reports', free: false, pro: 'Available', ent: 'Custom Branding' },
-      ],
-    },
-  ];
-
   const FAQ_ITEMS = [
     {
       q: 'What counts towards my monthly scan allowance?',
-      a: 'A scan is counted only when a scan job runs successfully against a verified target. Targeted re-tests ("Verify Fix Now") do not count against full scan limits. Failed scans never consume your scan allowance.',
+      a: 'Allowance is reserved when a scan job is created, including jobs that later fail. Additional scan credits apply after your monthly allowance is exhausted. Fix retests use a separate daily limit and do not reserve a full scan.',
     },
     {
       q: 'What happens if I reach my plan limit?',
@@ -151,7 +110,7 @@ export default function PricingPage() {
     },
     {
       q: 'Do you offer an SLA or dedicated support?',
-      a: 'Enterprise plans include tailored SLA agreements, dedicated security engineering support, and procurement review assistance.',
+      a: 'Enterprise support and any service-level commitments must be agreed in writing; no default uptime or response-time guarantee is included.',
     },
   ];
 
@@ -160,7 +119,7 @@ export default function PricingPage() {
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--ds-bg-page)' }}>
         <AnnouncementBar
           id="zx-pricing-banner"
-          message="Zero hidden fees. Transparent security subscriptions with annual discounts."
+          message="INR pricing with monthly and annual billing options."
           ctaLabel="Explore Academy"
           ctaHref="/academy"
           dismissible={true}
@@ -409,19 +368,19 @@ export default function PricingPage() {
                       <div>
                         <div style={{ fontSize: '11px', color: 'var(--ds-text-muted)' }}>Targets</div>
                         <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ds-text-primary)' }}>
-                          {p.limits.apps === 1000 ? 'Unlimited' : p.limits.apps}
+                          {p.id === 'ENTERPRISE' ? 'By agreement' : p.limits.apps}
                         </div>
                       </div>
                       <div>
                         <div style={{ fontSize: '11px', color: 'var(--ds-text-muted)' }}>Scans/mo</div>
                         <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ds-text-primary)' }}>
-                          {p.limits.scans === 1000 ? 'Custom' : p.limits.scans}
+                          {p.id === 'ENTERPRISE' ? 'By agreement' : p.limits.scans}
                         </div>
                       </div>
                       <div>
                         <div style={{ fontSize: '11px', color: 'var(--ds-text-muted)' }}>Seats</div>
                         <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ds-text-primary)' }}>
-                          {p.limits.members === 100 ? 'Unlimited' : p.limits.members}
+                          {p.id === 'ENTERPRISE' ? 'By agreement' : p.limits.members}
                         </div>
                       </div>
                     </div>
@@ -485,11 +444,7 @@ export default function PricingPage() {
                           ? 'Starting checkout...'
                           : isCurrent
                           ? 'Your Current Plan'
-                          : p.id === 'FREE_DEVELOPER'
-                          ? 'Start Free Scan'
-                          : p.id === 'TEAM_PRO'
-                          ? user ? 'Upgrade to Team Pro' : 'Start with Team Pro'
-                          : 'Talk to Security Team'}
+                          : p.cta.label}
                       </span>
                       {!isCurrent && <ArrowRight size={16} />}
                     </button>
@@ -520,11 +475,11 @@ export default function PricingPage() {
                   color: 'var(--ds-text-primary)',
                 }}
               >
-                Scan Compute &amp; Operation Weights
+                Scan Allowance &amp; Available Operations
               </h2>
             </div>
             <p style={{ fontSize: '14.5px', color: 'var(--ds-text-secondary)', lineHeight: 1.5, margin: '0 0 24px' }}>
-              Different security operations consume varying compute resources. Your plan includes predictable allowances. Failed scans never consume your count, and every operation is logged in the tamper-evident audit ledger.
+              A scan reserves one monthly scan when the job is created, including jobs that later fail. After your allowance is exhausted, an available scan credit is required. Fix retests have a separate daily limit.
             </p>
 
             <div
@@ -535,11 +490,11 @@ export default function PricingPage() {
               }}
             >
               {[
-                { name: 'Quick Scan', weight: '0 credits', status: 'Included', note: 'Passive header & bundle checks' },
-                { name: 'Deep Active Scan', weight: '2 weight', status: 'Included in Pro', note: 'Active probes with target proof' },
-                { name: 'API Schema Scan', weight: '4 weight', status: 'Coming soon', note: 'Introspection & fuzzing' },
-                { name: 'Authenticated Scan', weight: '5 weight', status: 'Coming soon', note: 'Session token traversal' },
-                { name: 'AI Code Analysis', weight: '6 weight', status: 'Coming soon', note: 'Deep semantic reasoning' },
+                { name: 'Quick Scan', weight: '1 scan from allowance', status: 'Included', note: 'Passive header & bundle checks' },
+                { name: 'Deep Active Scan', weight: '1 scan from allowance', status: 'Included in Pro', note: 'Active probes with target proof' },
+                { name: 'API Schema Scan', weight: 'Coming soon', status: 'Coming soon', note: 'Introspection & fuzzing' },
+                { name: 'Authenticated Scan', weight: 'Coming soon', status: 'Coming soon', note: 'Session token traversal' },
+                { name: 'AI Code Analysis', weight: 'Coming soon', status: 'Coming soon', note: 'Deep semantic reasoning' },
               ].map((op, i) => (
                 <div
                   key={i}
@@ -580,7 +535,7 @@ export default function PricingPage() {
             </h2>
 
             <div
-              data-lenis-prevent
+              data-lenis-prevent tabIndex={0} role="region" aria-label="Compare all four plans"
               style={{
                 overflowX: 'auto',
                 borderRadius: 'var(--ds-radius-lg)',
@@ -592,26 +547,16 @@ export default function PricingPage() {
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
                 <thead>
                   <tr style={{ backgroundColor: 'var(--ds-bg-subtle)', borderBottom: '1px solid var(--ds-border-default)' }}>
-                    <th style={{ padding: '16px 20px', fontSize: '14px', fontWeight: 700, color: 'var(--ds-text-primary)' }}>
-                      Capability
-                    </th>
-                    <th style={{ padding: '16px 20px', fontSize: '14px', fontWeight: 700, color: 'var(--ds-text-primary)', width: '22%' }}>
-                      Free Developer
-                    </th>
-                    <th style={{ padding: '16px 20px', fontSize: '14px', fontWeight: 700, color: 'var(--ds-action-brand)', width: '22%' }}>
-                      Team Pro
-                    </th>
-                    <th style={{ padding: '16px 20px', fontSize: '14px', fontWeight: 700, color: 'var(--ds-text-primary)', width: '22%' }}>
-                      Enterprise
-                    </th>
+                    <th scope="col" style={{ padding: '16px 20px' }}>Capability</th>
+                    {PUBLIC_PLAN_IDS.map((id) => <th key={id} scope="col" style={{ padding: '16px 20px', color: 'var(--ds-text-primary)' }}>{PLANS[id].name}</th>)}
                   </tr>
                 </thead>
                 <tbody>
-                  {COMPARISON_GROUPS.map((grp) => (
+                  {PLAN_COMPARISON.map((grp) => (
                     <Fragment key={grp.group}>
                       <tr style={{ backgroundColor: 'var(--ds-bg-subtle)', borderBottom: '1px solid var(--ds-border-subtle)' }}>
                         <td
-                          colSpan={4}
+                          colSpan={5}
                           style={{
                             padding: '10px 20px',
                             fontSize: '12px',
@@ -632,18 +577,8 @@ export default function PricingPage() {
                             backgroundColor: rIdx % 2 === 0 ? 'var(--ds-bg-card)' : 'var(--ds-bg-card-hover)',
                           }}
                         >
-                          <td style={{ padding: '14px 20px', fontSize: '13.5px', color: 'var(--ds-text-primary)', fontWeight: 500 }}>
-                            {row.name}
-                          </td>
-                          <td style={{ padding: '14px 20px', fontSize: '13px', color: 'var(--ds-text-secondary)' }}>
-                            {renderCell(row.free)}
-                          </td>
-                          <td style={{ padding: '14px 20px', fontSize: '13px', color: 'var(--ds-text-secondary)', fontWeight: 600 }}>
-                            {renderCell(row.pro)}
-                          </td>
-                          <td style={{ padding: '14px 20px', fontSize: '13px', color: 'var(--ds-text-secondary)' }}>
-                            {renderCell(row.ent)}
-                          </td>
+                          <th scope="row" style={{ padding: '14px 20px', fontSize: 14, color: 'var(--ds-text-primary)', fontWeight: 500 }}>{row.name}</th>
+                          {row.values.map((value, index) => <td key={PUBLIC_PLAN_IDS[index]} style={{ padding: '14px 20px', fontSize: 13, color: 'var(--ds-text-secondary)' }}>{renderCell(value)}</td>)}
                         </tr>
                       ))}
                     </Fragment>
@@ -748,7 +683,7 @@ export default function PricingPage() {
               Ready to verify your application?
             </h2>
             <p style={{ fontSize: '16px', color: 'var(--ds-text-on-ink-dim)', maxWidth: '560px', margin: '0 auto 28px' }}>
-              Run your first scan in under 60 seconds with no credit card required.
+              Start with the free plan. No credit card required.
             </p>
 
             <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>

@@ -167,8 +167,8 @@ app.use((req, res, next) => {
 import type { NextRequest } from 'next/server';
 
 const ALLOWED_ORIGINS = new Set([
-  'https://zerivex.com',
-  'https://app.zerivex.com',
+  'https://zerivex.tech',
+  'https://zerivex.tech',
 ]);
 
 export function middleware(req: NextRequest) {
@@ -191,7 +191,7 @@ export function middleware(req: NextRequest) {
         filename: 'src/server.ts',
         code: `import cors from 'cors';
 
-const ALLOWED_ORIGINS = ['https://zerivex.com', 'https://app.zerivex.com'];
+const ALLOWED_ORIGINS = ['https://zerivex.tech', 'https://zerivex.tech'];
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -274,7 +274,7 @@ DATABASE_URL="postgres://postgres:pass@db.example.com/prod"
 OPENAI_API_KEY="sk-proj-xyz123..."
 
 # Only Non-Sensitive Configuration for Client:
-NEXT_PUBLIC_APP_URL="https://app.zerivex.com"`,
+NEXT_PUBLIC_APP_URL="https://zerivex.tech"`,
         explanation: 'Remove NEXT_PUBLIC_ prefixes from all secrets. Secrets are only accessible on the server.',
       },
       {

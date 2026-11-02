@@ -1,10 +1,10 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/components/auth/AuthProvider';
 import {
-  ShieldCheck,
   ChevronDown,
   Menu,
   X,
@@ -130,30 +130,7 @@ export function Header() {
             color: 'var(--ds-text-primary)',
           }}
         >
-          <div
-            style={{
-              width: '28px',
-              height: '28px',
-              borderRadius: 'var(--ds-radius-sm)',
-              backgroundColor: 'var(--ds-action-brand)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--ds-on-brand)',
-            }}
-          >
-            <ShieldCheck size={18} strokeWidth={2.2} />
-          </div>
-          <span
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '18px',
-              fontWeight: 800,
-              letterSpacing: '-0.02em',
-            }}
-          >
-            ZERIVEX
-          </span>
+          <BrandLogo />
         </Link>
 
         {/* Desktop Nav Links */}

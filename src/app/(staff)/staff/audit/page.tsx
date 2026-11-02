@@ -20,11 +20,14 @@ interface StaffAuditItem {
 export default function StaffAuditPage() {
   const [logs, setLogs] = useState<StaffAuditItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadAudit = async () => {
     try {
       setLoading(true);
+      setLoadError(null);
       const res = await fetch('/api/staff/audit');
+      if (!res.ok) throw new Error('Unable to load current records. Refresh to retry.');
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
@@ -32,6 +35,7 @@ export default function StaffAuditPage() {
         }
       }
     } catch {
+      setLoadError('Unable to load current records. Refresh to retry.');
       // Handle error
     } finally {
       setLoading(false);
@@ -64,7 +68,8 @@ export default function StaffAuditPage() {
         </button>
       </div>
 
-      <div className="staff-card" style={{ padding: 0, overflow: 'hidden' }}>
+      {loadError && <p role="alert" className="staff-error">{loadError}</p>}
+      <div className="staff-card zx-table-scroll" style={{ padding: 0, overflow: 'hidden' }} tabIndex={0} role="region" aria-label="Staff records" >
         <table className="staff-table">
           <thead>
             <tr>
@@ -80,7 +85,7 @@ export default function StaffAuditPage() {
             {logs.length === 0 ? (
               <tr>
                 <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--staff-text-muted)' }}>
-                  {loading ? 'Querying audit ledger...' : 'No staff audit events recorded yet.'}
+                  {loading ? 'Querying audit ledger...' : loadError ? 'Audit records unavailable.' : 'No staff audit events recorded yet.'}
                 </td>
               </tr>
             ) : (

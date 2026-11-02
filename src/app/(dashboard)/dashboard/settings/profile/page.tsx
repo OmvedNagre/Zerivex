@@ -134,8 +134,8 @@ export default function ProfileSettingsPage() {
 
   if (loading) {
     return (
-      <div className="container" style={{ padding: '2.5rem 1.5rem 5rem', maxWidth: '840px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-secondary)' }}>
+      <div className="container zx-page" style={{ padding: '2.5rem 1.5rem 5rem', maxWidth: '840px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-secondary)' }} data-responsive-row >
           <div
             style={{
               width: '18px',
@@ -153,9 +153,9 @@ export default function ProfileSettingsPage() {
   }
 
   return (
-    <div className="container" style={{ padding: '2.5rem 1.5rem 5rem', maxWidth: '840px' }}>
+    <div className="container zx-page" style={{ padding: '2.5rem 1.5rem 5rem', maxWidth: '840px' }}>
       {/* Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', fontSize: '0.85rem' }} data-responsive-row >
         <Link href="/dashboard" style={{ color: 'var(--text-secondary)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
           <ArrowLeft size={14} /> Dashboard
         </Link>
@@ -179,14 +179,14 @@ export default function ProfileSettingsPage() {
             backgroundColor: 'rgba(16, 185, 129, 0.12)',
             border: '1px solid rgba(16, 185, 129, 0.3)',
             borderRadius: 'var(--radius-md)',
-            color: '#34d399',
+            color: 'var(--ds-success)',
             fontSize: '0.88rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
             marginBottom: '1.5rem',
           }}
-        >
+         data-responsive-row >
           <CheckCircle2 size={16} />
           <span>{successMsg}</span>
         </div>
@@ -199,28 +199,28 @@ export default function ProfileSettingsPage() {
             backgroundColor: 'rgba(239, 68, 68, 0.12)',
             border: '1px solid rgba(239, 68, 68, 0.3)',
             borderRadius: 'var(--radius-md)',
-            color: '#f87171',
+            color: 'var(--ds-danger)',
             fontSize: '0.88rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
             marginBottom: '1.5rem',
           }}
-        >
+         data-responsive-row >
           <AlertTriangle size={16} />
           <span>{errorMsg}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="card" style={{ padding: '2rem' }}>
+      <form onSubmit={handleSubmit} className="card zx-profile-form" style={{ padding: '2rem' }}>
         {/* Basic Info */}
         <div style={{ marginBottom: '2rem' }}>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-primary)' }}>
             Personal Details
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1.25rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }} htmlFor="field-src-app--dashboard--dashboard-settings-profile-page-tsx-0" >
                 Display Name
               </label>
               <input
@@ -231,16 +231,16 @@ export default function ProfileSettingsPage() {
                   width: '100%',
                   padding: '0.65rem 0.85rem',
                   borderRadius: 'var(--radius-sm)',
-                  backgroundColor: 'rgba(0,0,0,0.25)',
+                  backgroundColor: 'var(--ds-bg-subtle)',
                   border: '1px solid var(--border-subtle)',
                   color: 'var(--text-primary)',
                   fontSize: '0.9rem',
                 }}
-              />
+               id="field-src-app--dashboard--dashboard-settings-profile-page-tsx-0" />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }} htmlFor="field-src-app--dashboard--dashboard-settings-profile-page-tsx-1" >
                 Team Size (Optional)
               </label>
               <input
@@ -252,12 +252,12 @@ export default function ProfileSettingsPage() {
                   width: '100%',
                   padding: '0.65rem 0.85rem',
                   borderRadius: 'var(--radius-sm)',
-                  backgroundColor: 'rgba(0,0,0,0.25)',
+                  backgroundColor: 'var(--ds-bg-subtle)',
                   border: '1px solid var(--border-subtle)',
                   color: 'var(--text-primary)',
                   fontSize: '0.9rem',
                 }}
-              />
+               id="field-src-app--dashboard--dashboard-settings-profile-page-tsx-1" />
             </div>
           </div>
         </div>
@@ -270,7 +270,7 @@ export default function ProfileSettingsPage() {
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
             Shapes default sidebar layout and Academy recommendation order.
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '0.75rem' }}>
             {PERSONA_CHOICES.map((p) => {
               const Icon = p.icon;
               const isSelected = persona === p.id;
@@ -289,8 +289,8 @@ export default function ProfileSettingsPage() {
                     gap: '0.75rem',
                     transition: 'all 0.15s ease',
                   }}
-                >
-                  <Icon size={18} color={isSelected ? '#f97316' : 'var(--text-secondary)'} style={{ marginTop: '0.1rem', flexShrink: 0 }} />
+                 data-responsive-row >
+                  <Icon size={18} color={isSelected ? 'var(--ds-warning)' : 'var(--text-secondary)'} style={{ marginTop: '0.1rem', flexShrink: 0 }} />
                   <div>
                     <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
                       {p.label}
@@ -313,7 +313,7 @@ export default function ProfileSettingsPage() {
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
             Reorders priority for Next Best Action suggestions on the overview dashboard.
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }} data-responsive-row >
             {ALL_GOALS.map((g) => {
               const isSelected = goals.includes(g.id);
               return (
@@ -324,9 +324,9 @@ export default function ProfileSettingsPage() {
                   style={{
                     padding: '0.45rem 0.85rem',
                     borderRadius: '9999px',
-                    border: `1px solid ${isSelected ? '#f97316' : 'var(--border-subtle)'}`,
+                    border: `1px solid ${isSelected ? 'var(--ds-warning)' : 'var(--border-subtle)'}`,
                     backgroundColor: isSelected ? 'rgba(249, 115, 22, 0.12)' : 'rgba(255,255,255,0.03)',
-                    color: isSelected ? '#fb923c' : 'var(--text-secondary)',
+                    color: isSelected ? 'var(--ds-warning)' : 'var(--text-secondary)',
                     fontSize: '0.82rem',
                     fontWeight: 600,
                     cursor: 'pointer',
@@ -351,7 +351,7 @@ export default function ProfileSettingsPage() {
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
             AI coding agents, assistants, and hand-crafted tooling used to build your projects.
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }} data-responsive-row >
             {ALL_TOOLS.map((t) => {
               const isSelected = builtWith.includes(t.id);
               return (
@@ -362,9 +362,9 @@ export default function ProfileSettingsPage() {
                   style={{
                     padding: '0.45rem 0.85rem',
                     borderRadius: '9999px',
-                    border: `1px solid ${isSelected ? '#f97316' : 'var(--border-subtle)'}`,
+                    border: `1px solid ${isSelected ? 'var(--ds-warning)' : 'var(--border-subtle)'}`,
                     backgroundColor: isSelected ? 'rgba(249, 115, 22, 0.12)' : 'rgba(255,255,255,0.03)',
-                    color: isSelected ? '#fb923c' : 'var(--text-secondary)',
+                    color: isSelected ? 'var(--ds-warning)' : 'var(--text-secondary)',
                     fontSize: '0.82rem',
                     fontWeight: 600,
                     cursor: 'pointer',
@@ -389,7 +389,7 @@ export default function ProfileSettingsPage() {
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
             Configures the default framework tab in code fix snippets and Academy walkthroughs.
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.25rem' }} data-responsive-row >
             {ALL_STACKS.map((s) => {
               const isSelected = stack.includes(s.id);
               return (
@@ -400,9 +400,9 @@ export default function ProfileSettingsPage() {
                   style={{
                     padding: '0.45rem 0.85rem',
                     borderRadius: '9999px',
-                    border: `1px solid ${isSelected ? '#f97316' : 'var(--border-subtle)'}`,
+                    border: `1px solid ${isSelected ? 'var(--ds-warning)' : 'var(--border-subtle)'}`,
                     backgroundColor: isSelected ? 'rgba(249, 115, 22, 0.12)' : 'rgba(255,255,255,0.03)',
-                    color: isSelected ? '#fb923c' : 'var(--text-secondary)',
+                    color: isSelected ? 'var(--ds-warning)' : 'var(--text-secondary)',
                     fontSize: '0.82rem',
                     fontWeight: 600,
                     cursor: 'pointer',
@@ -420,7 +420,7 @@ export default function ProfileSettingsPage() {
         </div>
 
         {/* Submit */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1.5rem', borderTop: '1px solid var(--border-subtle)' }} data-responsive-row >
           <button
             type="submit"
             disabled={saving}

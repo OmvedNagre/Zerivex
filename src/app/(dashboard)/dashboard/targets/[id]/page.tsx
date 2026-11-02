@@ -71,15 +71,12 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
     fetchTargetData();
   }, [fetchTargetData]);
 
-  const handleVerify = async (bypass: boolean = false) => {
+  const handleVerify = async () => {
     setVerifying(true);
     setVerificationResult(null);
 
     try {
-      const isBypass = bypass || selectedMethod === 'MANUAL_BYPASS';
-      const payload = isBypass
-        ? { bypass: true, preferredMethod: 'MANUAL_BYPASS' }
-        : { preferredMethod: selectedMethod === 'HTTP_FILE' ? 'HTML_META' : selectedMethod };
+      const payload = { preferredMethod: selectedMethod === 'HTTP_FILE' ? 'HTTP_FILE' : selectedMethod };
 
       const res = await fetch(`/api/targets/${id}/verify`, {
         method: 'POST',
@@ -138,7 +135,7 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
   if (loading) {
     return (
       <div
-        className="zvc-container"
+        className="zvc-container zx-page"
         style={{
           padding: '4rem 1rem',
           display: 'flex',
@@ -148,7 +145,7 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
           gap: '1rem',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', color: 'var(--text-secondary)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', color: 'var(--text-secondary)' }} data-responsive-row >
           <Loader2 size={20} className="animate-spin" aria-hidden="true" />
           <span style={{ fontSize: '0.95rem', fontWeight: 500 }}>
             Loading cryptographic verification center...
@@ -160,7 +157,7 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
 
   if (error || !target || !instructions) {
     return (
-      <div className="zvc-container" style={{ maxWidth: '640px', padding: '2rem 0' }}>
+      <div className="zvc-container zx-page" style={{ maxWidth: '640px', padding: '2rem 0' }}>
         <div
           style={{
             padding: '1.25rem',
@@ -172,7 +169,7 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
             alignItems: 'flex-start',
             gap: '0.75rem',
           }}
-        >
+         data-responsive-row >
           <AlertTriangle size={20} style={{ flexShrink: 0, marginTop: '2px' }} aria-hidden="true" />
           <div>
             <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Unable to load target verification</div>

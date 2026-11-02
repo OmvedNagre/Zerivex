@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/core/db/database';
 import { validateSessionToken, SessionContext, SESSION_COOKIE_NAME } from '@/core/auth/session-service';
 import { PlatformRole, Permission, roleHasPermission, OrganizationRole, orgRoleHasPermission } from '@/core/rbac/permissions';
-import { recordAuditEvent } from '@/core/audit/audit-service';
 import { validateApiKey, ApiKeyContext, API_KEY_PREFIX } from '@/core/auth/api-key-service';
 import { getUserActiveOrganization } from '@/core/auth/organization-context';
 
@@ -78,9 +77,7 @@ export async function requireAuthenticatedUser(req: NextRequest): Promise<Sessio
  * Throws ForbiddenError (403) if unauthorized.
  */
 export function requirePermission(context: SessionContext, permission: Permission): void {
-  if (context.user.role === 'OWNER') {
-    return; // Owner entitlement override
-  }
+
 
   if (!roleHasPermission(context.user.role, permission)) {
     throw new ForbiddenError(`Role '${context.user.role}' lacks required permission: '${permission}'`);
@@ -162,9 +159,7 @@ export async function requireApiOrSessionAuth(
  * Enforce that the authenticated user holds one of the permitted platform roles.
  */
 export function requirePlatformRole(context: SessionContext, allowedRoles: PlatformRole[]): void {
-  if (context.user.role === 'OWNER') {
-    return; // Owner always authorized
-  }
+
 
   if (!allowedRoles.includes(context.user.role)) {
     throw new ForbiddenError(`Action restricted to roles: [${allowedRoles.join(', ')}]`);
@@ -187,17 +182,15 @@ export async function getMemberOrgRole(
 
 /**
  * Enforce that the user holds a specific capability within their organization.
- * If user is Platform OWNER, always grant full organization capabilities.
+ * Platform and staff roles never replace organization membership.
  */
 export async function requireOrgRolePermission(
   userId: string,
   organizationId: string,
   permission: Permission,
-  platformRole?: PlatformRole
+  _platformRole?: PlatformRole
 ): Promise<OrganizationRole> {
-  if (platformRole === 'OWNER') {
-    return 'ORG_OWNER';
-  }
+
 
   const role = await getMemberOrgRole(userId, organizationId);
   if (!role) {
@@ -214,13 +207,13 @@ export async function requireOrgRolePermission(
 /**
  * Enforce tenant resource isolation.
  * Guarantees a tenant cannot access or mutate another tenant's resources.
- * If an OWNER accesses another tenant's data, it is explicitly audit-logged.
+ * No account role may cross the active customer tenant boundary.
  */
 export async function requireTenantAccess(
   context: SessionContext,
   resourceOrganizationId: string,
-  resourceType: string,
-  resourceId?: string
+  _resourceType: string,
+  _resourceId?: string
 ): Promise<void> {
   // Strict confinement: sessions issued via staff portal can NEVER access other organizations
   if (context.viaStaffPortal) {
@@ -230,20 +223,7 @@ export async function requireTenantAccess(
     return;
   }
 
-  if (context.user.role === 'OWNER') {
-    // Owner is authorized to view customer resources, but the action MUST be audited
-    if (context.organizationId !== resourceOrganizationId) {
-      await recordAuditEvent({
-        organizationId: resourceOrganizationId,
-        actorUserId: context.user.id,
-        action: 'ADMIN_ACCESS',
-        resourceType,
-        resourceId,
-        reason: 'Platform Owner cross-tenant inspection',
-      });
-    }
-    return;
-  }
+
 
   if (!context.organizationId || context.organizationId !== resourceOrganizationId) {
     throw new ForbiddenError('Cross-tenant resource access is prohibited');

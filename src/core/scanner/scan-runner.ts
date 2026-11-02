@@ -159,7 +159,7 @@ export async function createScanJob(params: {
     const access = await client.query(`SELECT 1 FROM organizations o
       JOIN memberships m ON m.organization_id = o.id
       JOIN users u ON u.id = m.user_id AND u.status = 'ACTIVE'
-      WHERE o.id = $1 AND m.user_id = $2 AND (u.role = 'OWNER' OR m.role IN ('ORG_OWNER', 'ORG_ADMIN', 'ORG_MEMBER')) AND o.suspended_at IS NULL FOR SHARE OF o, m, u`,
+      WHERE o.id = $1 AND m.user_id = $2 AND m.role IN ('ORG_OWNER', 'ORG_ADMIN', 'ORG_MEMBER') AND o.suspended_at IS NULL FOR SHARE OF o, m, u`,
       [params.organizationId, params.requesterUserId]);
     if (!access.rows.length) throw Object.assign(new Error('Organization unavailable or membership revoked'), { statusCode: 403 });
     const { start, end } = getCurrentMonthWindow();
@@ -269,7 +269,7 @@ async function performScanJob(scanJobId: string, signal?: AbortSignal): Promise<
     target = await assertTargetScanAuthorization(job.targetId, job.organizationId, job.scanMode);
     const access = await query(`SELECT 1 FROM organizations o JOIN memberships m ON m.organization_id = o.id
       JOIN users u ON u.id = m.user_id AND u.status = 'ACTIVE'
-      WHERE o.id = $1 AND m.user_id = $2 AND (u.role = 'OWNER' OR m.role IN ('ORG_OWNER', 'ORG_ADMIN', 'ORG_MEMBER')) AND o.suspended_at IS NULL`, [job.organizationId, job.requesterUserId]);
+      WHERE o.id = $1 AND m.user_id = $2 AND m.role IN ('ORG_OWNER', 'ORG_ADMIN', 'ORG_MEMBER') AND o.suspended_at IS NULL`, [job.organizationId, job.requesterUserId]);
     if (!access.rows.length) throw new Error('Scan authorization revoked');
     const entitlements = resolveEntitlementsFromPlan(job.executionPlanId || 'STARTER');
     const scope = { targetUrl: target.targetUrl, pathOnly: target.verificationScope === 'URL_PATH', signal };

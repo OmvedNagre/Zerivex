@@ -18,11 +18,14 @@ interface SecurityEventItem {
 export default function StaffSecurityEventsPage() {
   const [events, setEvents] = useState<SecurityEventItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadEvents = async () => {
     try {
       setLoading(true);
+      setLoadError(null);
       const res = await fetch('/api/staff/security-events');
+      if (!res.ok) throw new Error('Unable to load current records. Refresh to retry.');
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
@@ -30,6 +33,7 @@ export default function StaffSecurityEventsPage() {
         }
       }
     } catch {
+      setLoadError('Unable to load current records. Refresh to retry.');
       // Handle error
     } finally {
       setLoading(false);
@@ -62,7 +66,8 @@ export default function StaffSecurityEventsPage() {
         </button>
       </div>
 
-      <div className="staff-card" style={{ padding: 0, overflow: 'hidden' }}>
+      {loadError && <p role="alert" className="staff-error">{loadError}</p>}
+      <div className="staff-card zx-table-scroll" style={{ padding: 0, overflow: 'hidden' }} tabIndex={0} role="region" aria-label="Staff records" >
         <table className="staff-table">
           <thead>
             <tr>
@@ -78,7 +83,7 @@ export default function StaffSecurityEventsPage() {
             {events.length === 0 ? (
               <tr>
                 <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--staff-text-muted)' }}>
-                  {loading ? 'Reading audit vault...' : 'No security anomalies detected.'}
+                  {loading ? 'Reading audit vault...' : loadError ? 'Security event state unavailable.' : 'No security events recorded in the current view.'}
                 </td>
               </tr>
             ) : (

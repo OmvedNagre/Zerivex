@@ -232,7 +232,7 @@ export default function FindingsPage() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }} className="zx-page" >
       {/* Page Header (eyebrow -> H1 -> subtitle -> actions) */}
       <div
         style={{
@@ -242,7 +242,7 @@ export default function FindingsPage() {
           gap: '24px',
           flexWrap: 'wrap',
         }}
-      >
+       data-responsive-row >
         <div>
           <div
             style={{
@@ -280,7 +280,7 @@ export default function FindingsPage() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px' }} data-responsive-row >
           <Button variant="secondary" onClick={() => fetchFindings()} icon={<RefreshCw size={14} />}>
             Refresh
           </Button>
@@ -303,8 +303,8 @@ export default function FindingsPage() {
             alignItems: 'center',
             color: 'var(--ds-danger)',
           }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+         data-responsive-row >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }} data-responsive-row >
             <AlertTriangle size={16} />
             <span>{error}</span>
           </div>
@@ -315,7 +315,7 @@ export default function FindingsPage() {
       )}
 
       {/* 4 Light Severity Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '16px' }}>
         <div
           style={{
             padding: '20px 24px',
@@ -411,8 +411,8 @@ export default function FindingsPage() {
           gap: '16px',
           flexWrap: 'wrap',
         }}
-      >
-        <div style={{ display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
+       data-responsive-row >
+        <div style={{ display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap' }} data-responsive-row >
           {/* Search Input with 42px leading padding */}
           <div style={{ position: 'relative', width: '280px' }}>
             <Search size={14} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ds-text-muted)' }} />
@@ -431,7 +431,7 @@ export default function FindingsPage() {
                 fontSize: '13px',
                 outline: 'none',
               }}
-            />
+             aria-label="Search Query" />
           </div>
 
           {/* Severity Filter */}
@@ -447,7 +447,7 @@ export default function FindingsPage() {
               fontSize: '13px',
               outline: 'none',
             }}
-          >
+           aria-label="Severity Filter" >
             <option value="ALL">All Severities</option>
             <option value="CRITICAL">Critical</option>
             <option value="HIGH">High</option>
@@ -468,7 +468,7 @@ export default function FindingsPage() {
               fontSize: '13px',
               outline: 'none',
             }}
-          >
+           aria-label="Status Filter" >
             <option value="ALL">All Statuses</option>
             <option value="OPEN">Open</option>
             <option value="CONFIRMED">Confirmed</option>
@@ -548,9 +548,9 @@ export default function FindingsPage() {
                     borderBottom: isExpanded ? '1px solid var(--ds-border-subtle)' : 'none',
                   }}
                   onClick={() => toggleGroupExpand(group.groupKey)}
-                >
+                 data-responsive-row >
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }} data-responsive-row >
                       <SeverityBadge severity={group.severity} />
                       <span
                         style={{
@@ -606,7 +606,7 @@ export default function FindingsPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }} data-responsive-row >
                     <Button
                       variant="secondary"
                       size="sm"
@@ -632,7 +632,7 @@ export default function FindingsPage() {
                       </Button>
                     )}
 
-                    <div style={{ color: 'var(--ds-text-muted)', display: 'flex', alignItems: 'center' }}>
+                    <div style={{ color: 'var(--ds-text-muted)', display: 'flex', alignItems: 'center' }} data-responsive-row >
                       {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                     </div>
                   </div>
@@ -715,7 +715,7 @@ export default function FindingsPage() {
             )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ds-text-primary)' }}>
+              <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ds-text-primary)' }} htmlFor="field-src-app--dashboard--dashboard-findings-page-tsx-0" >
                 Select Status
               </label>
               <select
@@ -729,7 +729,7 @@ export default function FindingsPage() {
                   color: 'var(--ds-text-primary)',
                   fontSize: '13.5px',
                 }}
-              >
+               id="field-src-app--dashboard--dashboard-findings-page-tsx-0" >
                 <option value="OPEN">Open (Active finding)</option>
                 <option value="CONFIRMED">Confirmed (Verified defect)</option>
                 <option value="ACCEPTED_RISK">Accepted Risk (Business exception)</option>
@@ -740,7 +740,7 @@ export default function FindingsPage() {
 
             {newStatus === 'ACCEPTED_RISK' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ds-text-primary)' }}>
+                <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ds-text-primary)' }} htmlFor="field-src-app--dashboard--dashboard-findings-page-tsx-1" >
                   Business Justification (Required)
                 </label>
                 <textarea
@@ -758,11 +758,11 @@ export default function FindingsPage() {
                     fontSize: '13px',
                     outline: 'none',
                   }}
-                />
+                 id="field-src-app--dashboard--dashboard-findings-page-tsx-1" />
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }} data-responsive-row >
               <Button
                 variant="secondary"
                 type="button"

@@ -1,4 +1,5 @@
 'use client';
+import { getStaffRoleLabel } from '@/lib/labels';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -124,7 +125,7 @@ export default function StaffConsoleLayout({
               border: '1px solid rgba(255, 255, 255, 0.2)',
             }}
           >
-            {user?.role}
+            {getStaffRoleLabel(user?.role)}
           </span>
         </div>
       </header>
@@ -134,7 +135,8 @@ export default function StaffConsoleLayout({
         {/* Left Rail */}
         <aside className="staff-sidebar">
           {/* Top: PortalSwitcher */}
-          <PortalSwitcher currentPortal="staff" />
+          <div className="staff-portal-expanded"><PortalSwitcher currentPortal="staff" /></div>
+          <div className="staff-portal-compact"><PortalSwitcher currentPortal="staff" isCollapsed /></div>
 
           {/* Navigation Items */}
           <nav style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '2px' }}>

@@ -1,4 +1,8 @@
 'use client';
+import { getStaffRoleLabel } from '@/lib/labels';
+import { useConfirmation } from '@/components/ui/ConfirmationProvider';
+
+import { Modal } from '@/components/ui/Modal';
 
 import { useState, useEffect } from 'react';
 import {
@@ -20,6 +24,7 @@ interface StaffMemberItem {
 }
 
 export default function StaffManagementPage() {
+  const { confirm } = useConfirmation();
   const [members, setMembers] = useState<StaffMemberItem[]>([]);
   const [activeOwnersCount, setActiveOwnersCount] = useState<number>(1);
   const [loading, setLoading] = useState(true);
@@ -91,7 +96,7 @@ export default function StaffManagementPage() {
   };
 
   const handleRevoke = async (member: StaffMemberItem) => {
-    if (!confirm(`Are you sure you want to revoke staff privileges for ${member.email}?`)) {
+    if (!(await confirm(`Are you sure you want to revoke staff privileges for ${member.email}?`))) {
       return;
     }
 
@@ -191,7 +196,7 @@ export default function StaffManagementPage() {
       )}
 
       {/* Staff Table */}
-      <div className="staff-card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="staff-card zx-table-scroll" style={{ padding: 0, overflow: 'hidden' }} tabIndex={0} role="region" aria-label="Staff records" >
         <table className="staff-table">
           <thead>
             <tr>
@@ -234,7 +239,7 @@ export default function StaffManagementPage() {
                         borderRadius: '4px',
                       }}
                     >
-                      {m.role}
+                      {getStaffRoleLabel(m.role)}
                     </span>
                   </td>
                   <td>{new Date(m.createdAt).toLocaleDateString()}</td>
@@ -272,23 +277,7 @@ export default function StaffManagementPage() {
 
       {/* Grant Staff Role Modal */}
       {showAddModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10000,
-            padding: '20px',
-          }}
-        >
-          <form
-            onSubmit={handleAddMember}
-            className="staff-card"
-            style={{ width: '100%', maxWidth: '440px', padding: '28px' }}
-          >
+        <Modal isOpen onClose={() => setShowAddModal(false)} ariaLabel="Add staff member" className="staff-dialog" size="md"><form onSubmit={handleAddMember}>
             <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF', margin: '0 0 8px' }}>
               Grant Staff Privilege
             </h2>
@@ -297,7 +286,7 @@ export default function StaffManagementPage() {
             </p>
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#E9EAF0', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#E9EAF0', marginBottom: '6px' }} htmlFor="field-src-app--staff--staff-staff-page-tsx-0" >
                 Corporate Email Address *
               </label>
               <input
@@ -315,11 +304,11 @@ export default function StaffManagementPage() {
                   color: '#FFFFFF',
                   fontSize: '13px',
                 }}
-              />
+               id="field-src-app--staff--staff-staff-page-tsx-0" />
             </div>
 
             <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#E9EAF0', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#E9EAF0', marginBottom: '6px' }} htmlFor="field-src-app--staff--staff-staff-page-tsx-1" >
                 Staff Role Tier *
               </label>
               <select
@@ -334,10 +323,10 @@ export default function StaffManagementPage() {
                   color: '#FFFFFF',
                   fontSize: '13px',
                 }}
-              >
-                <option value="STAFF_SUPPORT">STAFF_SUPPORT (Read-only + Pro preview)</option>
-                <option value="STAFF_ADMIN">STAFF_ADMIN (Suspend orgs + Capped credits)</option>
-                <option value="STAFF_OWNER">STAFF_OWNER (Full platform root privilege)</option>
+               id="field-src-app--staff--staff-staff-page-tsx-1" >
+                <option value="STAFF_SUPPORT">Support (View records and preview Pro)</option>
+                <option value="STAFF_ADMIN">Staff admin (Manage organizations and grant limited credits)</option>
+                <option value="STAFF_OWNER">Staff owner (Full platform access)</option>
               </select>
             </div>
 
@@ -357,8 +346,7 @@ export default function StaffManagementPage() {
                 <span>{saving ? 'Granting...' : 'Grant Role'}</span>
               </button>
             </div>
-          </form>
-        </div>
+          </form></Modal>
       )}
     </div>
   );

@@ -4,6 +4,9 @@
  */
 
 import crypto from 'crypto';
+import { sealInvitationToken } from '@/core/mail/invitation-outbox';
+import { requireMailConfiguration } from '@/core/mail/gmail-service';
+import { PLANS, resolvePlanId } from '@/core/billing/types';
 import { query, withTransaction } from '@/core/db/database';
 import { recordAuditEvent } from '@/core/audit/audit-service';
 import { OrganizationRole } from '@/core/rbac/permissions';
@@ -29,6 +32,8 @@ export interface OrganizationInvitation {
   inviterEmail?: string;
   inviterName?: string;
   organizationName?: string;
+  deliveryStatus?: string;
+  deliveryError?: string | null;
 }
 
 export const INVITATION_TOKEN_PREFIX = 'inv_';
@@ -91,14 +96,19 @@ export async function inviteMember(params: {
   email: string;
   role: OrganizationRole;
   actorUserId: string;
+  deliverEmail?: boolean;
 }): Promise<{ invitation: OrganizationInvitation; rawToken: string; inviteUrl: string }> {
+  if (params.deliverEmail) requireMailConfiguration();
+  return withTransaction(async (client) => {
+  const query = client.query.bind(client);
   const { organizationId, email, role, actorUserId } = params;
   const normalizedEmail = email.trim().toLowerCase();
 
-  if (!normalizedEmail || !normalizedEmail.includes('@')) {
+  if (!/^[^\s@<>\r\n]+@[^\s@<>\r\n]+\.[^\s@<>\r\n]+$/.test(normalizedEmail)) {
     throw new Error('Valid email address is required');
   }
 
+  await query('SELECT id FROM organizations WHERE id=$1 AND suspended_at IS NULL FOR UPDATE', [organizationId]);
   // 1. Check if user is already an active member
   const existingMemberRes = await query<{ id: string }>(
     `
@@ -170,8 +180,11 @@ export async function inviteMember(params: {
       role,
       expiresAt: row.expires_at,
     },
-  });
+  }, client);
 
+  if (params.deliverEmail) {
+    await query('INSERT INTO invitation_mail (invitation_id,encrypted_token) VALUES ($1,$2)', [row.id, sealInvitationToken(rawToken)]);
+  }
   return {
     invitation: {
       id: row.id,
@@ -186,6 +199,7 @@ export async function inviteMember(params: {
     rawToken,
     inviteUrl: `/invite/${rawToken}`,
   };
+  });
 }
 
 /**
@@ -206,6 +220,8 @@ export async function getPendingInvitations(
     inviterEmail: string;
     inviterName: string | null;
     organizationName: string;
+    deliveryStatus?: string;
+    deliveryError?: string | null;
   }>(
     `
     SELECT
@@ -217,6 +233,8 @@ export async function getPendingInvitations(
       i.expires_at,
       i.accepted_at,
       i.created_at,
+      (SELECT status FROM invitation_mail WHERE invitation_id=i.id) AS "deliveryStatus",
+      (SELECT last_error FROM invitation_mail WHERE invitation_id=i.id) AS "deliveryError",
       u.email as "inviterEmail",
       u.display_name as "inviterName",
       o.name as "organizationName"
@@ -243,6 +261,8 @@ export async function getPendingInvitations(
     inviterEmail: r.inviterEmail,
     inviterName: r.inviterName ?? undefined,
     organizationName: r.organizationName,
+    deliveryStatus: r.deliveryStatus || 'LINK_ONLY',
+    deliveryError: r.deliveryError,
   }));
 }
 
@@ -332,16 +352,20 @@ export async function acceptInvitation(params: {
       throw new Error('Invitation token has expired');
     }
 
-    // 2. Add or update organization membership
-    await client.query(
-      `
-      INSERT INTO memberships (organization_id, user_id, role)
-      VALUES ($1, $2, $3)
-      ON CONFLICT (organization_id, user_id) DO UPDATE
-      SET role = EXCLUDED.role
-      `,
-      [invite.organization_id, userId, invite.role]
-    );
+    const account = await client.query<{ email: string; verified: Date | null }>("SELECT email, email_verified_at AS verified FROM users WHERE id=$1 AND status='ACTIVE'", [userId]);
+    if (!account.rows[0]?.verified || account.rows[0].email.toLowerCase() !== invite.email.toLowerCase()) {
+      throw Object.assign(new Error('Sign in with the verified email address this invitation was sent to'), { statusCode: 403 });
+    }
+    const org = await client.query('SELECT id FROM organizations WHERE id=$1 AND suspended_at IS NULL FOR UPDATE', [invite.organization_id]);
+    if (!org.rows.length) throw Object.assign(new Error('Organization is unavailable'), { statusCode: 403 });
+    const existing = await client.query('SELECT role FROM memberships WHERE organization_id=$1 AND user_id=$2', [invite.organization_id, userId]);
+    if (existing.rows.length) throw Object.assign(new Error('You are already a member; this invitation cannot change your role'), { statusCode: 409 });
+    const subscription = await client.query<{ plan_id: string; status: string; current_period_end: Date }>('SELECT plan_id,status,current_period_end FROM subscriptions WHERE organization_id=$1', [invite.organization_id]);
+    const sub = subscription.rows[0];
+    const plan = sub && ['ACTIVE','TRIALING'].includes(sub.status) && new Date(sub.current_period_end).getTime()>Date.now() ? PLANS[resolvePlanId(sub.plan_id)] : PLANS.STARTER;
+    const count = await client.query<{ count: string }>('SELECT COUNT(*)::text AS count FROM memberships WHERE organization_id=$1', [invite.organization_id]);
+    if (Number(count.rows[0]?.count || 0)>=plan.limits.maxTeamMembers) throw Object.assign(new Error('This workspace has reached its member limit. Ask the owner to upgrade before accepting.'), { statusCode: 409 });
+    await client.query('INSERT INTO memberships (organization_id,user_id,role) VALUES ($1,$2,$3)', [invite.organization_id,userId,invite.role]);
 
     // 3. Mark invitation as accepted
     await client.query(
@@ -360,7 +384,7 @@ export async function acceptInvitation(params: {
       resourceType: 'invitation',
       resourceId: invite.id,
       metadata: { role: invite.role, email: invite.email },
-    });
+    }, client);
 
     return {
       organizationId: invite.organization_id,

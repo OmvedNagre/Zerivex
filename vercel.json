@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "daemons": {
+    "scanner": {
+      "root": ".",
+      "entrypoint": "Dockerfile.worker",
+      "instances": { "bom1": 1 },
+      "terminationGracePeriodSeconds": 300,
+      "livenessProbe": {
+        "httpGet": { "port": 8081, "path": "/health" },
+        "initialDelaySeconds": 30
+      }
+    }
+  }
+}

@@ -1,9 +1,12 @@
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-interface Fixture { customerToken: string; staffToken: string; organizationId: string }
+interface Fixture { customerToken: string; staffToken: string; organizationId: string; invitedUsers: Record<string,{recipientToken:string;invitationToken:string}> }
 const fixture = (): Fixture => JSON.parse(fs.readFileSync(process.env.E2E_FIXTURE_PATH!, 'utf8'));
-test.beforeEach(async ({ context }) => {
+test.beforeEach(async ({ context }, testInfo) => {
+ const testIp = createHash('sha256').update(testInfo.testId).digest();
+ await context.setExtraHTTPHeaders({ 'X-Forwarded-For': `198.18.${testIp[0]}.${testIp[1]}` });
   const data = fixture();
   await context.addCookies([{ name: 'zerivex_session', value: data.customerToken, domain: '127.0.0.1', path: '/', httpOnly: true, sameSite: 'Lax' },
     { name: 'zx_staff_session', value: data.staffToken, domain: '127.0.0.1', path: '/', httpOnly: true, sameSite: 'Lax' }]);
@@ -12,7 +15,7 @@ test.beforeEach(async ({ context }) => {
 test('legal drafts, contact routes, mobile layout and accessibility', async ({ page }) => {
   for (const path of ['/privacy', '/terms', '/acceptable-use', '/security']) {
     await page.goto(path); await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'code64816@gmail.com' }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: 'zerivex.secure@gmail.com' }).first()).toBeVisible();
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
     expect(results.violations).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
@@ -60,7 +63,7 @@ test('staff-to-customer switch stays inside the internal organization', async ({
 
 test('customer billing shows canonical plans and honest simulated checkout feedback', async ({ page }) => {
   await page.goto('/dashboard/billing?session_id=cs_sim_browser&simulated=true');
-  await expect(page.getByText('Local checkout simulation completed. No payment was taken or subscription changed.')).toBeVisible();
+  await expect(page.getByText('Local checkout simulation completed. No payment was taken or subscription changed.')).toHaveCount(0);
   for (const name of ['Starter', 'Pro', 'Team', 'Enterprise']) {
     await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
   }
@@ -76,4 +79,53 @@ test('CI asynchronous jobs are consumed and unreachable targets never receive a 
   expect(launched.ok()).toBe(true); const job = await launched.json();
   await expect.poll(async () => (await (await page.request.get(job.pollUrl)).json()).scanJob.status, { timeout: 45000 }).toBe('FAILED');
   const final = await (await page.request.get(job.pollUrl)).json(); expect(final.scanJob.score).toBeNull();
+});
+
+test('launch access restrictions and public plan comparison', async ({ page }) => {
+  expect((await page.request.get('/api/auth/login/mock')).status()).toBe(400);
+  expect((await page.request.get('/api/auth/mock-consent')).status()).toBe(404);
+  expect((await page.request.get('/dev/ui')).status()).toBe(404);
+  await page.goto('/pricing');
+  const headers = page.getByRole('columnheader');
+  await expect(headers).toHaveCount(5);
+  for (const plan of ['Starter', 'Pro', 'Team', 'Enterprise']) {
+    await expect(headers.filter({ hasText: plan })).toHaveCount(1);
+  }
+  await expect(page.getByText('Localhost Developer')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Upgrade to Pro', exact: true })).toBeVisible();
+  await expect(page.getByText('Failed scans never consume your count')).toHaveCount(0);
+});
+
+test('profile breadcrumbs have no duplicate-key console error', async ({ page }) => {
+  const errors:string[]=[];page.on('console',msg=>{if(msg.type()==='error')errors.push(msg.text());});
+  await page.goto('/dashboard/settings/profile');
+  await expect(page.getByRole('navigation',{name:'Breadcrumb'})).toContainText('Settings');
+  await expect(page.getByRole('navigation',{name:'Breadcrumb'})).toContainText('Profile');
+  expect(errors.filter(e=>e.includes('same key'))).toEqual([]);
+});
+
+test('invitation acceptance activates the invited workspace and completes onboarding', async ({ page, context }, testInfo) => {
+  const shared=fixture();
+  const data={...shared,...shared.invitedUsers[testInfo.project.name]!};
+  await context.addCookies([{name:'zerivex_session',value:data.recipientToken,domain:'127.0.0.1',path:'/',httpOnly:true,sameSite:'Lax'}]);
+  await page.goto(`/invite/${data.invitationToken}`);
+  await expect(page.getByRole('button',{name:'Accept the role',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Accept the role',exact:true}).click();
+  await page.waitForURL('**/onboarding/team');
+  await expect(page.getByRole('heading',{name:/Welcome to/})).toBeVisible();
+  await page.getByRole('button',{name:'Continue',exact:true}).click();
+  await page.getByLabel('Display name').fill('Invited Engineer');
+  await page.getByRole('button',{name:'Continue',exact:true}).click();
+  await page.getByRole('button',{name:'Enter workspace'}).click();
+  await page.waitForURL('**/dashboard');
+  const session=await (await page.request.get('/api/auth/session')).json();
+  expect(session.organizationId).toBe(data.organizationId);
+  expect(session.organizationRole).toBe('ORG_MEMBER');
+});
+
+test('scanner monitoring exposes a live idle heartbeat only to authenticated staff', async ({ page }) => {
+  const response=await page.request.get('/api/staff/queue');expect(response.ok()).toBe(true);
+  const body=await response.json();expect(body.data.workerHealth.online).toBe(true);
+  expect(body.data.workerHealth.workers.length).toBeGreaterThan(0);
+  expect((await page.request.get('/api/health/worker')).status()).toBe(401);
 });

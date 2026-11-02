@@ -1,15 +1,18 @@
 'use client';
+import { useConfirmation } from '@/components/ui/ConfirmationProvider';
 
+import { getOrgRoleLabel } from '@/lib/labels';
 import { useState } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 
 export default function SecuritySettingsPage() {
-  const { user, logout, logoutAll } = useAuth();
+  const { confirm } = useConfirmation();
+  const { user, organizationRole, logout, logoutAll } = useAuth();
   const [revoking, setRevoking] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const handleLogoutAll = async () => {
-    if (!confirm('Are you sure you want to sign out of all devices and active sessions?')) {
+    if (!(await confirm('Are you sure you want to sign out of all devices and active sessions?'))) {
       return;
     }
     setRevoking(true);
@@ -22,7 +25,7 @@ export default function SecuritySettingsPage() {
   };
 
   return (
-    <div style={{ maxWidth: '720px', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div style={{ maxWidth: '720px', display: 'flex', flexDirection: 'column', gap: '2rem' }} className="zx-page zx-account-security" >
       <div>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
           Account Security & Sessions
@@ -37,7 +40,7 @@ export default function SecuritySettingsPage() {
           style={{
             backgroundColor: 'rgba(37, 99, 235, 0.1)',
             border: '1px solid rgba(37, 99, 235, 0.3)',
-            color: '#93c5fd',
+            color: 'var(--ds-text-link)',
             padding: '0.75rem 1rem',
             borderRadius: 'var(--radius-sm)',
             fontSize: '0.9rem',
@@ -60,24 +63,24 @@ export default function SecuritySettingsPage() {
           Identity & Authorization
         </h2>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem', fontSize: '0.9rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem', fontSize: '0.9rem' }} data-responsive-grid >
           <div style={{ color: 'var(--text-muted)' }}>Verified Email</div>
           <div style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{user?.email}</div>
 
-          <div style={{ color: 'var(--text-muted)' }}>Platform Role</div>
+          <div style={{ color: 'var(--text-muted)' }}>Workspace Role</div>
           <div>
             <span
               style={{
                 display: 'inline-block',
                 backgroundColor: user?.role === 'OWNER' ? 'rgba(37, 99, 235, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                color: user?.role === 'OWNER' ? '#60a5fa' : 'var(--text-primary)',
+                color: user?.role === 'OWNER' ? 'var(--ds-text-link)' : 'var(--text-primary)',
                 padding: '0.2rem 0.5rem',
                 borderRadius: '4px',
                 fontSize: '0.8rem',
                 fontWeight: 600,
               }}
             >
-              {user?.role}
+              {getOrgRoleLabel(organizationRole)}
             </span>
           </div>
 
@@ -105,7 +108,7 @@ export default function SecuritySettingsPage() {
           or immediately invalidate all active sessions across all devices.
         </p>
 
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }} data-responsive-row >
           <button
             onClick={() => logout()}
             style={{
@@ -128,7 +131,7 @@ export default function SecuritySettingsPage() {
             style={{
               backgroundColor: 'var(--sev-critical-bg)',
               border: '1px solid var(--sev-critical)',
-              color: '#fca5a5',
+              color: 'var(--ds-danger)',
               padding: '0.6rem 1.25rem',
               borderRadius: 'var(--radius-sm)',
               fontSize: '0.9rem',

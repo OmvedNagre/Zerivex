@@ -8,17 +8,17 @@ describe('Phase D: Staff Perks & Plan Preview Controls (§D)', () => {
       const ownerSession = { role: 'STAFF_OWNER' as StaffRole };
       const adminSession = { role: 'STAFF_ADMIN' as StaffRole };
 
-      expect(can(ownerSession, 'PLAN_PREVIEW_ANY')).toBe(true);
-      expect(can(ownerSession, 'PLAN_PREVIEW_PRO')).toBe(true);
+      expect(can(ownerSession, 'PLAN_PREVIEW_ANY')).toBe(false);
+      expect(can(ownerSession, 'PLAN_PREVIEW_PRO')).toBe(false);
 
-      expect(can(adminSession, 'PLAN_PREVIEW_ANY')).toBe(true);
-      expect(can(adminSession, 'PLAN_PREVIEW_PRO')).toBe(true);
+      expect(can(adminSession, 'PLAN_PREVIEW_ANY')).toBe(false);
+      expect(can(adminSession, 'PLAN_PREVIEW_PRO')).toBe(false);
     });
 
     it('STAFF_SUPPORT is restricted to previewing up to Pro and cannot preview Enterprise', () => {
       const supportSession = { role: 'STAFF_SUPPORT' as StaffRole };
 
-      expect(can(supportSession, 'PLAN_PREVIEW_PRO')).toBe(true);
+      expect(can(supportSession, 'PLAN_PREVIEW_PRO')).toBe(false);
       expect(can(supportSession, 'PLAN_PREVIEW_ANY')).toBe(false);
     });
   });

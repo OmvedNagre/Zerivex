@@ -95,13 +95,13 @@ export default function TargetAttackSurfacePage({
   const getMethodBadgeStyle = (method: string) => {
     switch (method) {
       case 'GET':
-        return { bg: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', border: 'rgba(59, 130, 246, 0.3)' };
+        return { bg: 'rgba(59, 130, 246, 0.15)', color: 'var(--ds-text-link)', border: 'rgba(59, 130, 246, 0.3)' };
       case 'POST':
-        return { bg: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: 'rgba(16, 185, 129, 0.3)' };
+        return { bg: 'rgba(16, 185, 129, 0.15)', color: 'var(--ds-success)', border: 'rgba(16, 185, 129, 0.3)' };
       case 'PUT':
-        return { bg: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: 'rgba(245, 158, 11, 0.3)' };
+        return { bg: 'rgba(245, 158, 11, 0.15)', color: 'var(--ds-warning)', border: 'rgba(245, 158, 11, 0.3)' };
       case 'DELETE':
-        return { bg: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: 'rgba(239, 68, 68, 0.3)' };
+        return { bg: 'rgba(239, 68, 68, 0.15)', color: 'var(--ds-danger)', border: 'rgba(239, 68, 68, 0.3)' };
       default:
         return { bg: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', border: 'rgba(168, 85, 247, 0.3)' };
     }
@@ -122,7 +122,7 @@ export default function TargetAttackSurfacePage({
 
   if (loading) {
     return (
-      <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+      <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }} className="zx-page" >
         Loading target attack surface...
       </div>
     );
@@ -130,8 +130,8 @@ export default function TargetAttackSurfacePage({
 
   if (error && !target) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '600px' }}>
-        <div style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: 'var(--radius-md)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '600px' }} className="zx-page" >
+        <div style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--ds-danger)', borderRadius: 'var(--radius-md)' }}>
           {error}
         </div>
         <Link href="/dashboard/targets" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -142,10 +142,10 @@ export default function TargetAttackSurfacePage({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '1100px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '1100px' }} className="zx-page" >
       {/* Header & Breadcrumb */}
       <div>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '0.75rem' }} data-responsive-row >
           <Link
             href="/dashboard/targets"
             style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
@@ -165,7 +165,7 @@ export default function TargetAttackSurfacePage({
           </span>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }} data-responsive-row >
           <div>
             <h1 style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
               Attack Surface Explorer
@@ -176,7 +176,7 @@ export default function TargetAttackSurfacePage({
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', gap: '0.75rem' }} data-responsive-row >
             <Link
               href={`/dashboard/targets/${id}`}
               style={{
@@ -258,13 +258,13 @@ export default function TargetAttackSurfacePage({
             backgroundColor: 'rgba(16, 185, 129, 0.1)',
             border: '1px solid rgba(16, 185, 129, 0.3)',
             borderRadius: 'var(--radius-md)',
-            color: '#34d399',
+            color: 'var(--ds-success)',
             fontSize: '0.9rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.4rem',
           }}
-        >
+         data-responsive-row >
           <Check size={16} /> <span>{crawlMessage}</span>
         </div>
       )}
@@ -276,7 +276,7 @@ export default function TargetAttackSurfacePage({
             backgroundColor: 'rgba(239, 68, 68, 0.1)',
             border: '1px solid rgba(239, 68, 68, 0.3)',
             borderRadius: 'var(--radius-md)',
-            color: '#f87171',
+            color: 'var(--ds-danger)',
             fontSize: '0.9rem',
           }}
         >
@@ -288,7 +288,7 @@ export default function TargetAttackSurfacePage({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
           gap: '1rem',
         }}
       >
@@ -341,7 +341,7 @@ export default function TargetAttackSurfacePage({
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '0.5rem' }}>
             INPUT PARAMETERS
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#34d399' }}>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--ds-success)' }}>
             {endpoints.reduce((sum, ep) => sum + (ep.parameters?.length || 0), 0)}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
@@ -363,7 +363,7 @@ export default function TargetAttackSurfacePage({
           <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
             {target?.verificationScope || 'EXACT_HOST'}
           </div>
-          <div style={{ fontSize: '0.75rem', color: target?.verificationStatus === 'VERIFIED' ? '#34d399' : '#fbbf24', marginTop: '0.25rem' }}>
+          <div style={{ fontSize: '0.75rem', color: target?.verificationStatus === 'VERIFIED' ? 'var(--ds-success)' : 'var(--ds-warning)', marginTop: '0.25rem' }}>
             {target?.verificationStatus === 'VERIFIED' ? (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
                 <Check size={12} /> Ownership Confirmed
@@ -401,7 +401,7 @@ export default function TargetAttackSurfacePage({
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))',
               gap: '1rem',
             }}
           >
@@ -418,7 +418,7 @@ export default function TargetAttackSurfacePage({
                   gap: '0.5rem',
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }} data-responsive-row >
                   <div>
                     <span
                       style={{
@@ -443,7 +443,7 @@ export default function TargetAttackSurfacePage({
                       padding: '0.2rem 0.5rem',
                       borderRadius: '4px',
                       backgroundColor: tech.confidence === 'HIGH' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                      color: tech.confidence === 'HIGH' ? '#34d399' : '#fbbf24',
+                      color: tech.confidence === 'HIGH' ? 'var(--ds-success)' : 'var(--ds-warning)',
                     }}
                   >
                     {tech.confidence} CONFIDENCE
@@ -477,12 +477,12 @@ export default function TargetAttackSurfacePage({
 
       {/* Discovered Endpoints Section */}
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }} data-responsive-row >
           <h2 style={{ fontSize: '1.2rem', fontWeight: 700, letterSpacing: '-0.01em' }}>
             Discovered Application Endpoints ({filteredEndpoints.length} of {endpoints.length})
           </h2>
 
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }} data-responsive-row >
             {/* Search Input */}
             <input
               type="text"
@@ -498,7 +498,7 @@ export default function TargetAttackSurfacePage({
                 fontSize: '0.85rem',
                 width: '260px',
               }}
-            />
+             aria-label="Search Query" />
 
             {/* Method Filter */}
             <select
@@ -512,7 +512,7 @@ export default function TargetAttackSurfacePage({
                 color: 'var(--text-primary)',
                 fontSize: '0.85rem',
               }}
-            >
+             aria-label="Selected Method" >
               <option value="ALL">All Methods</option>
               <option value="GET">GET</option>
               <option value="POST">POST</option>
@@ -532,7 +532,7 @@ export default function TargetAttackSurfacePage({
                 color: 'var(--text-primary)',
                 fontSize: '0.85rem',
               }}
-            >
+             aria-label="Selected Source" >
               <option value="ALL">All Sources</option>
               <option value="CRAWLER">Crawler</option>
               <option value="ROBOTS_TXT">Robots.txt</option>
@@ -586,7 +586,7 @@ export default function TargetAttackSurfacePage({
               borderRadius: 'var(--radius-md)',
               overflowX: 'auto',
             }}
-          >
+           tabIndex={0} role="region" aria-label="Scrollable records"  className="zx-table-scroll" >
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
@@ -649,7 +649,7 @@ export default function TargetAttackSurfacePage({
                       {/* Parameters */}
                       <td style={{ padding: '0.75rem 1rem' }}>
                         {ep.parameters && ep.parameters.length > 0 ? (
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }} data-responsive-row >
                             {ep.parameters.slice(0, 3).map((p, pIdx) => (
                               <span
                                 key={pIdx}
@@ -686,12 +686,12 @@ export default function TargetAttackSurfacePage({
                               fontWeight: 600,
                               color:
                                 ep.statusCode >= 200 && ep.statusCode < 300
-                                  ? '#34d399'
+                                  ? 'var(--ds-success)'
                                   : ep.statusCode >= 300 && ep.statusCode < 400
-                                  ? '#60a5fa'
+                                  ? 'var(--ds-text-link)'
                                   : ep.statusCode >= 400 && ep.statusCode < 500
-                                  ? '#fbbf24'
-                                  : '#f87171',
+                                  ? 'var(--ds-warning)'
+                                  : 'var(--ds-danger)',
                             }}
                           >
                             {ep.statusCode}

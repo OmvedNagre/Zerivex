@@ -20,7 +20,7 @@ const envSchema = z.object({
   CSRF_SECRET: z.string().min(16).optional(),
 
   // One-time owner bootstrap email
-  INITIAL_OWNER_EMAIL: z.string().email('INITIAL_OWNER_EMAIL must be a valid email address'),
+  INITIAL_OWNER_EMAIL: z.string().email('INITIAL_OWNER_EMAIL must be a valid email address').optional(),
 
   // OAuth Credentials (Required for live auth in Phase 2)
   GOOGLE_CLIENT_ID: z.string().optional(),

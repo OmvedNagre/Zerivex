@@ -165,7 +165,7 @@ async function performSafeFetch(
       const reqModule = isHttps ? https : http;
 
       const reqHeaders = {
-        'User-Agent': 'Zerivex-Security-Scanner/1.0 (+https://zerivex.com)',
+        'User-Agent': 'Zerivex-Security-Scanner/1.0 (+https://zerivex.tech)',
         Host: currentUrl.host,
         Accept: '*/*',
         ...(options.headers ?? {}),

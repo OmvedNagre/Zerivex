@@ -18,7 +18,6 @@ import {
   Code2,
   FileCode2,
   FileText,
-  KeyRound,
   Zap,
   Loader2,
   ArrowLeft,
@@ -43,7 +42,7 @@ export interface Instructions {
   fileContent?: string;
 }
 
-export type ActiveVerificationMethod = VerificationMethod | 'HTTP_FILE' | 'MANUAL_BYPASS';
+export type ActiveVerificationMethod = VerificationMethod | 'HTTP_FILE';
 
 interface VerificationCenterProps {
   target: Target;
@@ -53,7 +52,7 @@ interface VerificationCenterProps {
   setSelectedMethod: (method: ActiveVerificationMethod) => void;
   verifying: boolean;
   verificationResult: { success: boolean; diagnostic: string } | null;
-  onVerify: (bypass?: boolean) => Promise<void>;
+  onVerify: () => Promise<void>;
   scanning: boolean;
   onRunScan: () => void;
 }
@@ -71,7 +70,6 @@ const METHODS: MethodConfig[] = [
   { id: 'HTML_META', label: 'HTML Meta Tag', icon: Code2 },
   { id: 'HTTP_HEADER', label: 'HTTP Header', icon: FileCode2 },
   { id: 'HTTP_FILE', label: 'File (.well-known)', icon: FileText },
-  { id: 'MANUAL_BYPASS', label: 'Admin Bypass', icon: KeyRound, badge: 'Privileged', badgeType: 'admin' },
 ];
 
 /**
@@ -232,8 +230,6 @@ export function VerificationCenter({
         return `${prefix}HTTP Response Header`;
       case 'HTTP_FILE':
         return `${prefix}Well-Known File`;
-      case 'MANUAL_BYPASS':
-        return 'Authorize Target (Admin Bypass)';
       default:
         return `${prefix}Ownership Now`;
     }
@@ -270,7 +266,7 @@ export function VerificationCenter({
             {latestScan && (
               <Link href={`/dashboard/scans/${latestScan.id}`} className="zvc-report-link">
                 <BarChart3 size={15} aria-hidden="true" />
-                <span>Latest Report ({latestScan.score !== null ? `${latestScan.score}/100` : 'Pending'})</span>
+                <span>Latest Report ({latestScan.score !== null ? `${latestScan.score}/100` : 'No score'})</span>
               </Link>
             )}
 
@@ -557,42 +553,13 @@ export function VerificationCenter({
           )}
 
           {/* Method 5: Manual Verification Bypass (Admin) */}
-          {selectedMethod === 'MANUAL_BYPASS' && (
-            <>
-              <p className="zvc-method-desc">
-                <strong>Platform Owner & Development Sandbox Authorization:</strong> Authorizes this target instantly
-                without external DNS or HTTP resolution. Intended for local development environments, synthetic test
-                targets, and platform administrative operations per ADR-0008.
-              </p>
-
-              <div className="zvc-callout" role="note">
-                <KeyRound size={18} className="zvc-callout-icon" aria-hidden="true" />
-                <div>
-                  <strong>Audit Governance:</strong> This authorization is recorded immutably in the organizational
-                  audit log with actor identity, timestamp, and sandbox rationale.
-                </div>
-              </div>
-
-              <div className="zvc-token-grid">
-                <TokenClipboardBox
-                  label="Cryptographic Target Challenge Token"
-                  badge="SHA-256 IDENTIFIER"
-                  value={instructions.token}
-                  copyId="adminToken"
-                  copiedKey={copiedKey}
-                  onCopy={handleCopy}
-                />
-              </div>
-            </>
-          )}
-
           {/* Action Trigger Area */}
           <div className="zvc-action-area">
             <div className="zvc-action-buttons">
               <button
                 id="verify-domain-button"
                 type="button"
-                onClick={() => onVerify(selectedMethod === 'MANUAL_BYPASS')}
+                onClick={() => onVerify()}
                 disabled={verifying}
                 className={`zvc-primary-verify-btn ${isVerified ? 'secondary' : 'primary'}`}
               >
@@ -609,19 +576,6 @@ export function VerificationCenter({
                 )}
               </button>
 
-              {selectedMethod !== 'MANUAL_BYPASS' && (
-                <button
-                  id="instant-verify-button"
-                  type="button"
-                  onClick={() => onVerify(true)}
-                  disabled={verifying}
-                  className="zvc-bypass-btn"
-                  title="Instantly authorize target for development and platform administration"
-                >
-                  <Zap size={14} aria-hidden="true" />
-                  <span>Instant Verify (Admin Bypass)</span>
-                </button>
-              )}
             </div>
 
             {/* Diagnostic Result Area */}

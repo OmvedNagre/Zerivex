@@ -1,9 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import './fonts.css';
 @import './dashboard-header.css';
 @import './command-banner.css';
 @import './quick-scan-launcher.css';
 @import './targets-table.css';
 @import './verification-center.css';
+@import './launch-readiness.css';
 @import './scans-execution.css';
 @import './launch-scan-modal.css';
 @import './findings-card.css';
@@ -560,3 +561,16 @@ input::placeholder, textarea::placeholder { color: var(--ash); }
 .policy-document a { color: var(--ds-text-link); text-decoration: underline; text-underline-offset: 3px; }
 .policy-document footer { margin-top: 48px; border-top: 1px solid var(--ds-border-default); padding-top: 24px; }
 .policy-document :focus-visible { outline: 2px solid var(--ds-text-link); outline-offset: 4px; }
+
+.zx-brand-logo { display:inline-block; position:relative; width:148px; height:36px; border-radius:6px; overflow:hidden; background:#060606; vertical-align:middle; flex-shrink:0; }
+.zx-brand-logo img { display:block; width:100%; height:100%; object-fit:cover; transform:scale(3); }
+.zx-brand-logo--compact { width:36px; height:36px; }
+.zx-brand-logo--compact img { width:148px; max-width:none; height:36px; transform:scale(3); transform-origin:center; }
+.zx-team-welcome { min-height:100vh; display:grid; place-items:center; padding:32px 16px; background:var(--ds-bg-page); color:var(--ds-text-primary); }
+.zx-team-welcome-card { width:100%; max-width:580px; padding:clamp(24px,5vw,48px); border:1px solid var(--ds-border-default); border-radius:24px; background:var(--ds-bg-card); }
+.zx-team-welcome-card h1 { font-size:clamp(26px,4vw,36px); line-height:1.15; margin:16px 0; }
+.zx-team-welcome-card p,.zx-team-welcome-card li { line-height:1.65; overflow-wrap:anywhere; }
+.zx-team-welcome-card input { width:100%; margin:12px 0; padding:12px; border:1px solid var(--ds-border-default); border-radius:10px; }
+.zx-welcome-eyebrow { margin-top:32px; font-size:12px; font-weight:700; letter-spacing:.08em; }
+.zx-welcome-support { margin-top:32px; font-size:13px; color:var(--ds-text-secondary); }
+.zx-brand-logo--compact img { clip-path:inset(0 60% 0 0); }

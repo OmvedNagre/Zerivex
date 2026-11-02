@@ -1,4 +1,7 @@
 'use client';
+import { useConfirmation } from '@/components/ui/ConfirmationProvider';
+
+import { Modal } from '@/components/ui/Modal';
 
 import { toast } from '@/components/ui/Toast';
 
@@ -12,6 +15,7 @@ import { ScanMode } from '@/core/scanner/checks/types';
 import { ArrowLeft, Check, AlertTriangle, AlertCircle, Zap, Lock, X, Clock } from 'lucide-react';
 
 export default function TargetMonitoringPage({ params }: { params: Promise<{ id: string }> }) {
+  const { confirm } = useConfirmation();
   const { id } = use(params);
 
   const [target, setTarget] = useState<Target | null>(null);
@@ -130,7 +134,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
   };
 
   const handleDeleteSchedule = async (scheduleId: string) => {
-    if (!confirm('Are you sure you want to delete this scan schedule?')) return;
+    if (!(await confirm('Are you sure you want to delete this scan schedule?'))) return;
     try {
       const res = await fetch(`/api/schedules/${scheduleId}`, { method: 'DELETE' });
       if (!res.ok) {
@@ -176,7 +180,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
 
   if (loading) {
     return (
-      <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+      <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }} className="zx-page" >
         Loading continuous monitoring engine...
       </div>
     );
@@ -184,8 +188,8 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
 
   if (error && !target) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '600px' }}>
-        <div style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: 'var(--radius-md)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '600px' }} className="zx-page" >
+        <div style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--ds-danger)', borderRadius: 'var(--radius-md)' }}>
           {error}
         </div>
         <Link href="/dashboard/targets" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -199,7 +203,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
   const latestScore = trends.length > 0 ? trends[trends.length - 1]?.score : target ? 100 : null;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '1100px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '1100px' }} className="zx-page" >
       {/* Header & Breadcrumb */}
       <div>
         <Link
@@ -217,7 +221,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
           <ArrowLeft size={14} /> Back to Targets
         </Link>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} data-responsive-row >
           <div>
             <h1 style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
               {target?.targetUrl}
@@ -227,7 +231,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }} data-responsive-row >
             {isVerified ? (
               <span
                 style={{
@@ -236,7 +240,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                   fontSize: '0.8rem',
                   fontWeight: 600,
                   backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                  color: '#34d399',
+                  color: 'var(--ds-success)',
                   border: '1px solid rgba(16, 185, 129, 0.3)',
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -253,7 +257,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                   fontSize: '0.8rem',
                   fontWeight: 600,
                   backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                  color: '#fbbf24',
+                  color: 'var(--ds-warning)',
                   border: '1px solid rgba(245, 158, 11, 0.3)',
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -266,24 +270,15 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
 
             <button
               onClick={() => setShowCreateModal(true)}
-              style={{
-                backgroundColor: 'var(--accent-primary)',
-                color: '#fff',
-                padding: '0.5rem 1rem',
-                borderRadius: 'var(--radius-md)',
-                fontWeight: 600,
-                fontSize: '0.85rem',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
+              style={{ cursor: 'pointer' }}
+             className="zx-btn zx-btn--brand zx-btn--md" >
               + Create Schedule
             </button>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }} data-responsive-row >
           <Link
             href={`/dashboard/targets/${id}`}
             style={{
@@ -340,22 +335,22 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
       </div>
 
       {actionSuccess && (
-        <div style={{ padding: '0.75rem 1rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#34d399', borderRadius: 'var(--radius-md)', border: '1px solid rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        <div style={{ padding: '0.75rem 1rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--ds-success)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', gap: '0.4rem' }} data-responsive-row >
           <Check size={14} /> <span>{actionSuccess}</span>
         </div>
       )}
 
       {error && (
-        <div style={{ padding: '0.75rem 1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#f87171', borderRadius: 'var(--radius-md)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        <div style={{ padding: '0.75rem 1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--ds-danger)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '0.4rem' }} data-responsive-row >
           <AlertTriangle size={14} /> <span>{error}</span>
         </div>
       )}
 
       {/* KPI Overview Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '1.25rem' }}>
         <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.25rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Latest Security Score</div>
-          <div style={{ fontSize: '2.25rem', fontWeight: 700, color: (latestScore ?? 100) >= 80 ? '#34d399' : (latestScore ?? 100) >= 60 ? '#fbbf24' : '#f87171' }}>
+          <div style={{ fontSize: '2.25rem', fontWeight: 700, color: (latestScore ?? 100) >= 80 ? 'var(--ds-success)' : (latestScore ?? 100) >= 60 ? 'var(--ds-warning)' : 'var(--ds-danger)' }}>
             {latestScore ?? '—'} <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>/ 100</span>
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
@@ -375,7 +370,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
 
         <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.25rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Open Regression Alerts</div>
-          <div style={{ fontSize: '2.25rem', fontWeight: 700, color: alerts.filter((a) => !a.isRead).length > 0 ? '#f87171' : 'var(--text-primary)' }}>
+          <div style={{ fontSize: '2.25rem', fontWeight: 700, color: alerts.filter((a) => !a.isRead).length > 0 ? 'var(--ds-danger)' : 'var(--text-primary)' }}>
             {alerts.filter((a) => !a.isRead).length}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
@@ -407,8 +402,8 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                   borderRadius: 'var(--radius-md)',
                   border: '1px solid var(--border-color)',
                 }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+               data-responsive-row >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }} data-responsive-row >
                   <div
                     style={{
                       width: '42px',
@@ -420,9 +415,9 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                       fontWeight: 700,
                       fontSize: '1rem',
                       backgroundColor: t.score >= 80 ? 'rgba(16, 185, 129, 0.15)' : t.score >= 60 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                      color: t.score >= 80 ? '#34d399' : t.score >= 60 ? '#fbbf24' : '#f87171',
+                      color: t.score >= 80 ? 'var(--ds-success)' : t.score >= 60 ? 'var(--ds-warning)' : 'var(--ds-danger)',
                     }}
-                  >
+                   data-responsive-row >
                     {t.score}
                   </div>
                   <div>
@@ -431,14 +426,14 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                       Mode: <strong>{t.scanMode}</strong> • {t.totalFindings} findings (
-                      <span style={{ color: '#f87171' }}>{t.criticalCount} crit</span>,{' '}
-                      <span style={{ color: '#fb923c' }}>{t.highCount} high</span>,{' '}
-                      <span style={{ color: '#fbbf24' }}>{t.mediumCount} med</span>)
+                      <span style={{ color: 'var(--ds-danger)' }}>{t.criticalCount} crit</span>,{' '}
+                      <span style={{ color: 'var(--ds-warning)' }}>{t.highCount} high</span>,{' '}
+                      <span style={{ color: 'var(--ds-warning)' }}>{t.mediumCount} med</span>)
                     </div>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }} data-responsive-row >
                   {idx === 0 && (
                     <span style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', borderRadius: '4px', backgroundColor: 'var(--accent-primary)', color: '#fff', fontWeight: 600 }}>
                       LATEST
@@ -459,7 +454,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
 
       {/* Scan Schedules Table */}
       <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', padding: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }} data-responsive-row >
           <h2 style={{ fontSize: '1.15rem', fontWeight: 600 }}>
             Scheduled Automated Scans
           </h2>
@@ -499,9 +494,9 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                   border: '1px solid var(--border-color)',
                   opacity: s.isActive ? 1 : 0.65,
                 }}
-              >
+               data-responsive-row >
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }} data-responsive-row >
                     <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{s.name}</span>
                     <span
                       style={{
@@ -510,7 +505,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                         fontSize: '0.7rem',
                         fontWeight: 600,
                         backgroundColor: s.scanMode === 'VERIFIED_ACTIVE' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.15)',
-                        color: s.scanMode === 'VERIFIED_ACTIVE' ? '#f87171' : '#60a5fa',
+                        color: s.scanMode === 'VERIFIED_ACTIVE' ? 'var(--ds-danger)' : 'var(--ds-text-link)',
                       }}
                     >
                       {s.scanMode}
@@ -535,7 +530,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} data-responsive-row >
                   <button
                     onClick={() => handleTriggerNow(s.id)}
                     disabled={runningScheduleId === s.id}
@@ -579,7 +574,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                       padding: '0.35rem 0.75rem',
                       borderRadius: 'var(--radius-md)',
                       backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                      color: '#f87171',
+                      color: 'var(--ds-danger)',
                       fontSize: '0.75rem',
                       fontWeight: 600,
                       border: '1px solid rgba(239, 68, 68, 0.2)',
@@ -601,8 +596,8 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
           Security Regression & Posture Alerts
         </h2>
         {alerts.length === 0 ? (
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', padding: '1rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Check size={14} style={{ color: '#10b981' }} /> Zero alerts detected. Target security posture is stable.
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', padding: '1rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }} data-responsive-row >
+            <Check size={14} style={{ color: 'var(--ds-success)' }} /> Zero alerts detected. Target security posture is stable.
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -618,9 +613,9 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                   borderRadius: 'var(--radius-md)',
                   border: alert.isRead ? '1px solid var(--border-color)' : '1px solid rgba(239, 68, 68, 0.3)',
                 }}
-              >
+               data-responsive-row >
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }} data-responsive-row >
                     <span
                       style={{
                         padding: '0.15rem 0.45rem',
@@ -628,14 +623,14 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                         fontSize: '0.7rem',
                         fontWeight: 700,
                         backgroundColor: alert.severity === 'CRITICAL' ? 'rgba(239, 68, 68, 0.2)' : alert.severity === 'HIGH' ? 'rgba(249, 115, 22, 0.2)' : 'rgba(234, 179, 8, 0.2)',
-                        color: alert.severity === 'CRITICAL' ? '#f87171' : alert.severity === 'HIGH' ? '#fb923c' : '#fbbf24',
+                        color: alert.severity === 'CRITICAL' ? 'var(--ds-danger)' : alert.severity === 'HIGH' ? 'var(--ds-warning)' : 'var(--ds-warning)',
                       }}
                     >
                       {alert.severity}
                     </span>
                     <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{alert.title}</span>
                     {!alert.isRead && (
-                      <span style={{ backgroundColor: '#f87171', color: '#fff', fontSize: '0.65rem', padding: '0.1rem 0.35rem', borderRadius: '9999px', fontWeight: 700 }}>
+                      <span style={{ backgroundColor: 'var(--ds-danger)', color: '#fff', fontSize: '0.65rem', padding: '0.1rem 0.35rem', borderRadius: '9999px', fontWeight: 700 }}>
                         NEW
                       </span>
                     )}
@@ -672,30 +667,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
 
       {/* Create Schedule Modal */}
       {showCreateModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 50,
-            padding: '1rem',
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: 'var(--bg-card)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--border-color)',
-              maxWidth: '520px',
-              width: '100%',
-              padding: '1.75rem',
-              boxShadow: 'var(--shadow-lg)',
-              position: 'relative',
-            }}
-          >
+        <Modal isOpen onClose={() => setShowCreateModal(false)} ariaLabel="Create scan schedule" className="zx-customer-dialog" size="md">
             {/* Modal Header with Close Button */}
             <div
               style={{
@@ -706,8 +678,8 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                 borderBottom: '1px solid var(--border-color)',
                 paddingBottom: '0.85rem',
               }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+             data-responsive-row >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }} data-responsive-row >
                 <Clock size={20} style={{ color: 'var(--accent-primary)' }} />
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
                   Configure Automated Scan Schedule
@@ -750,14 +722,14 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                   borderRadius: 'var(--radius-md)',
                   backgroundColor: 'rgba(16, 185, 129, 0.15)',
                   border: '1px solid rgba(16, 185, 129, 0.35)',
-                  color: '#34d399',
+                  color: 'var(--ds-success)',
                   fontSize: '0.875rem',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.6rem',
                   marginBottom: '1.25rem',
                 }}
-              >
+               data-responsive-row >
                 <Check size={16} />
                 <span style={{ fontWeight: 600 }}>{modalSuccess}</span>
               </div>
@@ -770,14 +742,14 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                   borderRadius: 'var(--radius-md)',
                   backgroundColor: 'rgba(239, 68, 68, 0.15)',
                   border: '1px solid rgba(239, 68, 68, 0.35)',
-                  color: '#f87171',
+                  color: 'var(--ds-danger)',
                   fontSize: '0.875rem',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.6rem',
                   marginBottom: '1.25rem',
                 }}
-              >
+               data-responsive-row >
                 <AlertCircle size={16} />
                 <span>{modalError}</span>
               </div>
@@ -785,7 +757,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
 
             <form onSubmit={handleCreateSchedule} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.35rem' }} htmlFor="field-src-app--dashboard--dashboard-targets--id--monitoring-page-tsx-0" >
                   Schedule Name
                 </label>
                 <input
@@ -803,11 +775,11 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                     fontSize: '0.9rem',
                   }}
                   required
-                />
+                 id="field-src-app--dashboard--dashboard-targets--id--monitoring-page-tsx-0" />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.35rem' }} htmlFor="field-src-app--dashboard--dashboard-targets--id--monitoring-page-tsx-1" >
                   Scan Frequency
                 </label>
                 <select
@@ -822,7 +794,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                     color: 'var(--text-primary)',
                     fontSize: '0.9rem',
                   }}
-                >
+                 id="field-src-app--dashboard--dashboard-targets--id--monitoring-page-tsx-1" >
                   <option value="DAILY">Daily (02:00 UTC)</option>
                   <option value="WEEKLY">Weekly (Monday 03:00 UTC)</option>
                   <option value="BIWEEKLY">Bi-Weekly (1st & 15th 03:00 UTC)</option>
@@ -833,7 +805,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
 
               {frequency === 'CUSTOM' && (
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.35rem' }} htmlFor="field-src-app--dashboard--dashboard-targets--id--monitoring-page-tsx-2" >
                     Custom Cron Expression (UTC)
                   </label>
                   <input
@@ -852,7 +824,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                       fontSize: '0.9rem',
                     }}
                     required
-                  />
+                   id="field-src-app--dashboard--dashboard-targets--id--monitoring-page-tsx-2" />
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     Standard 5-part format: <code>minute hour dom month dow</code>
                   </span>
@@ -863,7 +835,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.35rem' }}>
                   Scan Mode Profile
                 </label>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem' }} data-responsive-row >
                   <button
                     type="button"
                     onClick={() => setScanMode('PUBLIC_PASSIVE')}
@@ -909,7 +881,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.75rem' }} data-responsive-row >
                 <button
                   type="button"
                   onClick={() => {
@@ -937,7 +909,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                     padding: '0.65rem 1.4rem',
                     borderRadius: 'var(--radius-md)',
                     border: 'none',
-                    backgroundColor: modalSuccess ? '#10b981' : 'var(--accent-primary)',
+                    backgroundColor: modalSuccess ? 'var(--ds-success)' : 'var(--accent-primary)',
                     color: '#fff',
                     fontWeight: 600,
                     cursor: submitting || !!modalSuccess ? 'not-allowed' : 'pointer',
@@ -957,8 +929,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </Modal>
       )}
     </div>
   );

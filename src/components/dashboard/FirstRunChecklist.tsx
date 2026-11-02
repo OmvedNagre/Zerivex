@@ -35,8 +35,8 @@ export function FirstRunChecklist({ state }: FirstRunChecklistProps) {
     },
     {
       id: 'scan',
-      label: 'Execute first perimeter scan',
-      description: 'Run our 14 deterministic engines across headers, cookies, TLS, and bundles.',
+      label: 'Run your first scan',
+      description: 'Run security checks, then review completed and untested coverage.',
       done: state.hasCompletedScan,
       href: '/dashboard/scans',
       actionLabel: 'Launch scan',
@@ -54,8 +54,8 @@ export function FirstRunChecklist({ state }: FirstRunChecklistProps) {
       label: 'Arm CI/CD quality gate',
       description: 'Add our GitHub Actions or GitLab CI breaker to prevent PR regressions.',
       done: state.hasCiGate,
-      href: '/dashboard/scans',
-      actionLabel: 'View CI snippet',
+      href: '/dashboard/automation',
+      actionLabel: 'Set up CI/CD',
     },
   ];
 

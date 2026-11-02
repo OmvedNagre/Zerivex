@@ -1,13 +1,17 @@
 'use client';
+import { useConfirmation } from '@/components/ui/ConfirmationProvider';
+
+import { Modal } from '@/components/ui/Modal';
 
 import { toast } from '@/components/ui/Toast';
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { WebhookRecord, WebhookDeliveryRecord } from '@/core/webhooks/webhook-repository';
-import { ArrowLeft, Key, Zap, CheckCircle2, XCircle } from 'lucide-react';
+import { Key, Zap, CheckCircle2, XCircle } from 'lucide-react';
 
 export default function WebhooksSettingsPage() {
+  const { confirm } = useConfirmation();
   const [webhooks, setWebhooks] = useState<WebhookRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -114,7 +118,7 @@ export default function WebhooksSettingsPage() {
   };
 
   const handleDelete = async (id: string, webhookName: string) => {
-    if (!confirm(`Are you sure you want to delete webhook "${webhookName}"?`)) return;
+    if (!(await confirm(`Are you sure you want to delete webhook "${webhookName}"?`))) return;
     try {
       const res = await fetch(`/api/webhooks/${id}`, { method: 'DELETE' });
       const data = await res.json();
@@ -133,20 +137,10 @@ export default function WebhooksSettingsPage() {
   };
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }} className="zx-page" >
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }} data-responsive-row >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-            <Link
-              href="/dashboard/targets"
-              style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
-            >
-              <ArrowLeft size={14} /> Dashboard
-            </Link>
-            <span style={{ color: 'var(--text-tertiary)' }}>/</span>
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Developer Settings</span>
-          </div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}>
             Outbound Webhooks
           </h1>
@@ -157,27 +151,14 @@ export default function WebhooksSettingsPage() {
 
         <button
           onClick={() => setShowCreateModal(true)}
-          style={{
-            padding: '0.65rem 1.25rem',
-            backgroundColor: 'var(--primary)',
-            color: '#fff',
-            borderRadius: 'var(--radius-md)',
-            border: 'none',
-            fontWeight: 600,
-            fontSize: '0.9rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          }}
-        >
+          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+         className="zx-btn zx-btn--brand zx-btn--md" >
           <span>+</span> Register Webhook
         </button>
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }} data-responsive-row >
         <Link
           href="/dashboard/settings/api-keys"
           style={{
@@ -214,7 +195,7 @@ export default function WebhooksSettingsPage() {
       </div>
 
       {testResult && (
-        <div style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', backgroundColor: 'var(--bg-secondary)', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', color: testResult.success ? '#10b981' : '#ef4444' }}>
+        <div style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', backgroundColor: 'var(--bg-secondary)', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', color: testResult.success ? 'var(--ds-success)' : 'var(--ds-danger)' }} data-responsive-row >
           {testResult.success ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
           <span>{testResult.message}</span>
         </div>
@@ -228,7 +209,7 @@ export default function WebhooksSettingsPage() {
 
       {/* Webhooks Table */}
       <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--card-bg)', overflow: 'hidden' }}>
-        <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} data-responsive-row >
           <div>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>Registered Webhook Endpoints</h2>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.2rem 0 0 0' }}>
@@ -263,7 +244,7 @@ export default function WebhooksSettingsPage() {
             </button>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div style={{ overflowX: 'auto' }} tabIndex={0} role="region" aria-label="Scrollable records"  className="zx-table-scroll" >
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
               <thead>
                 <tr style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
@@ -284,7 +265,7 @@ export default function WebhooksSettingsPage() {
                       {wh.url}
                     </td>
                     <td style={{ padding: '0.9rem 1.25rem' }}>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }} data-responsive-row >
                         {wh.events.map((e) => (
                           <span
                             key={e}
@@ -311,7 +292,7 @@ export default function WebhooksSettingsPage() {
                             fontSize: '0.75rem',
                             fontWeight: 600,
                             backgroundColor: wh.lastStatusCode >= 200 && wh.lastStatusCode < 300 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                            color: wh.lastStatusCode >= 200 && wh.lastStatusCode < 300 ? '#10b981' : 'var(--danger)',
+                            color: wh.lastStatusCode >= 200 && wh.lastStatusCode < 300 ? 'var(--ds-success)' : 'var(--danger)',
                           }}
                         >
                           HTTP {wh.lastStatusCode}
@@ -321,7 +302,7 @@ export default function WebhooksSettingsPage() {
                       )}
                     </td>
                     <td style={{ padding: '0.9rem 1.25rem', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }} data-responsive-row >
                         <button
                           onClick={() => fetchDeliveries(wh)}
                           style={{
@@ -381,7 +362,7 @@ export default function WebhooksSettingsPage() {
       {/* Deliveries Drawer / Inspector */}
       {selectedWebhook && (
         <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--card-bg)', padding: '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }} data-responsive-row >
             <div>
               <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>
                 Delivery Log: {selectedWebhook.name}
@@ -428,8 +409,8 @@ export default function WebhooksSettingsPage() {
                     gap: '0.4rem',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} data-responsive-row >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} data-responsive-row >
                       <span
                         style={{
                           padding: '0.15rem 0.4rem',
@@ -437,7 +418,7 @@ export default function WebhooksSettingsPage() {
                           fontSize: '0.75rem',
                           fontWeight: 700,
                           backgroundColor: del.success ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                          color: del.success ? '#10b981' : 'var(--danger)',
+                          color: del.success ? 'var(--ds-success)' : 'var(--danger)',
                         }}
                       >
                         {del.statusCode ? `HTTP ${del.statusCode}` : 'FAILED'}
@@ -482,8 +463,7 @@ export default function WebhooksSettingsPage() {
 
       {/* Modal: Create Webhook */}
       {showCreateModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
-          <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', width: '100%', maxWidth: '540px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)' }}>
+        <Modal isOpen onClose={() => setShowCreateModal(false)} ariaLabel="Register webhook" className="zx-customer-dialog" size="md">
             <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: 600 }}>Register Outbound Webhook</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0 0 1.25rem 0' }}>
               Send real-time JSON payloads to your application when events occur. Payloads include an HMAC-SHA256 signature in the <code style={{ fontSize: '0.8rem' }}>X-Zerivex-Signature-256</code> header.
@@ -491,7 +471,7 @@ export default function WebhooksSettingsPage() {
 
             <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }} htmlFor="field-src-app--dashboard--dashboard-settings-webhooks-page-tsx-0" >
                   Webhook Name
                 </label>
                 <input
@@ -509,11 +489,11 @@ export default function WebhooksSettingsPage() {
                     color: 'var(--text-primary)',
                     fontSize: '0.9rem',
                   }}
-                />
+                 id="field-src-app--dashboard--dashboard-settings-webhooks-page-tsx-0" />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }} htmlFor="field-src-app--dashboard--dashboard-settings-webhooks-page-tsx-1" >
                   Target HTTPS Endpoint URL
                 </label>
                 <input
@@ -531,7 +511,7 @@ export default function WebhooksSettingsPage() {
                     color: 'var(--text-primary)',
                     fontSize: '0.9rem',
                   }}
-                />
+                 id="field-src-app--dashboard--dashboard-settings-webhooks-page-tsx-1" />
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '0.2rem', display: 'block' }}>
                   SSRF Protection: Requests to private IP spaces, cloud metadata (169.254.169.254), or loopback will be automatically rejected.
                 </span>
@@ -561,7 +541,7 @@ export default function WebhooksSettingsPage() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }} data-responsive-row >
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
@@ -581,23 +561,13 @@ export default function WebhooksSettingsPage() {
                 <button
                   type="submit"
                   disabled={submitting || !name.trim() || !url.trim()}
-                  style={{
-                    padding: '0.6rem 1.25rem',
-                    borderRadius: 'var(--radius-md)',
-                    border: 'none',
-                    backgroundColor: 'var(--primary)',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                  }}
-                >
+                  style={{ cursor: 'pointer' }}
+                 className="zx-btn zx-btn--brand zx-btn--md" >
                   {submitting ? 'Registering...' : 'Register Webhook'}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </Modal>
       )}
     </div>
   );

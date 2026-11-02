@@ -213,9 +213,9 @@ export function adaptPlans(
     const annualSavingsText = annualSavings > 0 ? `Save ${formatCurrencyINR(annualSavings)}/yr` : '';
 
     const featuresList = [
-      { text: `${p.limits.maxSites} Monitored Target${p.limits.maxSites > 1 ? 's' : ''}`, enabled: true },
-      { text: `${p.limits.maxMonthlyScans} Scans per month`, enabled: true },
-      { text: `${p.limits.maxTeamMembers} Team member${p.limits.maxTeamMembers > 1 ? 's' : ''}`, enabled: true },
+      { text: p.id === 'ENTERPRISE' ? 'Target limits by agreement' : `${p.limits.maxSites} Monitored Target${p.limits.maxSites > 1 ? 's' : ''}`, enabled: true },
+      { text: p.id === 'ENTERPRISE' ? 'Scan allowance by agreement' : `${p.limits.maxMonthlyScans} Scans per month`, enabled: true },
+      { text: p.id === 'ENTERPRISE' ? 'Team size by agreement' : `${p.limits.maxTeamMembers} Team member${p.limits.maxTeamMembers > 1 ? 's' : ''}`, enabled: true },
       { text: p.id === 'STARTER' ? 'Perimeter security checks (7 passive engines)' : 'Full 14 security engines (passive + active verified)', enabled: true },
       { text: 'Fix verification & remediation code diffs', enabled: true },
       { text: 'Continuous monitoring & regression alerts', enabled: p.features.alerts },

@@ -208,10 +208,10 @@ describe('Phase F: Single Plan Config, Engine Registry & Entitlements (§F1–F5
         previewPlanId: null,
       };
 
-      const supportEnt = await resolveEntitlements(null, supportSession);
-      expect(supportEnt.isStaffOverride).toBe(true);
-      expect(supportEnt.planId).toBe('PRO');
-      expect(supportEnt.engineIds).toHaveLength(14);
+      const supportEnt = await resolveEntitlements({ planId: 'STARTER' }, supportSession);
+      expect(supportEnt.isStaffOverride).toBe(false);
+      expect(supportEnt.planId).toBe('STARTER');
+      expect(supportEnt.engineIds).toHaveLength(7);
       expect(supportEnt.features.ciGates).toBe(false);
 
       // 2. Staff Support previewing Starter
@@ -219,8 +219,8 @@ describe('Phase F: Single Plan Config, Engine Registry & Entitlements (§F1–F5
         ...supportSession,
         previewPlanId: 'STARTER',
       };
-      const previewEnt = await resolveEntitlements(null, previewStarterSession);
-      expect(previewEnt.isStaffOverride).toBe(true);
+      const previewEnt = await resolveEntitlements({ planId: 'STARTER' }, previewStarterSession);
+      expect(previewEnt.isStaffOverride).toBe(false);
       expect(previewEnt.planId).toBe('STARTER');
       expect(previewEnt.engineIds).toHaveLength(7);
       expect(previewEnt.features.activeVerifiedTests).toBe(false);
@@ -231,10 +231,10 @@ describe('Phase F: Single Plan Config, Engine Registry & Entitlements (§F1–F5
         staffRole: 'STAFF_OWNER',
         previewPlanId: null,
       };
-      const ownerEnt = await resolveEntitlements(null, ownerSession);
-      expect(ownerEnt.isStaffOverride).toBe(true);
-      expect(ownerEnt.planId).toBe('ENTERPRISE');
-      expect(ownerEnt.limits.maxSites).toBe(999999);
+      const ownerEnt = await resolveEntitlements({ planId: 'STARTER' }, ownerSession);
+      expect(ownerEnt.isStaffOverride).toBe(false);
+      expect(ownerEnt.planId).toBe('STARTER');
+      expect(ownerEnt.limits.maxSites).toBe(1);
     });
   });
 

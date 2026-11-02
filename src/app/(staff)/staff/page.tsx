@@ -19,46 +19,25 @@ interface StaffOverviewStats {
 }
 
 export default function StaffOverviewPage() {
-  const [stats, setStats] = useState<StaffOverviewStats>({
-    totalCustomerOrgs: 0,
-    scansLast24h: 0,
-    failedScans: 0,
-    queueDepth: 0,
-  });
+  const [stats, setStats] = useState<StaffOverviewStats | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadOverview = async () => {
     try {
       setLoading(true);
-      const [orgsRes, queueRes] = await Promise.allSettled([
-        fetch('/api/staff/orgs').then((r) => r.json()),
-        fetch('/api/staff/queue').then((r) => r.json()),
-      ]);
-
-      let orgCount = 0;
-      let queueCount = 0;
-      let failedCount = 0;
-
-      if (orgsRes.status === 'fulfilled' && orgsRes.value?.success) {
-        const orgs = orgsRes.value.data?.organizations || [];
-        // Metrics hygiene: internal org excluded from customer metrics
-        orgCount = orgs.filter((o: any) => !o.isInternal).length;
-      }
-
-      if (queueRes.status === 'fulfilled' && queueRes.value?.success) {
-        const queue = queueRes.value.data?.queue || [];
-        queueCount = queue.filter((q: any) => q.status === 'QUEUED' || q.status === 'RUNNING').length;
-        failedCount = queue.filter((q: any) => q.status === 'FAILED').length;
-      }
-
-      setStats({
-        totalCustomerOrgs: orgCount,
-        scansLast24h: queueCount + failedCount,
-        failedScans: failedCount,
-        queueDepth: queueCount,
-      });
-    } catch {
-      // Handle gracefully
+      setError(null);
+      const fetchJson = async (url: string) => {
+        const response = await fetch(url); const body = await response.json();
+        if (!response.ok || !body.success) throw new Error('Operational metrics could not be loaded. Retry to check the current state.');
+        return body.data;
+      };
+      const [orgs, queue] = await Promise.all([fetchJson('/api/staff/orgs'), fetchJson('/api/staff/queue')]);
+      if (!queue.stats) throw new Error('Queue metrics are unavailable.');
+      setStats({ totalCustomerOrgs: orgs.organizations.filter((org: { isInternal: boolean }) => !org.isInternal).length,
+        ...queue.stats });
+    } catch (error) {
+      setStats(null); setError((error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -70,6 +49,7 @@ export default function StaffOverviewPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+      {error && <p role="alert" className="staff-error">{error}</p>}
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
@@ -92,7 +72,7 @@ export default function StaffOverviewPage() {
       </div>
 
       {/* 4 Core Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '16px' }}>
         <div className="staff-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
             <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--staff-text-muted)', textTransform: 'uppercase' }}>
@@ -101,7 +81,7 @@ export default function StaffOverviewPage() {
             <Building2 size={18} color="#AB6CFE" />
           </div>
           <div style={{ fontSize: '28px', fontWeight: 800, color: '#FFFFFF' }}>
-            {loading ? '...' : stats.totalCustomerOrgs}
+            {loading ? '...' : (stats?.totalCustomerOrgs ?? '—')}
           </div>
           <div style={{ fontSize: '12px', color: 'var(--staff-text-secondary)', marginTop: '4px' }}>
             Active multi-tenant workspaces
@@ -116,7 +96,7 @@ export default function StaffOverviewPage() {
             <Layers size={18} color="#38BDF8" />
           </div>
           <div style={{ fontSize: '28px', fontWeight: 800, color: '#FFFFFF' }}>
-            {loading ? '...' : stats.queueDepth}
+            {loading ? '...' : (stats?.queueDepth ?? '—')}
           </div>
           <div style={{ fontSize: '12px', color: 'var(--staff-text-secondary)', marginTop: '4px' }}>
             Pending and in-flight scans
@@ -128,13 +108,13 @@ export default function StaffOverviewPage() {
             <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--staff-text-muted)', textTransform: 'uppercase' }}>
               Scan Failures
             </span>
-            <AlertTriangle size={18} color={stats.failedScans > 0 ? '#EF4444' : '#10B981'} />
+            <AlertTriangle size={18} color={(stats?.failedScans ?? 0) > 0 ? '#EF4444' : '#10B981'} />
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: stats.failedScans > 0 ? '#EF4444' : '#FFFFFF' }}>
-            {loading ? '...' : stats.failedScans}
+          <div style={{ fontSize: '28px', fontWeight: 800, color: (stats?.failedScans ?? 0) > 0 ? '#EF4444' : '#FFFFFF' }}>
+            {loading ? '...' : (stats?.failedScans ?? '—')}
           </div>
           <div style={{ fontSize: '12px', color: 'var(--staff-text-secondary)', marginTop: '4px' }}>
-            {stats.failedScans === 0 ? 'Zero active scan failures' : 'Requires engineering triage'}
+            {(stats?.failedScans ?? '—') === 0 ? 'No failed scans in the last 24 hours' : 'Requires engineering triage'}
           </div>
         </div>
 
@@ -146,7 +126,7 @@ export default function StaffOverviewPage() {
             <ScanSearch size={18} color="#F59E0B" />
           </div>
           <div style={{ fontSize: '28px', fontWeight: 800, color: '#FFFFFF' }}>
-            {loading ? '...' : stats.scansLast24h}
+            {loading ? '...' : (stats?.scansLast24h ?? '—')}
           </div>
           <div style={{ fontSize: '12px', color: 'var(--staff-text-secondary)', marginTop: '4px' }}>
             Total jobs monitored in 24h
@@ -155,7 +135,7 @@ export default function StaffOverviewPage() {
       </div>
 
       {/* Operator Navigation & Modules */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: '20px' }}>
         <div className="staff-card">
           <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#FFFFFF', margin: '0 0 12px' }}>
             Customer Workspaces

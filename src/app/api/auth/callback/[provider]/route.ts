@@ -16,6 +16,7 @@ export async function GET(
 ) {
   const config = getEnvConfig();
   const { provider: rawProvider } = await params;
+  if (!['google', 'github'].includes(rawProvider)) return NextResponse.json({ error: 'Unsupported authentication provider' }, { status: 400 });
   const provider = rawProvider as OAuthProvider;
   const url = req.nextUrl;
   const searchParams = url.searchParams;
@@ -57,17 +58,6 @@ export async function GET(
       profile = await exchangeGoogleCode(code, codeVerifier);
     } else if (provider === 'github') {
       profile = await exchangeGitHubCode(code);
-    } else if (provider === 'mock' && config.NODE_ENV !== 'production') {
-      // Hermetic mock provider for offline testing and local sandbox
-      const mockEmail = searchParams.get('mock_email') || 'mock-user@zerivex.local';
-      profile = {
-        provider: 'mock',
-        providerAccountId: `mock-sub-${crypto.randomBytes(4).toString('hex')}`,
-        email: mockEmail,
-        isEmailVerified: true,
-        displayName: 'Mock Test User',
-        avatarUrl: null,
-      };
     } else {
       return NextResponse.redirect(`${config.NEXT_PUBLIC_APP_URL}/login?error=unsupported_provider`);
     }

@@ -1,7 +1,9 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import { CONTACT_EMAIL } from '@/lib/contact';
 import { usePathname } from 'next/navigation';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { Drawer } from 'vaul';
@@ -65,7 +67,7 @@ const NAV_GROUPS: NavGroupConfig[] = [
   {
     title: 'Learn',
     items: [
-      { label: 'Academy', href: '/academy', icon: GraduationCap },
+      { label: 'Academy', href: '/dashboard/academy', icon: GraduationCap },
     ],
   },
   {
@@ -89,7 +91,7 @@ const NAV_GROUPS: NavGroupConfig[] = [
     items: [
       { label: 'Profile & Persona', href: '/dashboard/settings/profile', icon: UserRound },
       { label: 'Security & Sessions', href: '/dashboard/settings/security', icon: UserRound },
-      { label: 'Help', href: 'mailto:support@zerivex.com', icon: HelpCircle },
+      { label: 'Help', href: `mailto:${CONTACT_EMAIL}`, icon: HelpCircle },
     ],
   },
 ];
@@ -101,7 +103,7 @@ export interface SidebarProps {
 
 export function Sidebar({ isPinned, onPinChange }: SidebarProps) {
   const pathname = usePathname();
-  const { user, organizationRole } = useAuth();
+  const { organizationName, user, organizationRole } = useAuth();
 
   const [isHovered, setIsHovered] = useState(false);
   const [badges, setBadges] = useState<NavBadges>({
@@ -200,7 +202,7 @@ export function Sidebar({ isPinned, onPinChange }: SidebarProps) {
   );
 
   const userRoleLabel = getOrgRoleLabel(organizationRole || user?.role);
-  const userOrgName = user?.displayName ? `${user.displayName}'s Workspace` : 'Zerivex Workspace';
+  const userOrgName = organizationName || 'Workspace';
 
   return (
     <>
@@ -221,7 +223,7 @@ export function Sidebar({ isPinned, onPinChange }: SidebarProps) {
           {/* Workspace Switcher / Header */}
           <div className="zx-sidebar-header">
             <Link href="/dashboard" className="zx-sidebar-logo-mark" aria-label="Zerivex Overview">
-              ZX
+              <BrandLogo compact />
             </Link>
             <div className="zx-sidebar-workspace-info">
               <span className="zx-sidebar-workspace-name">{userOrgName}</span>

@@ -631,7 +631,7 @@ export function TargetsTable({
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ds-text-primary)' }}>
+              <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ds-text-primary)' }} htmlFor="field-src-components-dashboard-TargetsTable-tsx-0" >
                 Type <code style={{ color: 'var(--ds-danger)', fontFamily: 'var(--font-mono)' }}>{targetToDelete.hostname}</code> to confirm:
               </label>
               <input
@@ -651,7 +651,7 @@ export function TargetsTable({
                   outline: 'none',
                   fontFamily: 'var(--font-mono)',
                 }}
-              />
+               id="field-src-components-dashboard-TargetsTable-tsx-0" />
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>

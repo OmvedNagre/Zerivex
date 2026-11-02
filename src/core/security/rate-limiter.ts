@@ -131,6 +131,11 @@ export const defaultRateLimiter = new SlidingWindowRateLimiter();
  * Prioritizes CF-Connecting-IP, X-Real-IP, and X-Forwarded-For.
  */
 export function getClientIp(headers: Headers, trustProxyHeaders = true): string {
+  // Vercel overwrites this header at its trusted ingress. Ignore other proxy headers there.
+  if (process.env.VERCEL === '1') {
+    const ip = headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim();
+    return ip && isValidIp(ip) ? ip : '127.0.0.1';
+  }
   if (!trustProxyHeaders) return '127.0.0.1';
   // 1. Cloudflare True Client IP (High Confidence)
   const cfIp = headers.get('cf-connecting-ip');

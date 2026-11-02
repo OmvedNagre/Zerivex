@@ -151,7 +151,7 @@ export default function DashboardOverviewPage() {
   const hasScore = typeof fleetScore === 'number';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }} className="zx-page" >
       {/* 1. Page Header (eyebrow -> H1 -> subtitle -> scanner status dot) */}
       <div
         style={{
@@ -161,7 +161,7 @@ export default function DashboardOverviewPage() {
           gap: '24px',
           flexWrap: 'wrap',
         }}
-      >
+       data-responsive-row >
         <div>
           <div
             style={{
@@ -212,7 +212,7 @@ export default function DashboardOverviewPage() {
             fontWeight: 600,
             color: 'var(--ds-text-secondary)',
           }}
-        >
+         data-responsive-row >
           <span
             style={{
               width: '8px',
@@ -245,8 +245,8 @@ export default function DashboardOverviewPage() {
             alignItems: 'center',
             color: 'var(--ds-danger)',
           }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13.5px' }}>
+         data-responsive-row >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13.5px' }} data-responsive-row >
             <AlertTriangle size={18} />
             <span>Couldn&apos;t load dashboard data: {error}</span>
           </div>
@@ -271,8 +271,8 @@ export default function DashboardOverviewPage() {
             gap: '16px',
             flexWrap: 'wrap',
           }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+         data-responsive-row >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }} data-responsive-row >
             <div
               style={{
                 width: '36px',
@@ -284,7 +284,7 @@ export default function DashboardOverviewPage() {
                 justifyContent: 'center',
                 flexShrink: 0,
               }}
-            >
+             data-responsive-row >
               <UserCheck size={18} color="var(--brand)" />
             </div>
             <div>
@@ -296,7 +296,7 @@ export default function DashboardOverviewPage() {
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} data-responsive-row >
             <Link href="/onboarding">
               <Button variant="brand" size="sm">
                 Complete Setup
@@ -334,7 +334,7 @@ export default function DashboardOverviewPage() {
             gap: '24px',
             flexWrap: 'wrap',
           }}
-        >
+         data-responsive-row >
           <div style={{ maxWidth: '680px' }}>
             <div
               style={{
@@ -398,7 +398,7 @@ export default function DashboardOverviewPage() {
       <QuickScanLauncher />
 
       {/* 5. Main Dashboard Grid (Score + Top Fixes / Sites + Recent Scans) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: '24px' }}>
         {/* Left Card: Security Score & Headline Status */}
         <div
           style={{
@@ -413,7 +413,7 @@ export default function DashboardOverviewPage() {
           }}
         >
           {/* Header Row: Score Label & "How is this calculated?" Popover */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} data-responsive-row >
             <span
               style={{
                 fontSize: '12px',
@@ -480,7 +480,7 @@ export default function DashboardOverviewPage() {
           </div>
 
           {/* Score Presentation: Ring + Grade + Headline */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }} data-responsive-row >
             {/* Score Ring */}
             <div style={{ position: 'relative', width: '100px', height: '100px', flexShrink: 0 }}>
               <svg width="100" height="100" viewBox="0 0 100 100">
@@ -545,7 +545,7 @@ export default function DashboardOverviewPage() {
 
             {/* Headline and Grade Info */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} data-responsive-row >
                 <span
                   style={{
                     padding: '2px 8px',
@@ -584,7 +584,7 @@ export default function DashboardOverviewPage() {
             >
               Open Issues by Severity
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }} data-responsive-grid >
               {[
                 { label: 'CRIT', val: overviewData?.openFindings?.critical ?? 0, color: 'var(--ds-danger)' },
                 { label: 'HIGH', val: overviewData?.openFindings?.high ?? 0, color: 'var(--ds-warning)' },
@@ -620,7 +620,7 @@ export default function DashboardOverviewPage() {
 
           {/* Fix These First (Top 3 open findings deduped) */}
           <div style={{ borderTop: '1px solid var(--ds-border-subtle)', paddingTop: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }} data-responsive-row >
               <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ds-text-primary)' }}>
                 Fix These First
               </span>
@@ -644,9 +644,9 @@ export default function DashboardOverviewPage() {
                       alignItems: 'center',
                       gap: '12px',
                     }}
-                  >
+                   data-responsive-row >
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }} data-responsive-row >
                         <SeverityBadge severity={f.severity} />
                         <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--ds-text-muted)' }}>
                           {f.ruleId}
@@ -681,7 +681,7 @@ export default function DashboardOverviewPage() {
                 ))}
               </div>
             ) : (
-              <div style={{ padding: '16px 0', color: 'var(--ds-text-muted)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ padding: '16px 0', color: 'var(--ds-text-muted)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }} data-responsive-row >
                 <CheckCircle2 size={16} style={{ color: 'var(--ds-success)' }} />
                 <span>Zero open critical or high defects detected.</span>
               </div>
@@ -692,7 +692,7 @@ export default function DashboardOverviewPage() {
         {/* Right Column: Sites Summary & Recent Scans */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* Sites & Quality Gate Mini Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }} data-responsive-grid >
             {/* Sites Card */}
             <div
               style={{
@@ -791,7 +791,7 @@ export default function DashboardOverviewPage() {
               flex: 1,
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }} data-responsive-row >
               <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ds-text-primary)' }}>
                 Recent Scans
               </span>
@@ -814,19 +814,19 @@ export default function DashboardOverviewPage() {
                       justifyContent: 'space-between',
                       gap: '12px',
                     }}
-                  >
+                   data-responsive-row >
                     <div>
                       <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ds-text-primary)' }}>
                         {s.targetHostname}
                       </div>
-                      <div style={{ fontSize: '11px', color: 'var(--ds-text-muted)', display: 'flex', gap: '8px', marginTop: '2px' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--ds-text-muted)', display: 'flex', gap: '8px', marginTop: '2px' }} data-responsive-row >
                         <span>{getScanModeLabel(s.scanMode)}</span>
                         <span>•</span>
                         <span>{getScanStatusLabel(s.status)}</span>
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }} data-responsive-row >
                       <span
                         style={{
                           fontSize: '14px',

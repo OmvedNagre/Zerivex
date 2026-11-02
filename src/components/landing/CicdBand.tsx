@@ -4,58 +4,14 @@ import { useState } from 'react';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { GitBranch, ShieldAlert, FileText, CheckCircle2 } from 'lucide-react';
 
-const SNIPPETS = {
-  github: `# .github/workflows/security.yml
-name: ZERIVEX Security Gate
-on: [pull_request, push]
-
-jobs:
-  security-gate:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Run ZERIVEX Security Gate
-        run: |
-          curl -sSL https://get.zerivex.com/cli | bash
-          zerivex gate \\
-            --api-key=\${{ secrets.ZERIVEX_API_KEY }} \\
-            --target=https://staging.myapp.com \\
-            --fail-on=CRITICAL \\
-            --sarif=results.sarif
-
-      - name: Upload SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: results.sarif
-          category: zerivex`,
-  gitlab: `# .gitlab-ci.yml
-stages:
-  - test
-  - security
-
-zerivex-security-gate:
-  stage: security
-  image: curlimages/curl:latest
-  script:
-    - curl -sSL https://get.zerivex.com/cli | sh
-    - zerivex gate --api-key=$ZERIVEX_API_KEY --target=$STAGING_URL --fail-on=CRITICAL --sarif=gl-security.sarif
-  artifacts:
-    reports:
-      sast: gl-security.sarif
-  only:
-    - merge_requests`,
-  curl: `# Direct CLI / Webhook Invocations
-curl -X POST https://api.zerivex.com/api/scans \\
-  -H "Authorization: Bearer zx_live_your_api_key_here" \\
+const REQUEST = `curl --fail --silent --show-error -X POST https://zerivex.tech/api/v1/ci/scan \\
+  -H "Authorization: Bearer $ZERIVEX_API_KEY" \\
   -H "Content-Type: application/json" \\
-  -d '{
-    "targetUrl": "https://staging.myapp.com",
-    "mode": "PUBLIC_PASSIVE",
-    "failOnSeverity": "CRITICAL"
-  }'`,
-};
+  -d '{"targetId":"YOUR_REGISTERED_TARGET_ID","wait":false}'
+# Poll the returned pollUrl until scanJob.status is COMPLETED.
+# Only then evaluate gate.passed. Failed or incomplete jobs must fail the pipeline.
+# Get a complete workflow from Targets → CI/CD in your workspace.`;
+const SNIPPETS = { github: `# GitHub Actions — use your ZERIVEX_API_KEY secret\n${REQUEST}`, gitlab: `# GitLab CI — use a masked ZERIVEX_API_KEY variable\n${REQUEST}`, curl: REQUEST };
 
 export function CicdBand() {
   const [activeTab, setActiveTab] = useState<'github' | 'gitlab' | 'curl'>('github');

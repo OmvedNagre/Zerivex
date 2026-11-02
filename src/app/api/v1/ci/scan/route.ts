@@ -32,6 +32,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (process.env.VERCEL === '1' && wait) {
+      return NextResponse.json({ success: false, error: 'Use wait:false and poll the returned pollUrl on Vercel; scanning runs in the worker.' }, { status: 400 });
+    }
+
     // 1. Create scan job (validates ADR-0008 target verification)
     const scanJob = await createScanJob({
       organizationId: auth.organizationId,

@@ -4,7 +4,7 @@ import { getEnvConfig } from '@/core/config/env-validator';
 import { handleOwnerBootstrap } from '@/core/auth/bootstrap-service';
 import { createSession } from '@/core/auth/session-service';
 
-export type OAuthProvider = 'google' | 'github' | 'mock';
+export type OAuthProvider = 'google' | 'github';
 
 export interface VerifiedOAuthProfile {
   provider: OAuthProvider;
@@ -78,10 +78,6 @@ export function getOAuthAuthorizationUrl(
     return `https://github.com/login/oauth/authorize?${params.toString()}`;
   }
 
-  if (provider === 'mock') {
-    return `${config.NEXT_PUBLIC_APP_URL}/api/auth/mock-consent?state=${state}`;
-  }
-
   throw new Error(`Unsupported OAuth provider: ${provider}`);
 }
 
@@ -107,7 +103,7 @@ export async function exchangeGoogleCode(
   }
 
   const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
+    method: 'POST', signal: AbortSignal.timeout(15000),
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams(bodyParams),
   });
@@ -120,6 +116,7 @@ export async function exchangeGoogleCode(
   const accessToken = tokenData.access_token;
 
   const userRes = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
+    signal: AbortSignal.timeout(15000),
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 
@@ -147,7 +144,7 @@ export async function exchangeGitHubCode(code: string): Promise<VerifiedOAuthPro
   const redirectUri = `${config.NEXT_PUBLIC_APP_URL}/api/auth/callback/github`;
 
   const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
-    method: 'POST',
+    method: 'POST', signal: AbortSignal.timeout(15000),
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
@@ -172,6 +169,7 @@ export async function exchangeGitHubCode(code: string): Promise<VerifiedOAuthPro
 
   // Fetch basic user profile
   const userRes = await fetch('https://api.github.com/user', {
+    signal: AbortSignal.timeout(15000),
     headers: {
       Authorization: `Bearer ${accessToken}`,
       Accept: 'application/vnd.github+json',
@@ -182,6 +180,7 @@ export async function exchangeGitHubCode(code: string): Promise<VerifiedOAuthPro
 
   // Fetch emails to get verified primary email
   const emailsRes = await fetch('https://api.github.com/user/emails', {
+    signal: AbortSignal.timeout(15000),
     headers: {
       Authorization: `Bearer ${accessToken}`,
       Accept: 'application/vnd.github+json',

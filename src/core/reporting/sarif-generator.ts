@@ -147,7 +147,7 @@ export function generateSarifReport(params: {
         defaultConfiguration: {
           level,
         },
-        helpUri: `https://zerivex.com/docs/rules/${finding.ruleId}`,
+        helpUri: `https://zerivex.tech/docs/rules/${finding.ruleId}`,
         help: remediation
           ? {
               text: `${remediation.summary}\n\nSecurity Impact:\n${remediation.impact}\n\nCLI Verification:\n${remediation.cliVerification || 'N/A'}`,
@@ -222,7 +222,7 @@ export function generateSarifReport(params: {
             name: 'Zerivex',
             version: '1.0.0',
             semanticVersion: '1.0.0',
-            informationUri: 'https://zerivex.com',
+            informationUri: 'https://zerivex.tech',
             rules,
           },
         },

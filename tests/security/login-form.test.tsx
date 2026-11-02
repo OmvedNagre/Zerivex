@@ -58,20 +58,18 @@ describe('Component 12 — Login Form, OAuth Buttons & Developer Access', () => 
     expect(html).toContain('aria-label="Continue with GitHub authentication"');
   });
 
-  it('4. Renders Localhost Developer button as clearly scoped development access', () => {
+  it('4. Does not expose developer sign-in', () => {
     mockError = null;
     mockReturnTo = null;
 
     const html = renderToStaticMarkup(<LoginForm />);
 
-    expect(html).toContain('zal-btn-dev');
-    expect(html).toContain('href="/api/auth/login/mock"');
-    expect(html).toContain('Localhost Developer');
-    expect(html).toContain('Development environment only (Owner / Admin)');
-    expect(html).toContain('or development access');
+    expect(html).not.toContain('/api/auth/login/mock');
+    expect(html).not.toContain('Localhost Developer');
+    expect(html).not.toContain('Owner / Admin');
   });
 
-  it('5. Correctly forwards returnTo query parameter to OAuth and Developer URLs', () => {
+  it('5. Correctly forwards returnTo query parameter to OAuth URLs', () => {
     mockError = null;
     mockReturnTo = '/dashboard/scans/scan-123';
 
@@ -79,7 +77,7 @@ describe('Component 12 — Login Form, OAuth Buttons & Developer Access', () => 
 
     expect(html).toContain('href="/api/auth/login/google?returnTo=%2Fdashboard%2Fscans%2Fscan-123"');
     expect(html).toContain('href="/api/auth/login/github?returnTo=%2Fdashboard%2Fscans%2Fscan-123"');
-    expect(html).toContain('href="/api/auth/login/mock?returnTo=%2Fdashboard%2Fscans%2Fscan-123"');
+    expect(html).not.toContain('/api/auth/login/mock');
   });
 
   it('6. Displays structured diagnostic error banner when invalid_state occurs', () => {
@@ -136,4 +134,12 @@ describe('Component 12 — Login Form, OAuth Buttons & Developer Access', () => 
     expect(html).toContain('Protected by Zerivex autonomous security protocols.');
     expect(html).toContain('By continuing, you agree to our Security &amp; Acceptable Use Policy.');
   });
+  it('explains first-time account creation when following an invitation', () => {
+    mockError = null; mockReturnTo = '/invite/inv_test';
+    const html = renderToStaticMarkup(<LoginForm />);
+    expect(html).toContain('Your first Google or GitHub sign-in creates your account automatically');
+    expect(html).toContain('Use the email that received the invitation');
+    expect(html).toContain('/api/auth/login/google?returnTo=%2Finvite%2Finv_test');
+  });
+
 });

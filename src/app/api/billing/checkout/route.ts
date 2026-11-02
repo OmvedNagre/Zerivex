@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const origin = req.nextUrl.origin || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const origin = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin;
 
     const session = await createStripeCheckoutSession({
       organizationId: orgCtx.organizationId,

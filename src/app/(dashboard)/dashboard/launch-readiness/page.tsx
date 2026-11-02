@@ -1,4 +1,6 @@
 'use client';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { toast } from '@/components/ui/Toast';
 
 import { useState, useEffect, useCallback } from 'react';
 import {
@@ -9,6 +11,8 @@ import {
 } from '@/components/dashboard/LaunchReadinessCockpit';
 
 export default function LaunchReadinessPage() {
+  const { user } = useAuth();
+  const canRunSelfScan = user?.role === 'OWNER' || user?.role === 'ADMIN';
   const [data, setData] = useState<LaunchReadinessData | null>(null);
   const [selfScanReport, setSelfScanReport] = useState<SelfScanReport | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,10 +80,12 @@ export default function LaunchReadinessPage() {
     );
   };
 
-  const copyCertificationHash = (hash: string) => {
-    navigator.clipboard.writeText(hash);
-    setCopiedHash(true);
-    setTimeout(() => setCopiedHash(false), 2500);
+  const copyCertificationHash = async (hash: string) => {
+    try {
+      await navigator.clipboard.writeText(hash);
+      setCopiedHash(true);
+      setTimeout(() => setCopiedHash(false), 2500);
+    } catch { toast.error('Could not copy. Select the text and copy it manually.'); }
   };
 
   return (
@@ -88,6 +94,7 @@ export default function LaunchReadinessPage() {
       selfScanReport={selfScanReport}
       loading={loading}
       scanning={scanning}
+      canRunSelfScan={canRunSelfScan}
       error={error}
       activeTab={activeTab}
       setActiveTab={setActiveTab}

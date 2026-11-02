@@ -42,7 +42,7 @@ async function main() {
       const identifier = `${quoteIdentifier(table.schemaname)}.${quoteIdentifier(table.tablename)}`;
       manifest.tables[`${table.schemaname}.${table.tablename}`] = Number((await snapshot.query<{ count: string }>(`SELECT COUNT(*) as count FROM ${identifier}`)).rows[0]!.count);
     }
-    await command(await binary('pg_dump'), ['--format=custom', '--no-owner', '--no-acl', `--snapshot=${snapshotId}`, `--file=${target}`], pgEnv);
+    await command(await binary('pg_dump'), ['--format=custom', '--schema=public', '--no-owner', '--no-acl', `--snapshot=${snapshotId}`, `--file=${target}`], pgEnv);
     await fs.chmod(target, 0o600);
     await snapshot.query('COMMIT');
     manifest.checksum = createHash('sha256').update(await fs.readFile(target)).digest('hex');
@@ -53,7 +53,7 @@ async function main() {
   try {
     if (process.argv.includes('--verify-restore')) {
       await admin.query(`CREATE DATABASE ${quoteIdentifier(restoreName)}`); restoreCreated = true;
-      await command(await binary('pg_restore'), ['--exit-on-error', '--no-owner', '--no-acl', '--dbname', restoreName, target], { ...pgEnv, PGDATABASE: restoreName });
+      await command(await binary('pg_restore'), ['--exit-on-error', '--clean', '--if-exists', '--no-owner', '--no-acl', '--dbname', restoreName, target], { ...pgEnv, PGDATABASE: restoreName });
       const restoredUrl = new URL(url); restoredUrl.pathname = `/${restoreName}`;
       const restored = databasePool(restoredUrl.toString());
       try {

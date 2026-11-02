@@ -24,11 +24,11 @@
      ------------------------------------------------------------------------- */
   --ds-text-primary:    #191B23;  /* high-contrast ink */
   --ds-text-secondary:  #484A54;  /* body text (gray-600) */
-  --ds-text-muted:      #6C6E79;  /* captions & helpers (gray-500) */
+  --ds-text-muted:      #62646F;  /* captions & helpers (gray-500) */
   --ds-text-on-ink:     #E9EAF0;  /* high-contrast text on dark islands */
   --ds-text-on-ink-dim: #A9ABB6;  /* secondary text on dark islands */
   --ds-text-on-inverse: #E9EAF0;
-  --ds-text-link:       #006DCA;
+  --ds-text-link:       #00539C;
   --ds-text-link-hover: #00539C;
 
   /* -------------------------------------------------------------------------
@@ -63,13 +63,13 @@
   /* -------------------------------------------------------------------------
      Status & Trends
      ------------------------------------------------------------------------- */
-  --ds-success:    #009F81;
+  --ds-success:    #00775F;
   --ds-success-bg: #DBFEE8;
-  --ds-warning:    #D87900;
+  --ds-warning:    #925100;
   --ds-warning-bg: #FDF7C8;
-  --ds-danger:     #D1002F;
+  --ds-danger:     #A51E38;
   --ds-danger-bg:  #FFF0F7;
-  --ds-info:       #008FF8;
+  --ds-info:       #0066B3;
   --ds-info-bg:    #E9F7FF;
 
   /* -------------------------------------------------------------------------
@@ -172,11 +172,11 @@
   --sev-critical-bg: rgba(209, 0, 47, 0.12);
   --sev-critical-border: rgba(209, 0, 47, 0.28);
 
-  --sev-high: #ff642d;
+  --sev-high: #a83a12;
   --sev-high-bg: rgba(255, 100, 45, 0.12);
   --sev-high-border: rgba(255, 100, 45, 0.28);
 
-  --sev-medium: #d87900;
+  --sev-medium: #925100;
   --sev-medium-bg: rgba(216, 121, 0, 0.12);
   --sev-medium-border: rgba(216, 121, 0, 0.28);
 
@@ -184,7 +184,7 @@
   --sev-low-bg: rgba(0, 109, 202, 0.12);
   --sev-low-border: rgba(0, 109, 202, 0.28);
 
-  --sev-info: #6c6e79;
+  --sev-info: #62646f;
   --sev-info-bg: rgba(108, 110, 121, 0.12);
   --sev-info-border: rgba(108, 110, 121, 0.28);
 

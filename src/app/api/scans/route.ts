@@ -4,7 +4,6 @@ import { requireAuth, requirePermission, handleAuthError } from '@/core/rbac/aut
 import { getUserActiveOrganization } from '@/core/auth/organization-context';
 import {
   createScanJob,
-  executeScanJob,
   listScanJobsForOrg,
 } from '@/core/scanner/scan-runner';
 import { ScanMode } from '@/core/scanner/checks/types';
@@ -82,15 +81,15 @@ export async function POST(req: NextRequest) {
     // 4. Record monthly scan usage
     // Usage is reserved atomically with job creation.
 
-    // 2. Execute scan job
-    const result = await executeScanJob(scanJob.id);
+    // A separate durable worker executes queued jobs; web requests never own scan lifetimes.
 
     return NextResponse.json(
       {
         success: true,
         data: {
-          scanJob: result.scanJob,
-          findingsCount: result.findings.length,
+          scanJob,
+          findingsCount: 0,
+          pollUrl: `/api/scans/${scanJob.id}`,
         },
       },
       { status: 201 }

@@ -15,9 +15,9 @@ const CATEGORY_LABELS: Record<AcademyCategory, string> = {
 };
 
 const DIFFICULTY_COLORS: Record<DifficultyLevel, { bg: string; text: string; border: string }> = {
-  BEGINNER: { bg: 'rgba(16, 185, 129, 0.15)', text: '#10b981', border: 'rgba(16, 185, 129, 0.3)' },
-  INTERMEDIATE: { bg: 'rgba(245, 158, 11, 0.15)', text: '#f59e0b', border: 'rgba(245, 158, 11, 0.3)' },
-  ADVANCED: { bg: 'rgba(239, 68, 68, 0.15)', text: '#ef4444', border: 'rgba(239, 68, 68, 0.3)' },
+  BEGINNER: { bg: 'rgba(16, 185, 129, 0.15)', text: 'var(--ds-success)', border: 'rgba(16, 185, 129, 0.3)' },
+  INTERMEDIATE: { bg: 'rgba(245, 158, 11, 0.15)', text: 'var(--ds-warning)', border: 'rgba(245, 158, 11, 0.3)' },
+  ADVANCED: { bg: 'rgba(239, 68, 68, 0.15)', text: 'var(--ds-danger)', border: 'rgba(239, 68, 68, 0.3)' },
 };
 
 export default function DashboardAcademyPage() {
@@ -57,17 +57,17 @@ export default function DashboardAcademyPage() {
   }, [searchQuery, selectedCategory, selectedTrack, selectedDifficulty]);
 
   return (
-    <div className="container" style={{ padding: '2rem 1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="container zx-page" style={{ padding: '2rem 1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }} data-responsive-row >
           <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             Security Academy & Playbooks
           </h1>
           <span
             style={{
               backgroundColor: 'rgba(37, 99, 235, 0.15)',
-              color: '#60a5fa',
+              color: 'var(--ds-text-link)',
               border: '1px solid rgba(37, 99, 235, 0.3)',
               padding: '0.2rem 0.6rem',
               borderRadius: '4px',
@@ -99,7 +99,7 @@ export default function DashboardAcademyPage() {
             color: 'var(--text-primary)',
             fontSize: '0.95rem',
           }}
-        />
+         aria-label="Search Query" />
       </div>
 
       {/* Filter Tabs */}
@@ -111,7 +111,7 @@ export default function DashboardAcademyPage() {
           alignItems: 'center',
           marginBottom: '1rem',
         }}
-      >
+       data-responsive-row >
         <button
           onClick={() => setSelectedCategory('ALL')}
           style={{
@@ -159,9 +159,9 @@ export default function DashboardAcademyPage() {
           borderBottom: '1px solid var(--border-subtle)',
           paddingBottom: '1rem',
         }}
-      >
+       data-responsive-row >
         {/* Track filter pills */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }} data-responsive-row >
           <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Track:</span>
           <button
             onClick={() => setSelectedTrack('ALL')}
@@ -199,7 +199,7 @@ export default function DashboardAcademyPage() {
         </div>
 
         {/* Difficulty filter */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} data-responsive-row >
           <label htmlFor="diff-filter" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
             Difficulty:
           </label>
@@ -228,7 +228,7 @@ export default function DashboardAcademyPage() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))',
           gap: '1.25rem',
         }}
       >
@@ -248,7 +248,7 @@ export default function DashboardAcademyPage() {
               }}
             >
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }} data-responsive-row >
                   <span
                     style={{
                       backgroundColor: diffStyle.bg,
@@ -268,7 +268,7 @@ export default function DashboardAcademyPage() {
                 </div>
 
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 0.5rem 0', lineHeight: 1.4 }}>
-                  <Link href={`/academy/${article.slug}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                  <Link href={`/dashboard/academy/${article.slug}`} style={{ color: 'inherit', textDecoration: 'none' }}>
                     {article.title}
                   </Link>
                 </h3>
@@ -277,7 +277,7 @@ export default function DashboardAcademyPage() {
                   {article.summary}
                 </p>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '1rem' }} data-responsive-row >
                   {article.relatedRuleIds.map((rule) => (
                     <span
                       key={rule}
@@ -285,7 +285,7 @@ export default function DashboardAcademyPage() {
                         fontFamily: 'monospace',
                         fontSize: '0.7rem',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        color: '#60a5fa',
+                        color: 'var(--ds-text-link)',
                         padding: '0.1rem 0.35rem',
                         borderRadius: '3px',
                       }}
@@ -296,12 +296,12 @@ export default function DashboardAcademyPage() {
                 </div>
               </div>
 
-              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} data-responsive-row >
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                   {CATEGORY_LABELS[article.category]}
                 </span>
                 <Link
-                  href={`/academy/${article.slug}`}
+                  href={`/dashboard/academy/${article.slug}`}
                   style={{
                     color: 'var(--accent-primary)',
                     fontWeight: 600,

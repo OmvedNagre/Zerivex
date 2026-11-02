@@ -110,7 +110,7 @@ export async function runPlatformSelfScan(
   const startTime = Date.now();
   const scanId = `self-scan-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
   const env = getEnvConfig();
-  const targetUrl = options.targetUrl || env.NEXT_PUBLIC_APP_URL || 'https://zerivex.com';
+  const targetUrl = options.targetUrl || env.NEXT_PUBLIC_APP_URL || 'https://zerivex.tech';
 
   const checkResults: SelfScanCheckResult[] = [];
   const allFindings: RawFinding[] = [];

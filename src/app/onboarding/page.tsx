@@ -213,7 +213,7 @@ export default function OnboardingPage() {
         </header>
 
         {/* Step Progress Dots */}
-        <div className="zob-progress" aria-label={`Step ${step} of 5`}>
+        <div className="zob-progress" role="group" aria-label={`Step ${step} of 5`}>
           {[1, 2, 3, 4, 5].map((s) => (
             <div
               key={s}

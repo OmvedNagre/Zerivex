@@ -76,11 +76,14 @@ export function StaggeredText({
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        whiteSpace: 'pre',
+        whiteSpace: 'normal',
+        flexWrap: 'wrap',
+        maxWidth: '100%',
         ...style,
       }}
-      aria-label={text}
+
     >
+      <span className="sr-only">{text}</span>
       {characters.map((char, index) => (
         <span
           key={`${char}-${index}`}

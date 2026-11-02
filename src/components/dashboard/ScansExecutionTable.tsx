@@ -583,7 +583,7 @@ export function ScansExecutionTable({
 
         {/* Loading State */}
         {loading ? (
-          <div className="zse-skeleton-container" aria-busy="true" aria-label="Loading scan execution records">
+          <div className="zse-skeleton-container" role="status" aria-busy="true" aria-label="Loading scan execution records">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="zse-skeleton-row">
                 <div className="zse-skeleton-box" style={{ width: '240px', height: '22px' }} />

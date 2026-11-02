@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     const subscription = await getSubscriptionByOrgId(orgCtx.organizationId);
 
-    const origin = req.nextUrl.origin || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const origin = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin;
     const returnUrl = `${origin}/dashboard/billing`;
 
     const portal = await createStripePortalSession({

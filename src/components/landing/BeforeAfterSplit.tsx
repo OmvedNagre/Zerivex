@@ -108,7 +108,7 @@ export async function GET(req: Request) {
   });
 }`,
         after: `// Verified: Whitelist explicit allowed origin only
-const ALLOWED_ORIGIN = process.env.TRUSTED_ORIGIN || 'https://app.zerivex.com';
+const ALLOWED_ORIGIN = process.env.TRUSTED_ORIGIN || 'https://zerivex.tech';
 
 export async function GET(req: Request) {
   const origin = req.headers.get('origin');
@@ -131,7 +131,7 @@ app.use(cors({ origin: true, credentials: true }));`,
         after: `// Verified: Restrict CORS to authorized frontend domain
 import cors from 'cors';
 
-const allowedOrigins = ['https://app.zerivex.com'];
+const allowedOrigins = ['https://zerivex.tech'];
 app.use(
   cors({
     origin: (origin, callback) => {

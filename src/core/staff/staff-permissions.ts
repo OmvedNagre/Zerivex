@@ -30,8 +30,6 @@ export const STAFF_PERMISSIONS: Record<StaffRole, StaffPermission[]> = {
     'RECONCILE_BILLING',
     'MANAGE_STAFF',
     'SYSTEM_SETTINGS',
-    'PLAN_PREVIEW_ANY',
-    'PLAN_PREVIEW_PRO',
   ],
   STAFF_ADMIN: [
     'CUSTOMER_PORTAL_ALL',
@@ -43,15 +41,12 @@ export const STAFF_PERMISSIONS: Record<StaffRole, StaffPermission[]> = {
     'GRANT_CREDITS',
     'VIEW_BILLING',
     'RECONCILE_BILLING',
-    'PLAN_PREVIEW_ANY',
-    'PLAN_PREVIEW_PRO',
   ],
   STAFF_SUPPORT: [
     'CUSTOMER_PORTAL_PRO',
     'VIEW_ORGS',
     'VIEW_QUEUE',
     'VIEW_SECURITY_EVENTS',
-    'PLAN_PREVIEW_PRO',
   ],
 };
 
@@ -83,12 +78,9 @@ export function can(
  * Returns entitlements for staff members operating in the Customer Portal.
  * Support references the Pro plan directly so updates to Pro flow through.
  */
-export function entitlementsForStaff(role: StaffRole): PlanFeatures {
-  if (role === 'STAFF_SUPPORT') {
-    return { ...PLANS.PRO.features };
-  }
-  // STAFF_OWNER and STAFF_ADMIN receive full platform enterprise capabilities
-  return { ...PLANS.ENTERPRISE.features };
+/** Legacy display helper; staff permissions never confer a paid customer plan. */
+export function entitlementsForStaff(_role: StaffRole): PlanFeatures {
+  return { ...PLANS.STARTER.features };
 }
 
 export const VALID_STAFF_ROLES: readonly StaffRole[] = [

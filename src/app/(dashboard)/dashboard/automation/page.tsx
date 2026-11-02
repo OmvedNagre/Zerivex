@@ -52,7 +52,7 @@ export default function AutomationPage() {
   }, []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }} className="zx-page" >
       {/* Page Header (eyebrow -> H1 -> subtitle -> brand CTA) */}
       <div
         style={{
@@ -62,7 +62,7 @@ export default function AutomationPage() {
           gap: '24px',
           flexWrap: 'wrap',
         }}
-      >
+       data-responsive-row >
         <div>
           <div
             style={{
@@ -100,7 +100,7 @@ export default function AutomationPage() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px' }} data-responsive-row >
           <Button variant="secondary" onClick={fetchData} icon={<RefreshCw size={14} />}>
             Refresh
           </Button>
@@ -121,7 +121,7 @@ export default function AutomationPage() {
           borderBottom: '1px solid var(--ds-border-subtle)',
           gap: '24px',
         }}
-      >
+       data-responsive-row >
         <button
           type="button"
           onClick={() => setActiveTab('schedules')}
@@ -227,7 +227,7 @@ export default function AutomationPage() {
               overflow: 'hidden',
               boxShadow: 'var(--ds-shadow-1)',
             }}
-          >
+           tabIndex={0} role="region" aria-label="Scrollable records"  className="zx-table-scroll" >
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--ds-border-subtle)', backgroundColor: 'var(--ds-bg-subtle)' }}>
@@ -294,7 +294,7 @@ export default function AutomationPage() {
               boxShadow: 'var(--ds-shadow-1)',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }} data-responsive-row >
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 6px', color: 'var(--ds-text-primary)' }}>
                   Organization Quality Gate Policy
@@ -334,7 +334,7 @@ export default function AutomationPage() {
             </div>
 
             {qualityGatePolicy ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginTop: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '16px', marginTop: '16px' }}>
                 <div style={{ padding: '14px', borderRadius: 'var(--ds-radius-md)', backgroundColor: 'var(--ds-bg-subtle)' }}>
                   <div style={{ fontSize: '11px', color: 'var(--ds-text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
                     Min Score Threshold
@@ -399,7 +399,7 @@ export default function AutomationPage() {
                       borderRadius: 'var(--ds-radius-md)',
                       border: '1px solid var(--ds-border-subtle)',
                     }}
-                  >
+                   data-responsive-row >
                     <div>
                       <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ds-text-primary)' }}>
                         {t.hostname || t.targetUrl}

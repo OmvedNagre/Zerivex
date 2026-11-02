@@ -1,4 +1,7 @@
 'use client';
+import { getStatusLabel } from '@/lib/labels';
+
+import { Modal } from '@/components/ui/Modal';
 
 import { useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
@@ -40,9 +43,9 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
   const [fixResult, setFixResult] = useState<{ fixed: boolean; diagnostic: string } | null>(null);
   const [fixResults, setFixResults] = useState<Record<string, { fixed: boolean; diagnostic: string }>>({});
 
-  const fetchScanReport = useCallback(async () => {
+  const fetchScanReport = useCallback(async (background = false) => {
     try {
-      setLoading(true);
+      if (!background) setLoading(true);
       const res = await fetch(`/api/scans/${id}`);
       const data = await res.json();
       if (!res.ok) {
@@ -61,6 +64,12 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
   useEffect(() => {
     fetchScanReport();
   }, [fetchScanReport]);
+
+  useEffect(() => {
+    if (!scan || !['QUEUED', 'RUNNING'].includes(scan.status)) return;
+    const timer = setInterval(() => { fetchScanReport(true); }, 3000);
+    return () => clearInterval(timer);
+  }, [scan?.status, fetchScanReport]);
 
   const toggleExpand = (findingId: string) => {
     setExpandedFindings((prev) => ({
@@ -206,15 +215,15 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
 
   const getScoreColor = (score: number | null) => {
     if (score === null) return '#94a3b8';
-    if (score >= 85) return '#34d399';
-    if (score >= 70) return '#fbbf24';
-    if (score >= 50) return '#fb923c';
-    return '#f87171';
+    if (score >= 85) return 'var(--ds-success)';
+    if (score >= 70) return 'var(--ds-warning)';
+    if (score >= 50) return 'var(--ds-warning)';
+    return 'var(--ds-danger)';
   };
 
   if (loading) {
     return (
-      <div className="container" style={{ padding: '3rem 1.5rem', textAlign: 'center' }}>
+      <div className="container zx-page" style={{ padding: '3rem 1.5rem', textAlign: 'center' }}>
         <p style={{ color: 'var(--text-secondary)' }}>Loading security scan report...</p>
       </div>
     );
@@ -222,9 +231,9 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
 
   if (error || !scan) {
     return (
-      <div className="container" style={{ padding: '3rem 1.5rem' }}>
+      <div className="container zx-page" style={{ padding: '3rem 1.5rem' }}>
         <div className="card" style={{ borderColor: 'rgba(239, 68, 68, 0.3)', backgroundColor: 'rgba(239, 68, 68, 0.05)' }}>
-          <h2 style={{ color: '#f87171', marginBottom: '0.75rem' }}>Scan Report Error</h2>
+          <h2 style={{ color: 'var(--ds-danger)', marginBottom: '0.75rem' }}>Scan Report Error</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
             {error || 'Unable to retrieve scan report.'}
           </p>
@@ -243,10 +252,10 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
   const lowCount = findings.filter((f) => f.severity === 'LOW').length;
 
   return (
-    <div className="container" style={{ padding: '2rem 1.5rem 5rem' }}>
+    <div className="container zx-page" style={{ padding: '2rem 1.5rem 5rem' }}>
       {/* Breadcrumb & Navigation */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }} data-responsive-row >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }} data-responsive-row >
           <Link href="/dashboard/scans" style={{ color: 'var(--text-secondary)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
             <ArrowLeft size={14} /> All Scans
           </Link>
@@ -257,7 +266,7 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
         </div>
 
         {/* Action Buttons: Export Report & New Scan */}
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }} data-responsive-row >
           <button
             onClick={handleRescanTarget}
             disabled={rescanning}
@@ -318,12 +327,12 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
             backgroundColor: 'rgba(239, 68, 68, 0.12)',
             border: '1px solid rgba(239, 68, 68, 0.3)',
             borderRadius: 'var(--radius-md)',
-            color: '#f87171',
+            color: 'var(--ds-danger)',
             fontSize: '0.9rem',
             marginBottom: '1.5rem',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }} data-responsive-row >
             <AlertTriangle size={14} /> {rescanError}
           </div>
         </div>
@@ -343,14 +352,14 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
             gap: '2rem',
             alignItems: 'center',
           }}
         >
           {/* Left Column: Target & Status */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }} data-responsive-row >
               <span
                 style={{
                   fontSize: '0.75rem',
@@ -368,15 +377,15 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
                       : 'rgba(148, 163, 184, 0.15)',
                   color:
                     scan.status === 'COMPLETED'
-                      ? '#34d399'
+                      ? 'var(--ds-success)'
                       : scan.status === 'RUNNING'
-                      ? '#60a5fa'
+                      ? 'var(--ds-text-link)'
                       : scan.status === 'FAILED'
-                      ? '#f87171'
+                      ? 'var(--ds-danger)'
                       : '#94a3b8',
                 }}
               >
-                {scan.status}
+                {getStatusLabel(scan.status)}
               </span>
 
               <span
@@ -405,7 +414,7 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
               {scan.targetUrl}
             </h1>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.25rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.25rem', color: 'var(--text-muted)', fontSize: '0.85rem' }} data-responsive-row >
               <div>
                 Triggered:{' '}
                 <span style={{ color: 'var(--text-secondary)' }}>
@@ -438,12 +447,12 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
               alignItems: 'center',
               justifyContent: 'center',
               gap: '2.5rem',
-              backgroundColor: 'rgba(0, 0, 0, 0.25)',
+              backgroundColor: 'var(--ds-bg-subtle)',
               padding: '1.75rem',
               borderRadius: 'var(--radius-md)',
               border: '1px solid var(--border-subtle)',
             }}
-          >
+           data-responsive-row >
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
                 Security Score
@@ -462,7 +471,7 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
               </div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.35rem' }}>
                 {scan.score === null
-                  ? 'Pending Analysis'
+                  ? scan.status === 'FAILED' ? 'Assessment incomplete — no security score' : scan.status === 'QUEUED' || scan.status === 'RUNNING' ? 'Assessment in progress' : 'No security score available'
                   : scan.score >= 85
                   ? 'Strong Baseline'
                   : scan.score >= 70
@@ -475,18 +484,18 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
                 Confirmed Findings:
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: '0.4rem 1rem', fontSize: '0.85rem' }}>
-                <span style={{ color: '#f87171', fontWeight: 600 }}>Critical:</span>
-                <span style={{ fontFamily: 'monospace', color: '#f87171' }}>{criticalCount}</span>
+              <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: '0.4rem 1rem', fontSize: '0.85rem' }} data-responsive-grid >
+                <span style={{ color: 'var(--ds-danger)', fontWeight: 600 }}>Critical:</span>
+                <span style={{ fontFamily: 'monospace', color: 'var(--ds-danger)' }}>{criticalCount}</span>
 
-                <span style={{ color: '#fb923c', fontWeight: 600 }}>High:</span>
-                <span style={{ fontFamily: 'monospace', color: '#fb923c' }}>{highCount}</span>
+                <span style={{ color: 'var(--ds-warning)', fontWeight: 600 }}>High:</span>
+                <span style={{ fontFamily: 'monospace', color: 'var(--ds-warning)' }}>{highCount}</span>
 
-                <span style={{ color: '#fbbf24', fontWeight: 600 }}>Medium:</span>
-                <span style={{ fontFamily: 'monospace', color: '#fbbf24' }}>{mediumCount}</span>
+                <span style={{ color: 'var(--ds-warning)', fontWeight: 600 }}>Medium:</span>
+                <span style={{ fontFamily: 'monospace', color: 'var(--ds-warning)' }}>{mediumCount}</span>
 
-                <span style={{ color: '#60a5fa', fontWeight: 600 }}>Low:</span>
-                <span style={{ fontFamily: 'monospace', color: '#60a5fa' }}>{lowCount}</span>
+                <span style={{ color: 'var(--ds-text-link)', fontWeight: 600 }}>Low:</span>
+                <span style={{ fontFamily: 'monospace', color: 'var(--ds-text-link)' }}>{lowCount}</span>
               </div>
             </div>
           </div>
@@ -494,7 +503,7 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
       </div>
 
       {/* Filter and Findings Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }} data-responsive-row >
         <div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>
             Scan Findings ({filteredFindings.length})
@@ -504,7 +513,7 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }} data-responsive-row >
           <input
             type="text"
             placeholder="Search findings or rule ID..."
@@ -519,7 +528,7 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
               fontSize: '0.85rem',
               width: '220px',
             }}
-          />
+           aria-label="Search Query" />
 
           <select
             value={severityFilter}
@@ -532,7 +541,7 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
               color: 'var(--text-primary)',
               fontSize: '0.85rem',
             }}
-          >
+           aria-label="Severity Filter" >
             <option value="ALL">All Severities</option>
             <option value="CRITICAL">Critical</option>
             <option value="HIGH">High</option>
@@ -553,14 +562,14 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
             border: '1px solid var(--border-subtle)',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem', color: 'var(--text-muted)' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem', color: 'var(--text-muted)' }} data-responsive-row >
             <Shield size={36} />
           </div>
           <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
-            {findings.length === 0 ? 'No Security Vulnerabilities Detected' : 'No findings match current filter'}
+            {findings.length > 0 ? 'No findings match your filters' : scan.status === 'COMPLETED' ? 'No findings reported' : 'Assessment incomplete'}
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '500px', margin: '0 auto' }}>
-            All deterministic checks passed with clean responses.
+            {findings.length > 0 ? 'Change or clear the filters to review the recorded findings.' : scan.status === 'COMPLETED' ? 'No findings were recorded. Review check coverage before treating the target as secure.' : 'This scan did not establish a complete result. Review the failure details and retry when the target is reachable.'}
           </p>
         </div>
       ) : (
@@ -599,31 +608,7 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
 
       {/* Status Update Modal */}
       {selectedFinding && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '1.5rem',
-          }}
-        >
-          <div
-            className="card"
-            style={{
-              width: '100%',
-              maxWidth: '520px',
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
-              padding: '1.75rem',
-            }}
-          >
+        <Modal isOpen onClose={() => setSelectedFinding(null)} ariaLabel="Update finding status" className="zx-customer-dialog" size="md">
             <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
               Update Finding Status
             </h3>
@@ -638,7 +623,7 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
                   borderRadius: 'var(--radius-sm)',
                   backgroundColor: 'rgba(239, 68, 68, 0.1)',
                   border: '1px solid rgba(239, 68, 68, 0.25)',
-                  color: '#f87171',
+                  color: 'var(--ds-danger)',
                   fontSize: '0.85rem',
                   marginBottom: '1rem',
                 }}
@@ -649,7 +634,7 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
 
             <form onSubmit={handleUpdateStatus}>
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }} htmlFor="field-src-app--dashboard--dashboard-scans--id--page-tsx-0" >
                   Lifecycle Status
                 </label>
                 <select
@@ -664,7 +649,7 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
                     color: 'var(--text-primary)',
                     fontSize: '0.9rem',
                   }}
-                >
+                 id="field-src-app--dashboard--dashboard-scans--id--page-tsx-0" >
                   <option value="OPEN">OPEN (Needs Remediation)</option>
                   <option value="CONFIRMED">CONFIRMED (Triage Verified)</option>
                   <option value="FIXED">FIXED (Resolved)</option>
@@ -675,7 +660,7 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
 
               {newStatus === 'ACCEPTED_RISK' && (
                 <div style={{ marginBottom: '1.25rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#fbbf24', marginBottom: '0.4rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--ds-warning)', marginBottom: '0.4rem' }} htmlFor="field-src-app--dashboard--dashboard-scans--id--page-tsx-1" >
                     Required Business Justification
                   </label>
                   <textarea
@@ -694,11 +679,11 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
                       fontSize: '0.85rem',
                       fontFamily: 'inherit',
                     }}
-                  />
+                   id="field-src-app--dashboard--dashboard-scans--id--page-tsx-1" />
                 </div>
               )}
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }} data-responsive-row >
                 <button
                   type="button"
                   onClick={() => setSelectedFinding(null)}
@@ -716,8 +701,7 @@ export default function ScanReportPage({ params }: { params: Promise<{ id: strin
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </Modal>
       )}
     </div>
   );

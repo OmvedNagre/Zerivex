@@ -1,5 +1,7 @@
 'use client';
 
+import { Modal } from '@/components/ui/Modal';
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { X, Building2 } from 'lucide-react';
@@ -228,7 +230,7 @@ export default function AgencyHubPage() {
   }
 
   return (
-    <div className="container" style={{ padding: '2rem 1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="container zx-page" style={{ padding: '2rem 1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Top Header */}
       <div
         style={{
@@ -239,16 +241,16 @@ export default function AgencyHubPage() {
           flexWrap: 'wrap',
           gap: '1rem',
         }}
-      >
+       data-responsive-row >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }} data-responsive-row >
             <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
               Agency Hub
             </h1>
             <span
               style={{
                 backgroundColor: 'rgba(99, 102, 241, 0.15)',
-                color: '#818cf8',
+                color: 'var(--ds-text-link)',
                 border: '1px solid rgba(99, 102, 241, 0.3)',
                 padding: '0.2rem 0.6rem',
                 borderRadius: '4px',
@@ -266,24 +268,11 @@ export default function AgencyHubPage() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem' }} data-responsive-row >
           <button
             onClick={() => setIsClientModalOpen(true)}
-            style={{
-              backgroundColor: 'var(--accent-primary)',
-              color: '#fff',
-              border: 'none',
-              padding: '0.65rem 1.25rem',
-              borderRadius: 'var(--radius-sm)',
-              fontWeight: 600,
-              fontSize: '0.9rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              transition: 'opacity 0.2s',
-            }}
-          >
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'opacity 0.2s' }}
+           className="zx-btn zx-btn--brand zx-btn--md" >
             <span>+</span> Provision Client Workspace
           </button>
         </div>
@@ -297,7 +286,7 @@ export default function AgencyHubPage() {
           borderBottom: '1px solid var(--border-subtle)',
           marginBottom: '1.75rem',
         }}
-      >
+       data-responsive-row >
         <button
           onClick={() => setActiveTab('portfolio')}
           style={{
@@ -338,18 +327,18 @@ export default function AgencyHubPage() {
             backgroundColor: 'rgba(239, 68, 68, 0.1)',
             border: '1px solid rgba(239, 68, 68, 0.3)',
             borderRadius: 'var(--radius-sm)',
-            color: '#ef4444',
+            color: 'var(--ds-danger)',
             fontSize: '0.9rem',
             marginBottom: '1.5rem',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
           }}
-        >
+         data-responsive-row >
           <span>{error}</span>
           <button
             onClick={() => setError(null)}
-            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            style={{ background: 'none', border: 'none', color: 'var(--ds-danger)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           >
             <X size={16} />
           </button>
@@ -363,18 +352,18 @@ export default function AgencyHubPage() {
             backgroundColor: 'rgba(16, 185, 129, 0.1)',
             border: '1px solid rgba(16, 185, 129, 0.3)',
             borderRadius: 'var(--radius-sm)',
-            color: '#10b981',
+            color: 'var(--ds-success)',
             fontSize: '0.9rem',
             marginBottom: '1.5rem',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
           }}
-        >
+         data-responsive-row >
           <span>{successMsg}</span>
           <button
             onClick={() => setSuccessMsg(null)}
-            style={{ background: 'none', border: 'none', color: '#10b981', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            style={{ background: 'none', border: 'none', color: 'var(--ds-success)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           >
             <X size={16} />
           </button>
@@ -388,7 +377,7 @@ export default function AgencyHubPage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
               gap: '1.25rem',
               marginBottom: '2rem',
             }}
@@ -407,7 +396,7 @@ export default function AgencyHubPage() {
               <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '0.4rem' }}>
                 {portfolio?.totalClients ?? 0}
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#10b981', marginTop: '0.2rem' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--ds-success)', marginTop: '0.2rem' }}>
                 {portfolio?.clients.filter((c) => c.status === 'ACTIVE').length ?? 0} active organizations
               </div>
             </div>
@@ -432,10 +421,10 @@ export default function AgencyHubPage() {
                     portfolio?.meanSecurityScore === null || portfolio?.meanSecurityScore === undefined
                       ? 'var(--text-secondary)'
                       : portfolio.meanSecurityScore >= 85
-                      ? '#10b981'
+                      ? 'var(--ds-success)'
                       : portfolio.meanSecurityScore >= 70
-                      ? '#f59e0b'
-                      : '#ef4444',
+                      ? 'var(--ds-warning)'
+                      : 'var(--ds-danger)',
                 }}
               >
                 {portfolio?.meanSecurityScore !== null && portfolio?.meanSecurityScore !== undefined
@@ -477,9 +466,9 @@ export default function AgencyHubPage() {
               <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
                 Aggregated Critical / High
               </div>
-              <div style={{ fontSize: '2rem', fontWeight: 700, color: '#ef4444', marginTop: '0.4rem' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--ds-danger)', marginTop: '0.4rem' }}>
                 {portfolio?.totalCriticalFindings ?? 0}
-                <span style={{ fontSize: '1.2rem', color: '#f97316', marginLeft: '0.5rem' }}>
+                <span style={{ fontSize: '1.2rem', color: 'var(--ds-warning)', marginLeft: '0.5rem' }}>
                   / {portfolio?.totalHighFindings ?? 0} High
                 </span>
               </div>
@@ -506,7 +495,7 @@ export default function AgencyHubPage() {
                 justifyContent: 'space-between',
                 alignItems: 'center',
               }}
-            >
+             data-responsive-row >
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
                 Managed Client Accounts ({portfolio?.clients?.length ?? 0})
               </h3>
@@ -532,7 +521,7 @@ export default function AgencyHubPage() {
               </div>
             ) : !portfolio?.clients || portfolio.clients.length === 0 ? (
               <div style={{ padding: '3.5rem', textAlign: 'center' }}>
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem', color: 'var(--text-muted)' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem', color: 'var(--text-muted)' }} data-responsive-row >
                   <Building2 size={36} />
                 </div>
                 <h4 style={{ color: 'var(--text-primary)', margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>
@@ -543,21 +532,13 @@ export default function AgencyHubPage() {
                 </p>
                 <button
                   onClick={() => setIsClientModalOpen(true)}
-                  style={{
-                    backgroundColor: 'var(--accent-primary)',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '0.65rem 1.25rem',
-                    borderRadius: 'var(--radius-sm)',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
+                  style={{ cursor: 'pointer' }}
+                 className="zx-btn zx-btn--brand zx-btn--md" >
                   Provision First Client
                 </button>
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
+              <div style={{ overflowX: 'auto' }} tabIndex={0} role="region" aria-label="Scrollable records"  className="zx-table-scroll" >
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase' }}>
@@ -576,10 +557,10 @@ export default function AgencyHubPage() {
                         score === null
                           ? 'var(--text-secondary)'
                           : score >= 85
-                          ? '#10b981'
+                          ? 'var(--ds-success)'
                           : score >= 70
-                          ? '#f59e0b'
-                          : '#ef4444';
+                          ? 'var(--ds-warning)'
+                          : 'var(--ds-danger)';
 
                       return (
                         <tr
@@ -607,7 +588,7 @@ export default function AgencyHubPage() {
                                   client.status === 'ACTIVE'
                                     ? 'rgba(16, 185, 129, 0.15)'
                                     : 'rgba(239, 68, 68, 0.15)',
-                                color: client.status === 'ACTIVE' ? '#10b981' : '#ef4444',
+                                color: client.status === 'ACTIVE' ? 'var(--ds-success)' : 'var(--ds-danger)',
                               }}
                             >
                               {client.status}
@@ -622,11 +603,11 @@ export default function AgencyHubPage() {
                             </span>
                           </td>
                           <td style={{ padding: '1rem 1rem' }}>
-                            <span style={{ color: client.criticalFindingsCount > 0 ? '#ef4444' : 'var(--text-secondary)', fontWeight: 600 }}>
+                            <span style={{ color: client.criticalFindingsCount > 0 ? 'var(--ds-danger)' : 'var(--text-secondary)', fontWeight: 600 }}>
                               {client.criticalFindingsCount} Critical
                             </span>
                             <span style={{ color: 'var(--text-secondary)', margin: '0 0.3rem' }}>/</span>
-                            <span style={{ color: client.highFindingsCount > 0 ? '#f97316' : 'var(--text-secondary)', fontWeight: 600 }}>
+                            <span style={{ color: client.highFindingsCount > 0 ? 'var(--ds-warning)' : 'var(--text-secondary)', fontWeight: 600 }}>
                               {client.highFindingsCount} High
                             </span>
                           </td>
@@ -639,7 +620,7 @@ export default function AgencyHubPage() {
                               style={{
                                 background: 'rgba(59, 130, 246, 0.1)',
                                 border: '1px solid rgba(59, 130, 246, 0.25)',
-                                color: '#60a5fa',
+                                color: 'var(--ds-text-link)',
                                 padding: '0.35rem 0.75rem',
                                 borderRadius: '4px',
                                 fontSize: '0.8rem',
@@ -663,7 +644,7 @@ export default function AgencyHubPage() {
 
       {/* TAB 2: WHITE-LABEL BRANDING */}
       {activeTab === 'branding' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '2rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: '2rem' }}>
           {/* Settings Form */}
           <div
             style={{
@@ -682,7 +663,7 @@ export default function AgencyHubPage() {
 
             <form onSubmit={handleSaveBranding}>
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.4rem' }} htmlFor="field-src-app--dashboard--dashboard-agency-page-tsx-0" >
                   Agency / Company Name *
                 </label>
                 <input
@@ -700,11 +681,11 @@ export default function AgencyHubPage() {
                     color: 'var(--text-primary)',
                     fontSize: '0.9rem',
                   }}
-                />
+                 id="field-src-app--dashboard--dashboard-agency-page-tsx-0" />
               </div>
 
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.4rem' }} htmlFor="field-src-app--dashboard--dashboard-agency-page-tsx-1" >
                   Brand Logo URL
                 </label>
                 <input
@@ -721,14 +702,14 @@ export default function AgencyHubPage() {
                     color: 'var(--text-primary)',
                     fontSize: '0.9rem',
                   }}
-                />
+                 id="field-src-app--dashboard--dashboard-agency-page-tsx-1" />
               </div>
 
               <div style={{ marginBottom: '1.25rem' }}>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
                   Primary Brand Accent Color
                 </label>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }} data-responsive-row >
                   <input
                     type="color"
                     value={branding.primaryColor || '#3b82f6'}
@@ -742,7 +723,7 @@ export default function AgencyHubPage() {
                       cursor: 'pointer',
                       background: 'none',
                     }}
-                  />
+                   aria-label="Primary Color" />
                   <input
                     type="text"
                     value={branding.primaryColor}
@@ -758,12 +739,12 @@ export default function AgencyHubPage() {
                       fontSize: '0.9rem',
                       fontFamily: 'monospace',
                     }}
-                  />
+                   aria-label="Primary Color" />
                 </div>
               </div>
 
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.4rem' }} htmlFor="field-src-app--dashboard--dashboard-agency-page-tsx-2" >
                   Support / Advisory Email
                 </label>
                 <input
@@ -780,11 +761,11 @@ export default function AgencyHubPage() {
                     color: 'var(--text-primary)',
                     fontSize: '0.9rem',
                   }}
-                />
+                 id="field-src-app--dashboard--dashboard-agency-page-tsx-2" />
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.4rem' }} htmlFor="field-src-app--dashboard--dashboard-agency-page-tsx-3" >
                   Executive Report Footer Disclaimer
                 </label>
                 <textarea
@@ -802,25 +783,14 @@ export default function AgencyHubPage() {
                     fontSize: '0.9rem',
                     resize: 'vertical',
                   }}
-                />
+                 id="field-src-app--dashboard--dashboard-agency-page-tsx-3" />
               </div>
 
               <button
                 type="submit"
                 disabled={savingBranding}
-                style={{
-                  backgroundColor: 'var(--accent-primary)',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: 'var(--radius-sm)',
-                  fontWeight: 600,
-                  fontSize: '0.95rem',
-                  cursor: savingBranding ? 'not-allowed' : 'pointer',
-                  opacity: savingBranding ? 0.7 : 1,
-                  width: '100%',
-                }}
-              >
+                style={{ cursor: savingBranding ? 'not-allowed' : 'pointer', opacity: savingBranding ? 0.7 : 1, width: '100%' }}
+               className="zx-btn zx-btn--brand zx-btn--md" >
                 {savingBranding ? 'Saving White-Label Tokens...' : 'Save Branding Configuration'}
               </button>
             </form>
@@ -835,11 +805,11 @@ export default function AgencyHubPage() {
               padding: '1.75rem',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }} data-responsive-row >
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
                 Executive Report Header Preview
               </h3>
-              <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600 }}>LIVE PREVIEW</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--ds-success)', fontWeight: 600 }}>LIVE PREVIEW</span>
             </div>
 
             <div
@@ -861,7 +831,7 @@ export default function AgencyHubPage() {
                   justifyContent: 'space-between',
                   alignItems: 'flex-end',
                 }}
-              >
+               data-responsive-row >
                 <div>
                   {branding.logoUrl ? (
                     <img
@@ -928,30 +898,8 @@ export default function AgencyHubPage() {
 
       {/* MODAL 1: Provision Client */}
       {isClientModalOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '1rem',
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)',
-              maxWidth: '520px',
-              width: '100%',
-              padding: '1.75rem',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <Modal isOpen onClose={() => setIsClientModalOpen(false)} ariaLabel="Add client organization" className="zx-customer-dialog" size="lg">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }} data-responsive-row >
               <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
                 Provision Client Organization Workspace
               </h3>
@@ -965,7 +913,7 @@ export default function AgencyHubPage() {
 
             <form onSubmit={handleCreateClient}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }} htmlFor="field-src-app--dashboard--dashboard-agency-page-tsx-4" >
                   Client Organization Name *
                 </label>
                 <input
@@ -983,11 +931,11 @@ export default function AgencyHubPage() {
                     color: 'var(--text-primary)',
                     fontSize: '0.9rem',
                   }}
-                />
+                 id="field-src-app--dashboard--dashboard-agency-page-tsx-4" />
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }} htmlFor="field-src-app--dashboard--dashboard-agency-page-tsx-5" >
                   Custom Slug (Optional)
                 </label>
                 <input
@@ -1004,11 +952,11 @@ export default function AgencyHubPage() {
                     color: 'var(--text-primary)',
                     fontSize: '0.9rem',
                   }}
-                />
+                 id="field-src-app--dashboard--dashboard-agency-page-tsx-5" />
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }} htmlFor="field-src-app--dashboard--dashboard-agency-page-tsx-6" >
                   Primary Contact Email (Optional)
                 </label>
                 <input
@@ -1025,11 +973,11 @@ export default function AgencyHubPage() {
                     color: 'var(--text-primary)',
                     fontSize: '0.9rem',
                   }}
-                />
+                 id="field-src-app--dashboard--dashboard-agency-page-tsx-6" />
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }} htmlFor="field-src-app--dashboard--dashboard-agency-page-tsx-7" >
                   Internal Notes (Optional)
                 </label>
                 <textarea
@@ -1047,10 +995,10 @@ export default function AgencyHubPage() {
                     fontSize: '0.9rem',
                     resize: 'vertical',
                   }}
-                />
+                 id="field-src-app--dashboard--dashboard-agency-page-tsx-7" />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }} data-responsive-row >
                 <button
                   type="button"
                   onClick={() => setIsClientModalOpen(false)}
@@ -1069,51 +1017,19 @@ export default function AgencyHubPage() {
                 <button
                   type="submit"
                   disabled={creatingClient}
-                  style={{
-                    backgroundColor: 'var(--accent-primary)',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '0.65rem 1.25rem',
-                    borderRadius: 'var(--radius-sm)',
-                    fontWeight: 600,
-                    cursor: creatingClient ? 'not-allowed' : 'pointer',
-                    opacity: creatingClient ? 0.7 : 1,
-                  }}
-                >
+                  style={{ cursor: creatingClient ? 'not-allowed' : 'pointer', opacity: creatingClient ? 0.7 : 1 }}
+                 className="zx-btn zx-btn--brand zx-btn--md" >
                   {creatingClient ? 'Provisioning...' : 'Provision Workspace'}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </Modal>
       )}
 
       {/* MODAL 2: Grant Stakeholder Access */}
       {isGrantModalOpen && selectedClient && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '1rem',
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)',
-              maxWidth: '480px',
-              width: '100%',
-              padding: '1.75rem',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <Modal isOpen onClose={() => setIsGrantModalOpen(false)} ariaLabel="Grant client access" className="zx-customer-dialog" size="lg">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }} data-responsive-row >
               <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
                 Grant Stakeholder Access
               </h3>
@@ -1131,7 +1047,7 @@ export default function AgencyHubPage() {
 
             <form onSubmit={handleGrantAccess}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }} htmlFor="field-src-app--dashboard--dashboard-agency-page-tsx-8" >
                   Stakeholder User Email *
                 </label>
                 <input
@@ -1149,11 +1065,11 @@ export default function AgencyHubPage() {
                     color: 'var(--text-primary)',
                     fontSize: '0.9rem',
                   }}
-                />
+                 id="field-src-app--dashboard--dashboard-agency-page-tsx-8" />
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }} htmlFor="field-src-app--dashboard--dashboard-agency-page-tsx-9" >
                   Access Role
                 </label>
                 <select
@@ -1168,13 +1084,13 @@ export default function AgencyHubPage() {
                     color: 'var(--text-primary)',
                     fontSize: '0.9rem',
                   }}
-                >
+                 id="field-src-app--dashboard--dashboard-agency-page-tsx-9" >
                   <option value="CLIENT_VIEWER">CLIENT_VIEWER (Read-only reports and findings)</option>
                   <option value="CLIENT_MANAGER">CLIENT_MANAGER (Launch scans and manage targets)</option>
                 </select>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }} data-responsive-row >
                 <button
                   type="button"
                   onClick={() => setIsGrantModalOpen(false)}
@@ -1208,8 +1124,7 @@ export default function AgencyHubPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </Modal>
       )}
     </div>
   );

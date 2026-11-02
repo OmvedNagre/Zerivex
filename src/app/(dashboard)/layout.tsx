@@ -65,6 +65,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <ProtectedRoute>
       <div
+        className="zx-customer-root"
         style={{
           minHeight: '100vh',
           display: 'flex',
@@ -96,8 +97,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <TopBar />
 
           {/* Page Viewport */}
-          <main style={{ flex: 1, padding: '32px 32px 64px' }}>
-            <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+          <main className="zx-page-viewport">
+            <div className="zx-page-container">
               {children}
             </div>
           </main>

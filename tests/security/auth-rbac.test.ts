@@ -43,7 +43,7 @@ describe('Authentication & RBAC Security Controls', () => {
 
   it('assigns role USER to regular non-owner signups', async () => {
     const { userId, role } = await authenticateWithOAuthProfile({
-      provider: 'mock',
+      provider: 'google',
       providerAccountId: 'regular-user-sub-1',
       email: testUserEmail,
       isEmailVerified: true,
@@ -56,34 +56,22 @@ describe('Authentication & RBAC Security Controls', () => {
     expect(userRes.rows[0]?.role).toBe('USER');
   });
 
-  it('promotes user to OWNER when email matches INITIAL_OWNER_EMAIL and is verified', async () => {
+  it('does not promote OAuth users even when email matches INITIAL_OWNER_EMAIL', async () => {
     // Temporarily set INITIAL_OWNER_EMAIL to match testOwnerEmail
     process.env.INITIAL_OWNER_EMAIL = testOwnerEmail;
     _resetConfigForTesting();
 
     const { userId, role } = await authenticateWithOAuthProfile({
-      provider: 'mock',
+      provider: 'google',
       providerAccountId: 'owner-sub-1',
       email: testOwnerEmail,
       isEmailVerified: true,
       displayName: 'True Platform Owner',
     });
 
-    expect(role).toBe('OWNER');
-
-    const userRes = await query<{ role: string }>('SELECT role FROM users WHERE id = $1', [userId]);
-    expect(userRes.rows[0]?.role).toBe('OWNER');
-
-    // Verify platform_bootstraps table has recorded the lock
-    const bootstrapRes = await query<{ owner_user_id: string }>(
-      'SELECT owner_user_id FROM platform_bootstraps WHERE bootstrap_key = $1',
-      [BOOTSTRAP_KEY]
-    );
-    expect(bootstrapRes.rows.length).toBe(1);
-    expect(bootstrapRes.rows[0]?.owner_user_id).toBe(userId);
-
-    const completed = await isBootstrapCompleted();
-    expect(completed).toBe(true);
+    expect(role).toBe('USER');
+    expect((await query<{ role: string }>('SELECT role FROM users WHERE id = $1', [userId])).rows[0]?.role).toBe('USER');
+    expect(await isBootstrapCompleted()).toBe(false);
   });
 
   it('PREVENTS repeated bootstrap: second user with same email or new user CANNOT become owner', async () => {
@@ -92,7 +80,7 @@ describe('Authentication & RBAC Security Controls', () => {
     _resetConfigForTesting();
 
     const { role } = await authenticateWithOAuthProfile({
-      provider: 'mock',
+      provider: 'google',
       providerAccountId: 'attacker-sub-1',
       email: attackerEmail,
       isEmailVerified: true,
@@ -106,7 +94,7 @@ describe('Authentication & RBAC Security Controls', () => {
   it('rejects unverified emails from authenticating', async () => {
     await expect(
       authenticateWithOAuthProfile({
-        provider: 'mock',
+        provider: 'google',
         providerAccountId: 'unverified-sub',
         email: 'unverified@zerivex-test.local',
         isEmailVerified: false,
@@ -116,7 +104,7 @@ describe('Authentication & RBAC Security Controls', () => {
 
   it('enforces Sole Owner Protection: prevents demoting the last remaining OWNER', async () => {
     const ownerRes = await query<{ id: string }>(
-      "SELECT id FROM users WHERE role = 'OWNER' AND email = $1",
+      "UPDATE users SET role = 'OWNER' WHERE email = $1 RETURNING id",
       [testOwnerEmail]
     );
     const ownerId = ownerRes.rows[0]!.id;

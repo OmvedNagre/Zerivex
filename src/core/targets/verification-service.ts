@@ -321,60 +321,11 @@ export async function verifyTarget(params: {
   preferredMethod?: VerificationMethod | 'MANUAL_BYPASS' | 'HTTP_FILE';
   bypass?: boolean;
 }): Promise<VerificationResult> {
-  const target = await getTargetById(params.targetId, params.organizationId);
-
-  // Platform Owner / Development Sandbox instant verification bypass
   if (params.bypass || params.preferredMethod === 'MANUAL_BYPASS') {
-    const now = new Date();
-    const effectiveMethod: VerificationMethod = target.verificationMethod || 'DNS_TXT';
-
-    await query(
-      `
-      UPDATE targets
-      SET 
-        verification_status = 'VERIFIED',
-        verification_method = $1,
-        verified_at = $2,
-        updated_at = NOW()
-      WHERE id = $3 AND organization_id = $4
-      `,
-      [effectiveMethod, now, target.id, params.organizationId]
-    );
-
-    await query(
-      `
-      INSERT INTO domain_verifications (
-        target_id,
-        token,
-        method,
-        expires_at,
-        verified_at
-      )
-      VALUES ($1, $2, $3, NOW() + INTERVAL '1 year', $4)
-      `,
-      [target.id, target.verificationToken, effectiveMethod, now]
-    );
-
-    await recordAuditEvent({
-      organizationId: params.organizationId,
-      actorUserId: params.actorUserId ?? null,
-      action: 'TARGET_VERIFIED',
-      resourceType: 'target',
-      resourceId: target.id,
-      metadata: {
-        method: 'MANUAL_BYPASS',
-        diagnostic: 'Domain ownership verified instantly via Platform Owner / Sandbox authorization.',
-        verifiedAt: now.toISOString(),
-      },
-    });
-
-    return {
-      success: true,
-      diagnostic: 'Domain ownership verified instantly via Platform Owner / Sandbox authorization.',
-      verifiedAt: now,
-    };
+    throw Object.assign(new Error('Manual verification bypasses are disabled. Prove control of the target using DNS or HTTP verification.'), { statusCode: 403 });
   }
 
+  const target = await getTargetById(params.targetId, params.organizationId);
   const method = (params.preferredMethod as VerificationMethod) ?? target.verificationMethod;
   let checkResult: { success: boolean; diagnostic: string };
 

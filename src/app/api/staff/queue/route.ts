@@ -1,3 +1,4 @@
+import { getWorkerHealth } from '@/core/scanner/worker-health';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireStaffPermission } from '@/core/staff/staff-session-service';
 import { query } from '@/core/db/database';
@@ -41,17 +42,25 @@ export async function GET(req: NextRequest) {
       `
     );
 
+    const totals = await query<{ scansLast24h: number; queueDepth: number; failedScans: number }>(`
+      SELECT COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '24 hours')::int AS "scansLast24h",
+        COUNT(*) FILTER (WHERE status IN ('QUEUED', 'RUNNING'))::int AS "queueDepth",
+        COUNT(*) FILTER (WHERE status = 'FAILED' AND created_at >= NOW() - INTERVAL '24 hours')::int AS "failedScans"
+      FROM scan_jobs`);
+
     return NextResponse.json({
       success: true,
       data: {
+        workerHealth: await getWorkerHealth(),
         queue: res.rows,
+        stats: totals.rows[0],
         currentUserRole: staff.role,
       },
     });
   } catch (err: any) {
     return NextResponse.json(
-      { success: false, error: err.message || 'Unauthorized' },
-      { status: err.statusCode || 401 }
+      { success: false, error: err.statusCode ? err.message : 'Unable to load queue records' },
+      { status: err.statusCode || 500 }
     );
   }
 }

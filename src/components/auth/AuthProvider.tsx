@@ -9,8 +9,12 @@ interface AuthContextValue {
   status: AuthStatus;
   user: AuthenticatedUser | null;
   organizationId: string | null;
+  organizationName?: string | null;
   organizationRole: string | null;
   isOwner: boolean;
+  viaStaffPortal: boolean;
+  previewPlanId: string | null;
+  staffRole: string | null;
   refreshSession: () => Promise<void>;
   logout: () => Promise<void>;
   logoutAll: () => Promise<void>;
@@ -22,6 +26,7 @@ const AuthContext = createContext<AuthContextValue>({
   organizationId: null,
   organizationRole: null,
   isOwner: false,
+  viaStaffPortal: false, previewPlanId: null, staffRole: null,
   refreshSession: async () => {},
   logout: async () => {},
   logoutAll: async () => {},
@@ -30,13 +35,18 @@ const AuthContext = createContext<AuthContextValue>({
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('AUTH_LOADING');
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
+  const [organizationName, setOrganizationName] = useState<string | null>(null);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [organizationRole, setOrganizationRole] = useState<string | null>(null);
 
+  const [portalContext, setPortalContext] = useState({ viaStaffPortal: false, previewPlanId: null as string | null, staffRole: null as string | null });
+
   const fetchSession = useCallback(async () => {
+    setStatus('AUTH_LOADING');
     try {
       const res = await fetch('/api/auth/session', {
         headers: { 'Cache-Control': 'no-cache' },
+        signal: AbortSignal.timeout(15000),
       });
 
       if (!res.ok) {
@@ -49,12 +59,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.authenticated && data.user) {
         setUser(data.user);
         setOrganizationId(data.organizationId);
+        setOrganizationName(data.organizationName || null);
         setOrganizationRole(data.organizationRole);
+        setPortalContext({ viaStaffPortal: data.viaStaffPortal === true, previewPlanId: data.previewPlanId || null, staffRole: data.staffRole || null });
         setStatus('AUTHENTICATED');
       } else {
         setUser(null);
         setOrganizationId(null);
         setOrganizationRole(null);
+        setPortalContext({ viaStaffPortal: false, previewPlanId: null, staffRole: null });
         setStatus('UNAUTHENTICATED');
       }
     } catch {
@@ -102,8 +115,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         status,
         user,
         organizationId,
+        organizationName,
         organizationRole,
         isOwner: user?.role === 'OWNER',
+        ...portalContext,
         refreshSession: fetchSession,
         logout,
         logoutAll,

@@ -1,12 +1,13 @@
 'use client';
 
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { StaggeredText } from '@/components/ui/StaggeredText';
-import { AlertTriangle, Terminal } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 export interface LoginFormProps {
   className?: string;
@@ -67,13 +68,15 @@ export function LoginForm({ className = '' }: LoginFormProps) {
       {/* Brand Header */}
       <div className="zal-brand">
         <Link href="/" aria-label="Back to Zerivex home" style={{ textDecoration: 'none', display: 'inline-block' }}>
-          <div className="zal-logo" aria-hidden="true">Z</div>
+          <div className="zal-logo" style={{background:"transparent",width:"auto",height:"auto"}}><BrandLogo /></div>
         </Link>
         <h1 className="zal-title">
           <StaggeredText text="Sign in to Zerivex" respectReducedMotion={true} />
         </h1>
         <p className="zal-subtitle">Security for software built with AI.</p>
       </div>
+
+      {returnTo?.startsWith('/invite/') && <p style={{fontSize:14,lineHeight:1.6}}>New to Zerivex? Your first Google or GitHub sign-in creates your account automatically. Use the email that received the invitation to accept your role.</p>}
 
       {/* Error Presentation */}
       {error && (
@@ -134,25 +137,6 @@ export function LoginForm({ className = '' }: LoginFormProps) {
           <span>Continue with GitHub</span>
         </a>
 
-        {/* Divider: OR DEVELOPMENT ACCESS */}
-        <div className="zal-divider" role="separator" aria-label="Development access options">
-          <div className="zal-divider-line" />
-          <span className="zal-divider-text">or development access</span>
-          <div className="zal-divider-line" />
-        </div>
-
-        {/* Localhost Developer Access (Owner/Admin Sandbox) */}
-        <a
-          href={getLoginUrl('mock')}
-          className="zal-btn-dev"
-          aria-label="Localhost Developer sign-in, development environment only"
-        >
-          <div className="zal-dev-main">
-            <Terminal size={15} aria-hidden="true" />
-            <span>Localhost Developer</span>
-          </div>
-          <span className="zal-dev-sub">Development environment only (Owner / Admin)</span>
-        </a>
       </div>
 
       {/* Trust & Legal Footer */}

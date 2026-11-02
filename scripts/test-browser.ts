@@ -15,13 +15,14 @@ async function main() {
   const schema = `zerivex_browser_${randomUUID().replaceAll('-', '')}`;
   const admin = databasePool(url); let created = false; let server: ChildProcess | undefined; let worker: ChildProcess | undefined;
   const fixture = path.join(os.tmpdir(), `${schema}.json`);
-  const nextEnv = await fs.readFile('next-env.d.ts', 'utf8').catch(() => undefined);
+  const browserWorkspace = await fs.mkdtemp(path.join(os.tmpdir(), 'zerivex-browser-workspace-'));
+  await fs.chmod(browserWorkspace, 0o700);
   const logFile = await fs.open(path.join(os.tmpdir(), `${schema}.log`), 'w', 0o600);
   try {
     await admin.query(`CREATE SCHEMA "${schema}"`); created = true;
     Object.assign(process.env, { DATABASE_URL: directDatabaseUrl(url, schema), NODE_ENV: 'development', NEXT_PUBLIC_APP_URL: 'http://127.0.0.1:3101',
       INITIAL_OWNER_EMAIL: 'browser-owner@example.test', STAFF_ALLOWED_EMAILS: 'browser-owner@example.test', SESSION_SECRET: 'isolated-browser-session-secret-not-production',
-      STRIPE_SECRET_KEY: '', STRIPE_WEBHOOK_SECRET: '', E2E_BASE_URL: 'http://127.0.0.1:3101', E2E_FIXTURE_PATH: fixture });
+      STRIPE_SECRET_KEY: '', STRIPE_WEBHOOK_SECRET: '', TRUST_PROXY_HEADERS: 'true', E2E_BASE_URL: 'http://127.0.0.1:3101', E2E_FIXTURE_PATH: fixture });
     const { runMigrations } = await import('../src/core/db/migrate'); await runMigrations();
     const { query, closeDbPool } = await import('../src/core/db/database');
     const { getUserActiveOrganization } = await import('../src/core/auth/organization-context');
@@ -34,10 +35,24 @@ async function main() {
     await query("INSERT INTO platform_roles (user_id,role) VALUES ($1,'STAFF_OWNER')", [userId]);
     await ensureStaffInternalOrgMembership(userId, 'STAFF_OWNER');
     const customer = await createSession({ userId }); const staff = await createStaffSession({ userId });
-    await fs.writeFile(fixture, JSON.stringify({ customerToken: customer.rawToken, staffToken: staff.rawToken, organizationId: org.organizationId }), { mode: 0o600 });
+    const {inviteMember} = await import('../src/core/teams/team-service');
+    const invitedUsers: Record<string,{recipientToken:string;invitationToken:string}> = {};
+    for (const project of ['desktop','mobile']) {
+      const email=`browser-invitee-${project}@example.test`;
+      const recipientId=(await query<{id:string}>("INSERT INTO users (email,display_name,email_verified_at) VALUES ($1,'Invited Engineer',NOW()) RETURNING id",[email])).rows[0]!.id;
+      const recipient=await createSession({userId:recipientId});
+      const invitation=await inviteMember({organizationId:org.organizationId,email,role:'ORG_MEMBER',actorUserId:userId});
+      invitedUsers[project]={recipientToken:recipient.rawToken,invitationToken:invitation.rawToken};
+    }
+    await fs.writeFile(fixture, JSON.stringify({ customerToken: customer.rawToken, staffToken: staff.rawToken, organizationId: org.organizationId, invitedUsers }), { mode: 0o600 });
     await closeDbPool();
+    // A separate source copy prevents generated Next.js types from racing a user's dev server.
+    for (const entry of ['src', 'public', 'package.json', 'tsconfig.json', 'next-env.d.ts', 'next.config.mjs']) {
+      await fs.cp(path.resolve(entry), path.join(browserWorkspace, entry), { recursive: true });
+    }
+    await fs.symlink(path.resolve('node_modules'), path.join(browserWorkspace, 'node_modules'), 'dir');
     const env = { ...process.env, ZERIVEX_DIST_DIR: '.next-browser' };
-    server = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'dev', '--hostname', '127.0.0.1', '--port', '3101'], { env, detached: true, stdio: ['ignore', logFile.fd, logFile.fd] });
+    server = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'dev', '--webpack', '--hostname', '127.0.0.1', '--port', '3101'], { env, cwd: browserWorkspace, detached: true, stdio: ['ignore', logFile.fd, logFile.fd] });
     worker = spawn(process.execPath, ['--import', 'tsx', 'scripts/worker.ts'], { env, detached: true, stdio: ['ignore', logFile.fd, logFile.fd] });
     let ready = false;
     for (let attempt = 0; attempt < 120; attempt++) {
@@ -59,7 +74,7 @@ async function main() {
     const { closeDbPool } = await import('../src/core/db/database'); await closeDbPool();
     if (created) await admin.query(`DROP SCHEMA "${schema}" CASCADE`);
     await admin.end(); await logFile.close(); await fs.rm(fixture, { force: true });
-    if (nextEnv !== undefined) await fs.writeFile('next-env.d.ts', nextEnv);
+    await fs.rm(browserWorkspace, { recursive: true, force: true });
   }
 }
 main().catch((error: unknown) => { console.error('Browser verification failed:', error instanceof Error ? error.message : 'Unknown failure'); process.exitCode = 1; });

@@ -236,33 +236,34 @@ describe('Phase 11: Production Polish, Billing & Enterprise Readiness', () => {
   });
 
   describe('5. Platform Owner Entitlement Override', () => {
-    it('bypasses scan quota limits server-side when user role is OWNER', async () => {
+    it('enforces scan quota for OWNER', async () => {
       // Free org is at 10/10 limit, but OWNER executes check
       const quota = await checkScanQuota(testOrgId, 'OWNER');
-      expect(quota.allowed).toBe(true);
-      expect(quota.isOwnerBypass).toBe(true);
-      expect(quota.max).toBe(999999);
+      expect(quota.allowed).toBe(false);
+      expect(quota.isOwnerBypass).toBe(false);
+      expect(quota.max).toBe(8);
     });
 
-    it('bypasses target quota limits server-side when user role is OWNER', async () => {
+    it('enforces the same target quota for OWNER and USER', async () => {
       const quota = await checkTargetQuota(testOrgId, 'OWNER');
-      expect(quota.allowed).toBe(true);
-      expect(quota.isOwnerBypass).toBe(true);
-      expect(quota.max).toBe(999999);
+      const normalQuota = await checkTargetQuota(testOrgId, 'USER');
+      expect(quota.allowed).toBe(normalQuota.allowed);
+      expect(quota.isOwnerBypass).toBe(false);
+      expect(quota.max).toBe(1);
     });
 
-    it('unlocks Compliance Audit Vault export for Platform Owner regardless of org plan', async () => {
+    it('denies unpaid Audit Vault access even for platform owners', async () => {
       const vaultCheck = await checkFeatureAccess(testOrgId, 'complianceAuditVault', 'OWNER');
-      expect(vaultCheck.allowed).toBe(true);
-      expect(vaultCheck.isOwnerBypass).toBe(true);
+      expect(vaultCheck.allowed).toBe(false);
+      expect(vaultCheck.isOwnerBypass).toBe(false);
     });
 
-    it('summary reflects owner bypass while preserving tenant subscription record', async () => {
+    it('summary follows the tenant subscription without owner bypass', async () => {
       const summary = await getOrganizationEntitlementSummary(testOrgId, 'OWNER');
-      expect(summary.isOwnerBypass).toBe(true);
+      expect(summary.isOwnerBypass).toBe(false);
       expect(summary.subscription.planId).toBe('STARTER'); // Tenant DB unmutated
-      expect(summary.usage.monthlyScans.max).toBe(999999);
-      expect(summary.features.complianceAuditVault).toBe(true);
+      expect(summary.usage.monthlyScans.max).toBe(8);
+      expect(summary.features.complianceAuditVault).toBe(false);
     });
   });
 
@@ -383,19 +384,12 @@ describe('Phase 11: Production Polish, Billing & Enterprise Readiness', () => {
   });
 
   describe('8. Simulated Stripe Checkout Initiation', () => {
-    it('generates simulated checkout URL when no live Stripe keys are provided', async () => {
-      const session = await createStripeCheckoutSession({
-        organizationId: testOrgId,
-        planId: 'ENTERPRISE',
-        billingCycle: 'YEARLY',
+    it('rejects checkout when Stripe keys are missing', async () => {
+      await expect(createStripeCheckoutSession({
+        organizationId: testOrgId, planId: 'PRO', billingCycle: 'YEARLY',
         successUrl: 'http://localhost:3000/dashboard/billing?success=true',
         cancelUrl: 'http://localhost:3000/dashboard/billing?canceled=true',
-      });
-
-      expect(session.isSimulated).toBe(true);
-      expect(session.sessionId).toContain('cs_sim_');
-      expect(session.url).toContain('ENTERPRISE');
-      expect(session.url).toContain('YEARLY');
+      })).rejects.toThrow('Stripe is not configured');
     });
   });
 });

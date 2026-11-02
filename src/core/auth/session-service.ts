@@ -17,6 +17,7 @@ export interface SessionContext {
   user: AuthenticatedUser;
   organizationId: string | null;
   organizationRole: string | null;
+  organizationName?: string | null;
   expiresAt: Date;
   viaStaffPortal?: boolean;
   previewPlanId?: string | null;
@@ -136,11 +137,12 @@ export async function validateSessionToken(rawToken: string): Promise<SessionCon
       s.preview_plan_id as "previewPlanId"
     FROM sessions s
     JOIN users u ON u.id = s.user_id
-    LEFT JOIN memberships m ON m.user_id = u.id
+    LEFT JOIN memberships m ON m.user_id = u.id AND (s.active_organization_id IS NULL OR m.organization_id = s.active_organization_id)
     WHERE s.session_token_hash = $1
       AND s.revoked_at IS NULL
       AND s.expires_at > NOW()
       AND u.status = 'ACTIVE'
+      AND (s.active_organization_id IS NULL OR m.organization_id IS NOT NULL)
     ORDER BY m.created_at ASC
     LIMIT 1
     `,
@@ -176,12 +178,14 @@ export async function validateSessionToken(rawToken: string): Promise<SessionCon
     effectiveOrgId = internalOrg.rows[0].id;
   }
 
+  let organizationName: string | null = null;
   if (effectiveOrgId) {
-    const orgAccess = await query(
-      'SELECT 1 FROM organizations o JOIN memberships m ON m.organization_id = o.id WHERE o.id = $1 AND m.user_id = $2 AND o.suspended_at IS NULL',
+    const orgAccess = await query<{ name: string }>(
+      'SELECT o.name FROM organizations o JOIN memberships m ON m.organization_id = o.id WHERE o.id = $1 AND m.user_id = $2 AND o.suspended_at IS NULL',
       [effectiveOrgId, row.userId],
     );
     if (orgAccess.rows.length === 0) return null;
+    organizationName = orgAccess.rows[0]!.name;
   }
 
   // Touch last_used_at timestamp asynchronously
@@ -199,11 +203,12 @@ export async function validateSessionToken(rawToken: string): Promise<SessionCon
       status: row.status,
     },
     organizationId: effectiveOrgId,
+    organizationName,
     organizationRole: row.viaStaffPortal
       ? staffRole === 'STAFF_OWNER' ? 'ORG_OWNER' : staffRole === 'STAFF_ADMIN' ? 'ORG_ADMIN' : 'ORG_MEMBER'
       : row.organizationRole,
     viaStaffPortal: row.viaStaffPortal,
-    previewPlanId: row.previewPlanId,
+    previewPlanId: null,
     staffRole,
   };
 }

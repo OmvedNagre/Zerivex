@@ -192,7 +192,7 @@ export function CommandBanner({ user, stats, loading = false }: CommandBannerPro
           </a>
 
           <a
-            href="/academy"
+            href="/dashboard/academy"
             className="zb-btn zb-btn-ghost"
             id="cta-security-academy"
           >

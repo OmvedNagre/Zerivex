@@ -60,6 +60,7 @@ describe('Phase 10: Enterprise Teams, Audit Vault & Collaboration', () => {
       [`auditor-a-${testSuffix}@zerivex.local`]
     );
     userAuditorAId = u3.rows[0]!.id;
+    await query('UPDATE users SET email_verified_at=NOW() WHERE id=$1',[userAuditorAId]);
 
     const u4 = await query<{ id: string }>(
       `INSERT INTO users (email, display_name, role) VALUES ($1, 'Owner B', 'USER') RETURNING id`,
@@ -73,6 +74,7 @@ describe('Phase 10: Enterprise Teams, Audit Vault & Collaboration', () => {
       ['Acme Security Corp', `acme-sec-${testSuffix}`, userOwnerAId]
     );
     orgAId = o1.rows[0]!.id;
+    await query("INSERT INTO subscriptions (organization_id,plan_id) VALUES ($1,'TEAM')",[orgAId]);
 
     const o2 = await query<{ id: string }>(
       `INSERT INTO organizations (name, slug, created_by_user_id) VALUES ($1, $2, $3) RETURNING id`,
@@ -226,7 +228,7 @@ describe('Phase 10: Enterprise Teams, Audit Vault & Collaboration', () => {
     it('generates 256-bit CSPRNG token and stores only SHA-256 hash', async () => {
       const inviteResult = await inviteMember({
         organizationId: orgAId,
-        email: `new-auditor-${testSuffix}@zerivex.local`,
+        email: `auditor-a-${testSuffix}@zerivex.local`,
         role: 'ORG_AUDITOR',
         actorUserId: userOwnerAId,
       });

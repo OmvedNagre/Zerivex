@@ -1,4 +1,5 @@
 'use client';
+import { getStatusLabel } from '@/lib/labels';
 
 import { useRef } from 'react';
 import gsap from 'gsap';
@@ -109,6 +110,7 @@ interface LaunchReadinessCockpitProps {
   selfScanReport: SelfScanReport | null;
   loading: boolean;
   scanning: boolean;
+  canRunSelfScan?: boolean;
   error: string | null;
   activeTab: 'subsystems' | 'selfscan' | 'checklist';
   setActiveTab: (tab: 'subsystems' | 'selfscan' | 'checklist') => void;
@@ -139,6 +141,7 @@ export function LaunchReadinessCockpit({
   selfScanReport,
   loading,
   scanning,
+  canRunSelfScan = false,
   error,
   activeTab,
   setActiveTab,
@@ -211,7 +214,7 @@ export function LaunchReadinessCockpit({
       <header className="zlr-header">
         <div className="zlr-header-left">
           <div className="zlr-header-tags">
-            <span className="zlr-tag zlr-tag-accent">RELEASE GATE 15</span>
+            <span className="zlr-tag zlr-tag-accent">Release review</span>
             <span
               className={`zlr-tag ${
                 isReady
@@ -244,7 +247,7 @@ export function LaunchReadinessCockpit({
             />
           </h1>
           <p className="zlr-header-desc">
-            Autonomous security self-scan dogfooding, deterministic subsystem verification audit, and production release sign-off.
+            Review platform configuration, scan coverage, and the checks still required before release.
           </p>
         </div>
 
@@ -264,7 +267,8 @@ export function LaunchReadinessCockpit({
             type="button"
             className="zlr-btn zlr-btn-primary"
             onClick={onRunSelfScan}
-            disabled={scanning}
+            disabled={scanning || !canRunSelfScan}
+            aria-describedby={!canRunSelfScan ? 'self-scan-permission' : undefined}
             aria-label="Run ZERIVEX Autonomous Self-Scan Engine"
           >
             {scanning ? (
@@ -279,6 +283,7 @@ export function LaunchReadinessCockpit({
               </>
             )}
           </button>
+          {!canRunSelfScan && <p id="self-scan-permission" className="zlr-permission-note">Only a platform owner or administrator can run the platform self-scan.</p>}
         </div>
       </header>
 
@@ -731,7 +736,7 @@ export function LaunchReadinessCockpit({
                         : 'zlr-checklist-status-badge-pending'
                     }`}
                   >
-                    {item.status}
+                    {getStatusLabel(item.status)}
                   </span>
                 </div>
               );

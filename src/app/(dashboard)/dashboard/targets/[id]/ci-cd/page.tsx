@@ -94,11 +94,25 @@ export default function TargetCiCdPage({ params }: { params: Promise<{ id: strin
     }
   };
 
-  const copySnippet = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedSnippet(true);
-    setTimeout(() => setCopiedSnippet(false), 2000);
+  const copySnippet = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedSnippet(true);
+      setTimeout(() => setCopiedSnippet(false), 2000);
+    } catch { toast.error('Could not copy. Select the text and copy it manually.'); }
   };
+
+  const appOrigin = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') || 'http://localhost:3000';
+  const pollingScript = (indent: string, token: string) => [
+    `SCAN_ID=$(echo "$RESPONSE" | jq -er '.scanId // .scanJob.id') || exit 1`,
+    'for attempt in $(seq 1 120); do',
+    `  RESPONSE=$(curl --fail --silent --show-error --max-time 30 -H "Authorization: Bearer ${token}" "${appOrigin}/api/v1/ci/scans/$SCAN_ID") || exit 1`,
+    `  STATUS=$(echo "$RESPONSE" | jq -er '.scanJob.status') || exit 1`,
+    '  [ "$STATUS" = "COMPLETED" ] && break',
+    '  case "$STATUS" in QUEUED|RUNNING) sleep 5 ;; *) echo "Scan failed: $STATUS"; exit 1 ;; esac',
+    'done',
+    '[ "$STATUS" = "COMPLETED" ] || { echo "Scan timed out"; exit 1; }',
+  ].map((line) => indent + line).join('\n');
 
   // Generate GitHub Actions workflow
   const githubActionsYaml = `name: Zerivex Security Gate & Code Scanning
@@ -121,25 +135,26 @@ jobs:
         id: zerivex
         run: |
           echo "Initiating automated security scan for target ${target?.hostname || 'app'}..."
-          RESPONSE=$(curl -s -X POST "https://zerivex.com/api/v1/ci/scan" \\
+          RESPONSE=$(curl --fail --silent --show-error --max-time 30 -X POST "${appOrigin}/api/v1/ci/scan" \\
             -H "Authorization: Bearer \${{ secrets.ZERIVEX_API_KEY }}" \\
             -H "Content-Type: application/json" \\
             -d '{
               "targetId": "${id}",
               "scanMode": "${target?.verificationStatus === 'VERIFIED' ? 'VERIFIED_ACTIVE' : 'PUBLIC_PASSIVE'}",
-              "wait": true
+              "wait": false
             }')
           
+${pollingScript('          ', '${{ secrets.ZERIVEX_API_KEY }}')}
           echo "$RESPONSE" > zerivex-output.json
           cat zerivex-output.json
           
-          SCAN_ID=$(jq -r '.scanId' zerivex-output.json)
+          SCAN_ID=$(jq -er '.scanJob.id' zerivex-output.json)
           GATE_PASSED=$(jq -r '.gate.passed' zerivex-output.json)
-          SCORE=$(jq -r '.score' zerivex-output.json)
+          SCORE=$(jq -r '.scanJob.score' zerivex-output.json)
           
           # Fetch OASIS SARIF v2.1.0 for GitHub Code Scanning
-          curl -s -H "Authorization: Bearer \${{ secrets.ZERIVEX_API_KEY }}" \\
-            "https://zerivex.com/api/v1/ci/scans/$SCAN_ID/sarif" > zerivex-results.sarif
+          curl --fail --silent --show-error --max-time 30 -H "Authorization: Bearer \${{ secrets.ZERIVEX_API_KEY }}" \\
+            "${appOrigin}/api/v1/ci/scans/$SCAN_ID/sarif" > zerivex-results.sarif
 
           echo "score=$SCORE" >> $GITHUB_OUTPUT
           echo "gate_passed=$GATE_PASSED" >> $GITHUB_OUTPUT
@@ -164,14 +179,15 @@ jobs:
     - apk add --no-cache curl jq
   script:
     - |
-      RESPONSE=$(curl -s -X POST "https://zerivex.com/api/v1/ci/scan" \\
+      RESPONSE=$(curl --fail --silent --show-error --max-time 30 -X POST "${appOrigin}/api/v1/ci/scan" \\
         -H "Authorization: Bearer $ZERIVEX_API_KEY" \\
         -H "Content-Type: application/json" \\
-        -d '{"targetId": "${id}", "wait": true}')
+        -d '{"targetId": "${id}", "wait": false}')
       SCAN_ID=$(echo "$RESPONSE" | jq -r '.scanId')
+${pollingScript('      ', '$ZERIVEX_API_KEY')}
       GATE_PASSED=$(echo "$RESPONSE" | jq -r '.gate.passed')
-      curl -s -H "Authorization: Bearer $ZERIVEX_API_KEY" \\
-        "https://zerivex.com/api/v1/ci/scans/$SCAN_ID/sarif" > zerivex-results.sarif
+      curl --fail --silent --show-error --max-time 30 -H "Authorization: Bearer $ZERIVEX_API_KEY" \\
+        "${appOrigin}/api/v1/ci/scans/$SCAN_ID/sarif" > zerivex-results.sarif
       if [ "$GATE_PASSED" != "true" ]; then
         echo "[FAIL] Zerivex Security Quality Gate Failed!"
         exit 1
@@ -188,13 +204,14 @@ export ZERIVEX_API_KEY="\${ZERIVEX_API_KEY:-your_api_key_here}"
 TARGET_ID="${id}"
 
 echo "Starting Zerivex scan for $TARGET_ID..."
-RESPONSE=$(curl -s -X POST "https://zerivex.com/api/v1/ci/scan" \\
+RESPONSE=$(curl --fail --silent --show-error --max-time 30 -X POST "${appOrigin}/api/v1/ci/scan" \\
   -H "Authorization: Bearer $ZERIVEX_API_KEY" \\
   -H "Content-Type: application/json" \\
-  -d '{"targetId": "'$TARGET_ID'", "wait": true}')
+  -d '{"targetId": "'$TARGET_ID'", "wait": false}')
 
+${pollingScript('', '$ZERIVEX_API_KEY')}
 GATE_PASSED=$(echo "$RESPONSE" | jq -r '.gate.passed')
-SCORE=$(echo "$RESPONSE" | jq -r '.score')
+SCORE=$(echo "$RESPONSE" | jq -r '.scanJob.score')
 echo "Security Score: $SCORE/100 | Gate Status: $GATE_PASSED"
 
 if [ "$GATE_PASSED" != "true" ]; then
@@ -214,10 +231,10 @@ exit 0
       : curlCliScript;
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }} className="zx-page" >
       {/* Header */}
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }} data-responsive-row >
           <Link
             href={`/dashboard/targets/${id}`}
             style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
@@ -228,7 +245,7 @@ exit 0
           <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>CI/CD & Integrations</span>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }} data-responsive-row >
           <div>
             <h1 style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}>
               CI/CD Pipeline Integration Hub
@@ -238,7 +255,7 @@ exit 0
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem' }} data-responsive-row >
             <Link
               href="/dashboard/settings/api-keys"
               style={{
@@ -259,7 +276,7 @@ exit 0
       </div>
 
       {/* Target Subsystem Navigation Tabs */}
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', flexWrap: 'wrap' }} data-responsive-row >
         <Link
           href={`/dashboard/targets/${id}`}
           style={{
@@ -329,11 +346,11 @@ exit 0
           Loading CI/CD configuration...
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '2rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 480px), 1fr))', gap: '2rem' }}>
           {/* Left Column: Quality Gate Configuration */}
           <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--card-bg)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} data-responsive-row >
                 <Shield size={20} style={{ color: 'var(--accent-primary)' }} />
                 <h2 style={{ fontSize: '1.2rem', fontWeight: 600, margin: 0 }}>
                   {policy?.name || 'Security Quality Gate Policy'}
@@ -345,16 +362,16 @@ exit 0
             </div>
 
             {saveSuccess && (
-              <div style={{ padding: '0.75rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', borderRadius: 'var(--radius-md)', color: '#10b981', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div style={{ padding: '0.75rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', borderRadius: 'var(--radius-md)', color: 'var(--ds-success)', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }} data-responsive-row >
                 <Check size={14} /> Quality Gate Policy successfully updated.
               </div>
             )}
 
             <form onSubmit={handleSavePolicy} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }} data-responsive-row >
                   <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Minimum Security Score</label>
-                  <span style={{ fontSize: '0.9rem', fontWeight: 700, color: minSecurityScore >= 80 ? '#10b981' : '#f59e0b' }}>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 700, color: minSecurityScore >= 80 ? 'var(--ds-success)' : 'var(--ds-warning)' }}>
                     {minSecurityScore} / 100
                   </span>
                 </div>
@@ -366,7 +383,7 @@ exit 0
                   value={minSecurityScore}
                   onChange={(e) => setMinSecurityScore(Number(e.target.value))}
                   style={{ width: '100%', accentColor: 'var(--primary)' }}
-                />
+                 aria-label="Min Security Score" />
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                   Pipelines will fail if the target security score drops below this threshold.
                 </span>
@@ -386,7 +403,7 @@ exit 0
                   />
                 </label>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} data-responsive-row >
                   <div>
                     <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Max Allowed High Findings</div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Fail pipeline if High count exceeds limit</div>
@@ -406,10 +423,10 @@ exit 0
                       color: 'var(--text-primary)',
                       textAlign: 'center',
                     }}
-                  />
+                   aria-label="Max High Findings" />
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} data-responsive-row >
                   <div>
                     <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Max Allowed Medium Findings</div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Fail pipeline if Medium count exceeds limit</div>
@@ -429,7 +446,7 @@ exit 0
                       color: 'var(--text-primary)',
                       textAlign: 'center',
                     }}
-                  />
+                   aria-label="Max Medium Findings" />
                 </div>
 
                 <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
@@ -449,18 +466,8 @@ exit 0
               <button
                 type="submit"
                 disabled={savingPolicy}
-                style={{
-                  padding: '0.65rem 1rem',
-                  backgroundColor: 'var(--primary)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 'var(--radius-md)',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  marginTop: '0.5rem',
-                }}
-              >
+                style={{ cursor: 'pointer', marginTop: '0.5rem' }}
+               className="zx-btn zx-btn--brand zx-btn--md" >
                 {savingPolicy ? 'Saving Policy...' : 'Save Quality Gate Settings'}
               </button>
             </form>
@@ -468,7 +475,7 @@ exit 0
 
           {/* Right Column: Code Snippet Generator */}
           <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--card-bg)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} data-responsive-row >
               <div>
                 <h2 style={{ fontSize: '1.2rem', fontWeight: 600, margin: 0 }}>Automated Pipeline Config</h2>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.2rem 0 0 0' }}>
@@ -480,7 +487,7 @@ exit 0
                 onClick={() => copySnippet(currentSnippet)}
                 style={{
                   padding: '0.4rem 0.85rem',
-                  backgroundColor: copiedSnippet ? '#10b981' : 'var(--bg-secondary)',
+                  backgroundColor: copiedSnippet ? 'var(--ds-success)' : 'var(--bg-secondary)',
                   color: copiedSnippet ? '#fff' : 'var(--text-primary)',
                   border: '1px solid var(--border)',
                   borderRadius: 'var(--radius-md)',
@@ -497,7 +504,7 @@ exit 0
             </div>
 
             {/* Snippet Format Selector */}
-            <div style={{ display: 'flex', gap: '0.4rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.4rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }} data-responsive-row >
               {[
                 { id: 'github', label: 'GitHub Actions' },
                 { id: 'gitlab', label: 'GitLab CI' },
@@ -541,7 +548,7 @@ exit 0
               {currentSnippet}
             </pre>
 
-            <div style={{ padding: '0.75rem', backgroundColor: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', color: 'var(--primary)', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+            <div style={{ padding: '0.75rem', backgroundColor: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', color: 'var(--primary)', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }} data-responsive-row >
               <Lightbulb size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
               <span><strong>GitHub Code Scanning:</strong> Uploading the SARIF artifact embeds inline vulnerability alerts directly inside GitHub pull request diffs and the repository Security tab.</span>
             </div>

@@ -44,19 +44,13 @@ export interface OrgEntitlementSummary {
   engineIds: string[];
 }
 
-/**
- * Check if the requesting user has platform owner override privileges.
- */
-export function isPlatformOwner(userRole?: string): boolean {
-  return userRole === 'OWNER' || userRole === 'STAFF_OWNER';
-}
 
 /**
  * Pure synchronous resolver for entitlements from a plan identifier (§F3).
  */
 export function resolveEntitlementsFromPlan(
   planInput: PlanId | string,
-  options?: { isStaffOverride?: boolean; previewPlanId?: PlanId | null }
+  _options?: { isStaffOverride?: boolean; previewPlanId?: PlanId | null }
 ): ResolvedEntitlements {
   const planId = resolvePlanId(planInput);
   const plan = PLANS[planId] || PLANS.STARTER;
@@ -68,48 +62,20 @@ export function resolveEntitlementsFromPlan(
     limits: plan.limits,
     features: plan.features,
     engineIds: engineDefs.map((e) => e.id),
-    isStaffOverride: options?.isStaffOverride ?? false,
-    previewPlanId: options?.previewPlanId ?? null,
+    isStaffOverride: false,
+    previewPlanId: null,
   };
 }
 
 /**
  * Centrally resolves plan limits, feature flags, and allowed engine IDs (§F3).
- * Prioritizes staff overrides and session preview plans before organization defaults.
+ * Customer entitlements always follow the organization subscription, regardless of staff role.
  * No `if (plan === 'pro')` anywhere.
  */
 export async function resolveEntitlements(
   org?: { id?: string; planId?: string | null; isInternal?: boolean } | string | null,
   session?: SessionContext | null
 ): Promise<ResolvedEntitlements> {
-  // 1. Staff session overrides (preview plan or platform role)
-  if (session?.viaStaffPortal) {
-    if (session.previewPlanId) {
-      const previewPlan = resolvePlanId(session.previewPlanId);
-      return resolveEntitlementsFromPlan(previewPlan, {
-        isStaffOverride: true,
-        previewPlanId: previewPlan,
-      });
-    }
-
-    if (session.staffRole === 'STAFF_SUPPORT') {
-      return resolveEntitlementsFromPlan('PRO', { isStaffOverride: true });
-    }
-
-    if (
-      session.staffRole === 'STAFF_OWNER' ||
-      session.staffRole === 'STAFF_ADMIN' ||
-      session.user?.role === 'OWNER'
-    ) {
-      return resolveEntitlementsFromPlan('ENTERPRISE', { isStaffOverride: true });
-    }
-  }
-
-  // 2. Platform owner override on customer session
-  if (session?.user?.role === 'OWNER') {
-    return resolveEntitlementsFromPlan('ENTERPRISE', { isStaffOverride: true });
-  }
-
   // 3. Directly passed plan name or legacy alias
   if (typeof org === 'string' && (org in PLANS || org === 'FREE_DEVELOPER' || org === 'TEAM_PRO')) {
     return resolveEntitlementsFromPlan(org);
@@ -157,10 +123,8 @@ export async function getOrganizationEntitlementSummary(
   userRoleOrSession?: string | SessionContext | null
 ): Promise<OrgEntitlementSummary> {
   const session = typeof userRoleOrSession === 'object' ? userRoleOrSession : null;
-  const userRole = typeof userRoleOrSession === 'string' ? userRoleOrSession : session?.user?.role;
   const entitlements = await resolveEntitlements(organizationId, session);
   const subscription = await getSubscriptionByOrgId(organizationId);
-  const ownerBypass = isPlatformOwner(userRole) || entitlements.isStaffOverride;
 
   const [targetsCount, scansCount, membersCount] = await Promise.all([
     getActiveTargetCount(organizationId),
@@ -174,33 +138,33 @@ export async function getOrganizationEntitlementSummary(
     return Math.min(100, Math.round((curr / max) * 100));
   };
 
-  const targetLimit = ownerBypass ? 999999 : entitlements.limits.maxSites;
-  const scanLimit = ownerBypass ? 999999 : entitlements.limits.maxMonthlyScans;
-  const memberLimit = ownerBypass ? 999999 : entitlements.limits.maxTeamMembers;
+  const targetLimit = entitlements.limits.maxSites;
+  const scanLimit = entitlements.limits.maxMonthlyScans;
+  const memberLimit = entitlements.limits.maxTeamMembers;
 
   return {
     scanCredits: (await getCreditLedger(organizationId)).balance,
     subscription,
     plan: entitlements.plan,
-    isOwnerBypass: ownerBypass,
+    isOwnerBypass: false,
     usage: {
       targets: {
         current: targetsCount,
         max: targetLimit,
-        percentage: ownerBypass ? 0 : calcPercentage(targetsCount, targetLimit),
+        percentage: calcPercentage(targetsCount, targetLimit),
       },
       monthlyScans: {
         current: scansCount,
         max: scanLimit,
-        percentage: ownerBypass ? 0 : calcPercentage(scansCount, scanLimit),
+        percentage: calcPercentage(scansCount, scanLimit),
       },
       teamMembers: {
         current: membersCount,
         max: memberLimit,
-        percentage: ownerBypass ? 0 : calcPercentage(membersCount, memberLimit),
+        percentage: calcPercentage(membersCount, memberLimit),
       },
     },
-    features: ownerBypass ? PLANS.ENTERPRISE.features : entitlements.features,
+    features: entitlements.features,
     engineIds: entitlements.engineIds,
   };
 }
@@ -213,36 +177,17 @@ export async function checkTargetQuota(
   userRoleOrSession?: string | SessionContext | null
 ): Promise<QuotaCheckResult> {
   const session = typeof userRoleOrSession === 'object' ? userRoleOrSession : null;
-  const userRole = typeof userRoleOrSession === 'string' ? userRoleOrSession : session?.user?.role;
 
-  if (isPlatformOwner(userRole)) {
-    return {
-      allowed: true,
-      metric: 'ACTIVE_TARGETS',
-      current: 0,
-      max: 999999,
-      planId: 'ENTERPRISE',
-      isOwnerBypass: true,
-    };
-  }
+
 
   const entitlements = await resolveEntitlements(organizationId, session);
-  if (entitlements.isStaffOverride && entitlements.limits.maxSites >= 999999) {
-    return {
-      allowed: true,
-      metric: 'ACTIVE_TARGETS',
-      current: 0,
-      max: 999999,
-      planId: entitlements.planId,
-      isOwnerBypass: true,
-    };
-  }
+
 
   const subscription = await getSubscriptionByOrgId(organizationId).catch(() => null);
   const current = await getActiveTargetCount(organizationId);
   const max = entitlements.limits.maxSites;
 
-  if (current >= max && (!entitlements.isStaffOverride || Boolean(entitlements.previewPlanId))) {
+  if (current >= max) {
     return {
       allowed: false,
       metric: 'ACTIVE_TARGETS',
@@ -272,36 +217,17 @@ export async function checkScanQuota(
   userRoleOrSession?: string | SessionContext | null
 ): Promise<QuotaCheckResult> {
   const session = typeof userRoleOrSession === 'object' ? userRoleOrSession : null;
-  const userRole = typeof userRoleOrSession === 'string' ? userRoleOrSession : session?.user?.role;
 
-  if (isPlatformOwner(userRole)) {
-    return {
-      allowed: true,
-      metric: 'MONTHLY_SCANS',
-      current: 0,
-      max: 999999,
-      planId: 'ENTERPRISE',
-      isOwnerBypass: true,
-    };
-  }
+
 
   const entitlements = await resolveEntitlements(organizationId, session);
-  if (entitlements.isStaffOverride && entitlements.limits.maxMonthlyScans >= 999999) {
-    return {
-      allowed: true,
-      metric: 'MONTHLY_SCANS',
-      current: 0,
-      max: 999999,
-      planId: entitlements.planId,
-      isOwnerBypass: true,
-    };
-  }
+
 
   const subscription = await getSubscriptionByOrgId(organizationId).catch(() => null);
   const current = await getMonthlyScanUsage(organizationId);
   const max = entitlements.limits.maxMonthlyScans;
 
-  if (current >= max && (!entitlements.isStaffOverride || Boolean(entitlements.previewPlanId))) {
+  if (current >= max) {
     return {
       allowed: false,
       metric: 'MONTHLY_SCANS',
@@ -332,22 +258,14 @@ export async function checkFeatureAccess(
   userRoleOrSession?: string | SessionContext | null
 ): Promise<FeatureAccessResult> {
   const session = typeof userRoleOrSession === 'object' ? userRoleOrSession : null;
-  const userRole = typeof userRoleOrSession === 'string' ? userRoleOrSession : session?.user?.role;
 
-  if (isPlatformOwner(userRole)) {
-    return {
-      allowed: true,
-      feature,
-      planId: 'ENTERPRISE',
-      isOwnerBypass: true,
-    };
-  }
+
 
   const entitlements = await resolveEntitlements(organizationId, session);
   const subscription = await getSubscriptionByOrgId(organizationId).catch(() => null);
   const hasAccess = entitlements.features[feature] === true;
 
-  if (!hasAccess && (!entitlements.isStaffOverride || Boolean(entitlements.previewPlanId))) {
+  if (!hasAccess) {
     return {
       allowed: false,
       feature,
@@ -361,7 +279,7 @@ export async function checkFeatureAccess(
     allowed: true,
     feature,
     planId: subscription?.planId || entitlements.planId,
-    isOwnerBypass: entitlements.isStaffOverride,
+    isOwnerBypass: false,
   };
 }
 

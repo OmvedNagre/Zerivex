@@ -321,7 +321,7 @@ export function Modal({
           aria-describedby={effectiveAriaDescribedBy}
           aria-label={!effectiveAriaLabelledBy ? ariaLabel : undefined}
           tabIndex={-1}
-          className={`zmd-dialog zmd-size-${size} ${className}`}
+          className={`zmd-dialog zmd-size-${size} ${className.includes('staff-dialog') || className.includes('zx-customer-dialog') ? '' : 'zx-customer-dialog'} ${className}`}
         >
           {/* Default Header when title prop is provided */}
           {hasTitle && (

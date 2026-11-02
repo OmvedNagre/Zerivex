@@ -311,10 +311,10 @@ describe('Phase 15: Self-Scan & Launch Readiness Certification', () => {
       expect(res.headers.get('Content-Type')).toContain('text/plain');
 
       const body = await res.text();
-      expect(body).toContain('Contact: mailto:code64816@gmail.com');
+      expect(body).toContain('Contact: mailto:zerivex.secure@gmail.com');
       expect(body).toContain('Expires:');
-      expect(body).toContain('Canonical: https://zerivex.com/.well-known/security.txt');
-      expect(body).toContain('Policy: https://zerivex.com/security');
+      expect(body).toContain('Canonical: https://zerivex.tech/.well-known/security.txt');
+      expect(body).toContain('Policy: https://zerivex.tech/security');
 
       // Verify that Expires date is in the future
       const match = body.match(/Expires:\s+([^\n\r]+)/);

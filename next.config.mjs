@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   poweredByHeader: false,
+  devIndicators: false,
   ...(process.env.ZERIVEX_DIST_DIR ? { distDir: process.env.ZERIVEX_DIST_DIR } : {}),
   reactStrictMode: true,
   async headers() {

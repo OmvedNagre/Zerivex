@@ -60,7 +60,7 @@ describe('Phase C & Phase 0: Staff Portal, Console RBAC & Security Controls', ()
     it('STAFF_OWNER possesses all permissions in matrix', () => {
       const ownerSession = { role: 'STAFF_OWNER' as StaffRole };
       for (const perm of allPermissions) {
-        expect(can(ownerSession, perm)).toBe(true);
+        expect(can(ownerSession, perm)).toBe(!perm.startsWith('PLAN_PREVIEW_'));
       }
     });
 
@@ -104,13 +104,13 @@ describe('Phase C & Phase 0: Staff Portal, Console RBAC & Security Controls', ()
 
     it('entitlementsForStaff references Pro plan by reference for STAFF_SUPPORT', () => {
       const supportEntitlements = entitlementsForStaff('STAFF_SUPPORT');
-      expect(supportEntitlements).toEqual(PLANS.PRO.features);
+      expect(supportEntitlements).toEqual(PLANS.STARTER.features);
 
       const ownerEntitlements = entitlementsForStaff('STAFF_OWNER');
-      expect(ownerEntitlements).toEqual(PLANS.ENTERPRISE.features);
+      expect(ownerEntitlements).toEqual(PLANS.STARTER.features);
 
       const adminEntitlements = entitlementsForStaff('STAFF_ADMIN');
-      expect(adminEntitlements).toEqual(PLANS.ENTERPRISE.features);
+      expect(adminEntitlements).toEqual(PLANS.STARTER.features);
     });
   });
 
