@@ -92,13 +92,21 @@ export class WorkerPool {
         queuedAt: Date.now(),
         timeoutMs: params.timeoutMs || this.defaultTimeoutMs,
         execute: params.execute,
+        reject,
       };
 
       // Wrap execution to resolve/reject caller promise
       const originalExecute = job.execute;
       job.execute = async (signal: AbortSignal) => {
         try {
-          const res = await originalExecute(signal);
+          const res = await new Promise<T>((resolveExecution, rejectExecution) => {
+            const abort = () => rejectExecution(new Error('Worker execution aborted or timed out'));
+            signal.addEventListener('abort', abort, { once: true });
+            Promise.resolve().then(() => {
+              signal.throwIfAborted();
+              return originalExecute(signal);
+            }).then(resolveExecution, rejectExecution).finally(() => signal.removeEventListener('abort', abort));
+          });
           resolve(res);
           return res;
         } catch (err: any) {
@@ -248,6 +256,7 @@ export class WorkerPool {
     if (queueIndex !== -1) {
       const job = this.queue.splice(queueIndex, 1)[0]!;
       job.status = 'CANCELLED';
+      job.reject?.(new Error('Worker job cancelled'));
       job.completedAt = Date.now();
       return true;
     }
@@ -258,8 +267,6 @@ export class WorkerPool {
       active.status = 'CANCELLED';
       active.abortController?.abort();
       active.completedAt = Date.now();
-      this.activeJobs.delete(jobId);
-      this.processQueue();
       return true;
     }
 
@@ -275,6 +282,7 @@ export class WorkerPool {
     // Clear and cancel any queued jobs
     for (const job of this.queue) {
       job.status = 'CANCELLED';
+      job.reject?.(new Error('Worker pool shutting down'));
     }
     this.queue = [];
 
@@ -297,6 +305,7 @@ export class WorkerPool {
    * Reset worker pool state (primarily for automated testing).
    */
   public reset(): void {
+    for (const job of this.queue) job.reject?.(new Error('Worker pool reset'));
     this.queue = [];
     for (const [, job] of this.activeJobs) {
       job.abortController?.abort();
@@ -339,4 +348,4 @@ export class WorkerPool {
 }
 
 // Global default singleton instance
-export const defaultWorkerPool = new WorkerPool();
+export const defaultWorkerPool = new WorkerPool({ maxConcurrency: Number(process.env.SCANNER_MAX_CONCURRENT_JOBS) || DEFAULT_MAX_CONCURRENCY });

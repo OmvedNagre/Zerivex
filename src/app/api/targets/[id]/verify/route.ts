@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, requirePermission, handleAuthError } from '@/core/rbac/authorization-guard';
 import { getUserActiveOrganization } from '@/core/auth/organization-context';
@@ -13,12 +14,12 @@ export async function POST(
     requirePermission(auth, 'targets:verify');
 
     const { id: targetId } = await params;
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
 
     let preferredMethod: VerificationMethod | 'MANUAL_BYPASS' | undefined;
     let bypass = false;
     try {
-      const body = await req.json();
+      const body = await readJsonBody(req);
       if (body.preferredMethod) {
         preferredMethod = body.preferredMethod;
       }

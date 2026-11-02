@@ -15,7 +15,7 @@ export async function GET(
     requirePermission(auth, 'scans:read');
 
     const { id: scanJobId } = await params;
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
     const format = req.nextUrl.searchParams.get('format') || 'html';
 
     if (format === 'json') {

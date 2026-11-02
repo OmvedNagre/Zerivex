@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   requireApiOrSessionAuth,
@@ -15,7 +16,7 @@ export async function PATCH(
     await requireOrgRolePermission(auth.userId, auth.organizationId, 'findings:assign', auth.userRole);
 
     const { id: findingId } = await params;
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const { assignedUserId } = body as { assignedUserId?: string | null };
 
     const clientIp =

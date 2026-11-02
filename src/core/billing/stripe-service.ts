@@ -108,6 +108,9 @@ export async function createStripeCheckoutSession(
 
   // Simulated mode (for local dev, tests, or environments without live Stripe keys)
   if (!stripeSecretKey || !stripeSecretKey.startsWith('sk_')) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Stripe is not configured for production');
+    }
     const simulatedSessionId = `cs_sim_${crypto.randomBytes(12).toString('hex')}`;
     const redirectUrl = new URL(params.successUrl);
     redirectUrl.searchParams.set('session_id', simulatedSessionId);
@@ -185,6 +188,9 @@ export async function createStripePortalSession(
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
   if (!stripeSecretKey || !stripeSecretKey.startsWith('sk_')) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Stripe is not configured for production');
+    }
     return {
       url: `${params.returnUrl}?portal_simulated=true`,
       isSimulated: true,

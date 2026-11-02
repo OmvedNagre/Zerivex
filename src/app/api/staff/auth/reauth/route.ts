@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   requireStaffAuth,
@@ -32,6 +33,11 @@ async function verifyGoogleTokenOrCode(codeOrToken: string, redirectUri: string)
     );
     if (tokenInfoRes.ok) {
       const data = await tokenInfoRes.json();
+      const age = Math.floor(Date.now() / 1000) - Number(data.iat);
+      if (data.aud !== config.GOOGLE_CLIENT_ID || !['accounts.google.com', 'https://accounts.google.com'].includes(data.iss) ||
+          !Number.isFinite(age) || age < -30 || age > 600) {
+        throw new Error('Google token audience, issuer, or freshness check failed');
+      }
       return {
         email: data.email as string,
         email_verified: data.email_verified === 'true' || data.email_verified === true,
@@ -102,7 +108,7 @@ export async function POST(req: NextRequest) {
     const staff = await requireStaffAuth(req);
     const config = getEnvConfig();
 
-    const body = await req.json().catch(() => ({}));
+    const body = await readJsonBody(req);
     const code = body.code || body.idToken;
 
     if (!code || typeof code !== 'string') {

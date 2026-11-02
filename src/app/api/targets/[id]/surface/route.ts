@@ -1,3 +1,5 @@
+import { resolveEntitlements } from '@/core/billing/entitlement-service';
+import { withinAssessmentScope } from '@/core/security/assessment-context';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, requirePermission, handleAuthError } from '@/core/rbac/authorization-guard';
 import { getUserActiveOrganization } from '@/core/auth/organization-context';
@@ -20,7 +22,7 @@ export async function GET(
     requirePermission(auth, 'targets:read');
 
     const { id } = await params;
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
 
     // Verify target ownership under tenant
     const target = await getTargetById(id, orgCtx.organizationId);
@@ -54,16 +56,21 @@ export async function POST(
     requirePermission(auth, 'targets:update');
 
     const { id } = await params;
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
 
     // Verify target ownership under tenant
     const target = await getTargetById(id, orgCtx.organizationId);
 
     // Execute on-demand crawl
-    const result = await crawlAttackSurface(target.targetUrl, {
-      maxDepth: 2,
-      maxPages: 25,
-    });
+    const entitlements = await resolveEntitlements(orgCtx.organizationId, auth);
+    if (!entitlements.limits.crawl.enabled) {
+      return NextResponse.json({ error: 'Crawler requires an upgraded plan' }, { status: 403 });
+    }
+    const result = await withinAssessmentScope({ targetUrl: target.targetUrl,
+      pathOnly: target.verificationScope === 'URL_PATH' }, () => crawlAttackSurface(target.targetUrl, {
+      maxDepth: entitlements.limits.crawl.maxDepth,
+      maxPages: entitlements.limits.crawl.maxPages,
+    }));
 
     if (result.endpoints.length > 0) {
       await upsertDiscoveredEndpoints(orgCtx.organizationId, target.id, null, result.endpoints);

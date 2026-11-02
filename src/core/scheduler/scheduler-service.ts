@@ -17,7 +17,6 @@ import {
   isValidCron,
   ScheduleFrequency,
 } from './cron-evaluator';
-import { evaluateScanRegression } from '@/core/monitoring/regression-detector';
 import { createMonitoringAlert } from '@/core/monitoring/monitoring-repository';
 
 export interface CreateScheduleInput {
@@ -240,8 +239,7 @@ export async function triggerScheduleNow(
   // 4. Execute scan job
   await executeScanJob(scanJob.id);
 
-  // 5. Evaluate security regressions
-  await evaluateScanRegression(scanJob.id);
+  // The scan runner evaluates regressions once.
 
   const updatedSchedule = (await getScanScheduleById(scheduleId, organizationId))!;
   return { schedule: updatedSchedule, scanJob };
@@ -288,11 +286,7 @@ export async function dispatchDueSchedules(batchSize = 5): Promise<number> {
       const nextRunAt = getNextRunDate(schedule.cronExpression);
       await recordScheduleExecution(schedule.id, scanJob.id, nextRunAt);
 
-      // Execute scan job
-      await executeScanJob(scanJob.id);
-
-      // Evaluate regressions
-      await evaluateScanRegression(scanJob.id);
+      // The durable worker consumes this QUEUED job; do not run inside the scheduler.
 
       executedCount++;
     } catch (err) {

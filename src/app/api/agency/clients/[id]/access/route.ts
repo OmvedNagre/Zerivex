@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, requirePermission, handleAuthError } from '@/core/rbac/authorization-guard';
 import {
@@ -15,7 +16,7 @@ export async function POST(
     requirePermission(auth, 'agency:clients_manage');
 
     const { id: relationshipId } = await params;
-    const body = await req.json();
+    const body = await readJsonBody(req);
 
     const { userEmail, role = 'CLIENT_VIEWER' } = body;
 

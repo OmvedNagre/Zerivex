@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiOrSessionAuth, handleAuthError } from '@/core/rbac/authorization-guard';
 import {
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const auth = await requireApiOrSessionAuth(req, 'qualitygate:manage');
-    const body = await req.json();
+    const body = await readJsonBody(req);
 
     const {
       targetId,

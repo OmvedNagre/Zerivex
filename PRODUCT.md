@@ -28,13 +28,13 @@ Cloud and on-premise web environments, CI/CD deployment pipelines, DNS managemen
 - **Cryptographic target verification**: Scoped to exact hosts or apex domains.
 - **Deterministic findings triage**: Standardized severity levels (CRITICAL, HIGH, MEDIUM, LOW, INFO) mapped to OWASP Top 10 and CWE.
 - **SARIF 2.1.0 and RFC 4180 CSV exportability**: Immutable audit trail in the Compliance Audit Vault.
-- **Modern UI Architecture**: Next.js 16 App Router, React 18, Vanilla CSS custom properties (`[data-theme="dark"]` and `[data-theme="light"]`), GSAP motion, and React Bits micro-typography.
+- **Modern UI Architecture**: Next.js 16 App Router, React 18, Vanilla CSS custom properties (current light-first token system; theme selection is parked pending visual validation), GSAP motion, and React Bits micro-typography.
 
 ## Brand Commitments
 
 - **Tone & Atmosphere**: "Quietly expensive security infrastructure" — sophisticated, restrained, technical, precise, zero AI-slop, zero excessive glow/blur.
 - **Palette**: Deep Obsidian (#07090e) Dark theme, Clean Slate (#f8fafc) Light theme, Cyber Blue (#3b82f6), Emerald Mint (#10b981), Warning Amber (#f59e0b), and Critical Crimson (#ef4444).
-- **Typography**: Plus Jakarta Sans (body, titles, navigation) and JetBrains Mono (status badges, hosts, ciphers, code).
+- **Typography**: Inter (body and navigation), Bricolage Grotesque (display headings) and JetBrains Mono (status badges, hosts, ciphers, code).
 
 ## Product Principles
 

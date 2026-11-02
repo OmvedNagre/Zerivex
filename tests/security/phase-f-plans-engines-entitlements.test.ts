@@ -104,7 +104,7 @@ describe('Phase F: Single Plan Config, Engine Registry & Entitlements (§F1–F5
         'check-cookies',
         'check-cors',
         'check-exposed-secrets',
-        'check-security-txt',
+        'security-txt-check',
         'check-ai-code-smells',
       ]);
     });

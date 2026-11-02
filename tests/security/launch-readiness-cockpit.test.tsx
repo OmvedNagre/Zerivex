@@ -433,7 +433,7 @@ describe('Component 11 — Launch Readiness Cockpit, Subsystem Health & Certific
       />
     );
 
-    expect(html).toContain('ZERIVEX PRODUCTION READINESS CERTIFICATE');
+    expect(html).toContain('ZERIVEX CONFIGURATION AUDIT');
     expect(html).toContain('ZERIVEX Autonomous Self-Scan Dogfooding Engine v1.0');
     expect(html).toContain('a4f8b92d7c1e5069f143a28b0c9e8d7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d');
     expect(html).toContain('Copy');

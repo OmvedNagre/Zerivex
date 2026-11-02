@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from '@/components/ui/Toast';
+
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { WebhookRecord, WebhookDeliveryRecord } from '@/core/webhooks/webhook-repository';
@@ -57,7 +59,7 @@ export default function WebhooksSettingsPage() {
       if (!res.ok) throw new Error(data.error || 'Failed to fetch deliveries');
       setDeliveries(data.data.deliveries || []);
     } catch (err) {
-      alert(`Error: ${(err as Error).message}`);
+      toast.error(`Error: ${(err as Error).message}`);
     } finally {
       setLoadingDeliveries(false);
     }
@@ -81,7 +83,7 @@ export default function WebhooksSettingsPage() {
       setUrl('');
       fetchWebhooks();
     } catch (err) {
-      alert(`Error creating webhook: ${(err as Error).message}`);
+      toast.error(`Error creating webhook: ${(err as Error).message}`);
     } finally {
       setSubmitting(false);
     }
@@ -120,7 +122,7 @@ export default function WebhooksSettingsPage() {
       if (selectedWebhook?.id === id) setSelectedWebhook(null);
       fetchWebhooks();
     } catch (err) {
-      alert(`Error: ${(err as Error).message}`);
+      toast.error(`Error: ${(err as Error).message}`);
     }
   };
 

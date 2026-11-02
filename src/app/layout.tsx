@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import '@/styles/globals.css';
+import { Toaster } from '@/components/ui/Toast';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export default function RootLayout({
       <body style={{ backgroundColor: 'var(--ds-bg-page)', color: 'var(--ds-text-primary)' }}>
         <AuthProvider>
           {children}
+          <Toaster />
         </AuthProvider>
       </body>
     </html>

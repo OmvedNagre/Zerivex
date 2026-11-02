@@ -13,7 +13,7 @@ export async function GET(
     requirePermission(auth, 'targets:read');
 
     const { id: targetId } = await params;
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
 
     const target = await getTargetById(targetId, orgCtx.organizationId);
     const instructions = getVerificationInstructions(target);
@@ -39,7 +39,7 @@ export async function DELETE(
     requirePermission(auth, 'targets:delete');
 
     const { id: targetId } = await params;
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
 
     await deleteTarget(targetId, orgCtx.organizationId, auth.user.id);
 

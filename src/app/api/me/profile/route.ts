@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, handleAuthError } from '@/core/rbac/authorization-guard';
 import { getUserActiveOrganization } from '@/core/auth/organization-context';
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const auth = await requireAuth(req);
-    const body = await req.json().catch(() => ({}));
+    const body = await readJsonBody(req);
 
     // 1. Strict input validation and sanitization
     const validation = validateProfileInput(body);
@@ -58,7 +59,7 @@ export async function PUT(req: NextRequest) {
     // 2. Fetch active organization context for optional audit logging
     let orgId: string | undefined;
     try {
-      const orgCtx = await getUserActiveOrganization(auth.user.id);
+      const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
       orgId = orgCtx.organizationId;
     } catch {
       // Organization context optional for personal profile

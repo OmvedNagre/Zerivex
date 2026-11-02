@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiOrSessionAuth, handleAuthError } from '@/core/rbac/authorization-guard';
 import {
@@ -44,7 +45,7 @@ export async function PATCH(
   try {
     const auth = await requireApiOrSessionAuth(req, 'webhooks:update');
     const { id } = await context.params;
-    const body = await req.json();
+    const body = await readJsonBody(req);
 
     const { name, url, events, isActive } = body as {
       name?: string;

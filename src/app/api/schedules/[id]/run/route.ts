@@ -12,7 +12,7 @@ export async function POST(
     requirePermission(auth, 'schedules:update');
 
     const { id } = await params;
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
 
     const result = await triggerScheduleNow(id, orgCtx.organizationId, auth.user.id);
 

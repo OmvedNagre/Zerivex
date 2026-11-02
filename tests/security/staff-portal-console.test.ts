@@ -256,9 +256,9 @@ describe('Phase C & Phase 0: Staff Portal, Console RBAC & Security Controls', ()
   });
 
   describe('8. Next.js 16 Edge Proxy Guard (§0.10)', () => {
-    it('redirects unauthenticated /staff requests to /staff/login', () => {
+    it('redirects unauthenticated /staff requests to /staff/login', async () => {
       const req = new NextRequest('http://localhost:3000/staff');
-      const res = proxy(req);
+      const res = await proxy(req);
 
       expect(res.status).toBe(307);
       expect(res.headers.get('location')).toContain('/staff/login');
@@ -266,17 +266,17 @@ describe('Phase C & Phase 0: Staff Portal, Console RBAC & Security Controls', ()
       expect(res.headers.get('cache-control')).toBe('no-store');
     });
 
-    it('returns 404 when STAFF_PORTAL_ENABLED is false', () => {
+    it('returns 404 when STAFF_PORTAL_ENABLED is false', async () => {
       process.env.STAFF_PORTAL_ENABLED = 'false';
       const req = new NextRequest('http://localhost:3000/staff');
-      const res = proxy(req);
+      const res = await proxy(req);
 
       expect(res.status).toBe(404);
     });
 
-    it('appends noindex, nofollow and no-store headers on all staff paths', () => {
+    it('appends noindex, nofollow and no-store headers on all staff paths', async () => {
       const req = new NextRequest('http://localhost:3000/staff/login');
-      const res = proxy(req);
+      const res = await proxy(req);
 
       expect(res.headers.get('x-robots-tag')).toBe('noindex, nofollow');
       expect(res.headers.get('cache-control')).toBe('no-store');

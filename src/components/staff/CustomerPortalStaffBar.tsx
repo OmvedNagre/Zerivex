@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from '@/components/ui/Toast';
+
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Shield, Eye, ArrowRight } from 'lucide-react';
@@ -58,10 +60,10 @@ export function CustomerPortalStaffBar() {
         window.location.reload();
       } else {
         const data = await res.json();
-        alert(data.error || 'Failed to update plan preview');
+        toast.error(data.error || 'Failed to update plan preview');
       }
     } catch {
-      alert('Error updating preview plan');
+      toast.error('Error updating preview plan');
     } finally {
       setUpdatingPlan(false);
     }

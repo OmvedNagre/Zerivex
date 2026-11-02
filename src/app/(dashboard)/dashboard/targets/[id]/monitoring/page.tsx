@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from '@/components/ui/Toast';
+
 import { useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
 import { Target } from '@/core/targets/target-service';
@@ -884,7 +886,7 @@ export default function TargetMonitoringPage({ params }: { params: Promise<{ id:
                     type="button"
                     onClick={() => {
                       if (!isVerified) {
-                        alert('Active scans require verified domain ownership (ADR-0008). Verify this target first.');
+                        toast.error('Active scans require verified domain ownership (ADR-0008). Verify this target first.');
                         return;
                       }
                       setScanMode('VERIFIED_ACTIVE');

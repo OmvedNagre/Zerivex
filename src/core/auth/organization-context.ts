@@ -13,7 +13,7 @@ export interface UserOrganizationContext {
  * Get or automatically provision an active organization & default project for a user.
  * Ensures every authenticated user always operates within a strict tenant boundary.
  */
-export async function getUserActiveOrganization(userId: string): Promise<UserOrganizationContext> {
+export async function getUserActiveOrganization(userId: string, organizationId?: string | null): Promise<UserOrganizationContext> {
   // 1. Check existing memberships
   const membershipRes = await query<{
     organization_id: string;
@@ -30,10 +30,12 @@ export async function getUserActiveOrganization(userId: string): Promise<UserOrg
     FROM memberships m
     JOIN organizations o ON o.id = m.organization_id
     WHERE m.user_id = $1
+      AND ($2::uuid IS NULL OR o.id = $2)
+      AND o.suspended_at IS NULL
     ORDER BY m.created_at ASC
     LIMIT 1
     `,
-    [userId]
+    [userId, organizationId ?? null]
   );
 
   if (membershipRes.rows.length > 0) {
@@ -65,6 +67,11 @@ export async function getUserActiveOrganization(userId: string): Promise<UserOrg
       role: mem.role,
       defaultProjectId,
     };
+  }
+
+  const existing = await query('SELECT 1 FROM memberships WHERE user_id = $1 LIMIT 1', [userId]);
+  if (organizationId || existing.rows.length > 0) {
+    throw new Error('Organization unavailable or access revoked');
   }
 
   // 2. No membership found - atomically create Personal Organization & Default Project

@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, requirePermission, handleAuthError } from '@/core/rbac/authorization-guard';
 import { getUserActiveOrganization } from '@/core/auth/organization-context';
@@ -11,14 +12,14 @@ export async function POST(req: NextRequest) {
     const auth = await requireAuth(req);
     requirePermission(auth, 'billing:manage');
 
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const { planId, billingCycle } = body;
 
     const resolvedPlan = resolvePlanId(planId);
-    const validPaidPlans = ['PRO', 'TEAM', 'ENTERPRISE'];
+    const validPaidPlans = ['PRO', 'TEAM'];
     if (!planId || !validPaidPlans.includes(resolvedPlan)) {
       return NextResponse.json(
-        { error: 'Valid paid planId required (PRO, TEAM, or ENTERPRISE)' },
+        { error: 'Valid self-service planId required (PRO or TEAM); Enterprise requires a custom agreement' },
         { status: 400 }
       );
     }
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
 
     // Section C6: Billing disabled for internal organizations
     const orgCheck = await query<{ isInternal: boolean }>(
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
 
     const session = await createStripeCheckoutSession({
       organizationId: orgCtx.organizationId,
-      planId: planId as PlanId,
+      planId: resolvedPlan as PlanId,
       billingCycle: billingCycle as BillingCycle,
       customerEmail: auth.user.email,
       successUrl: `${origin}/dashboard/billing?session_id={CHECKOUT_SESSION_ID}&success=true`,

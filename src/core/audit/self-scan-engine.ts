@@ -23,7 +23,7 @@ export interface SelfScanCheckResult {
   checkId: string;
   checkName: string;
   category: string;
-  status: 'PASSED' | 'FAILED';
+  status: 'PASSED' | 'FAILED' | 'NOT_TESTED';
   durationMs: number;
   message: string;
   findingsCount: number;
@@ -123,6 +123,13 @@ export async function runPlatformSelfScan(
     evaluator: () => Promise<RawFinding[]>
   ) => {
     const t0 = Date.now();
+    const configurationChecks = new Set(['zx-self-cookies', 'zx-self-secrets', 'zx-self-api', 'zx-self-ssrf', 'zx-self-redirect']);
+    if (!configurationChecks.has(id)) {
+      checkResults.push({ checkId: id, checkName: name, category, status: 'NOT_TESTED',
+        durationMs: 0, message: 'Requires a live deployment assessment; configuration inspection cannot verify this control.',
+        findingsCount: 0, findings: [] });
+      return;
+    }
     try {
       const findings = await evaluator();
       const durationMs = Date.now() - t0;
@@ -142,6 +149,7 @@ export async function runPlatformSelfScan(
       });
     } catch (err) {
       const durationMs = Date.now() - t0;
+      allFindings.push({ ruleId: `ZX-EXEC-${id}`, title: `Configuration check failed: ${name}`, severity: 'HIGH', confidence: 'HIGH', category, resourceEndpoint: targetUrl, evidence: { error: 'Check execution failed' } });
       checkResults.push({
         checkId: id,
         checkName: name,
@@ -481,7 +489,9 @@ export async function runPlatformSelfScan(
   const timestamp = new Date().toISOString();
   const certHash = generateCertificationHash(scanId, timestamp, score, allFindings.length);
 
-  const isCertified = score === 100 && criticalFindings === 0 && highFindings === 0 && mediumFindings === 0;
+  // Configuration checks cannot certify a deployment or attest to live vulnerability coverage.
+  const isCertified = false;
+  const configurationPassed = failedChecks === 0;
 
   const report: SelfScanReport = {
     id: scanId,
@@ -490,7 +500,7 @@ export async function runPlatformSelfScan(
     durationMs,
     score,
     grade,
-    status: isCertified ? 'PASSED' : 'FAILED',
+    status: configurationPassed ? 'PASSED' : 'FAILED',
     summary: {
       totalChecks: checkResults.length,
       passedChecks,
@@ -505,7 +515,7 @@ export async function runPlatformSelfScan(
     findings: allFindings,
     certification: {
       certifiedAt: timestamp,
-      certifiedBy: 'ZERIVEX Autonomous Self-Scan Dogfooding Engine v1.0',
+      certifiedBy: 'Zerivex configuration audit (not a production certification)',
       certificationHash: certHash,
       status: isCertified ? 'CERTIFIED_PRODUCTION_READY' : 'UNCERTIFIED',
     },
@@ -526,12 +536,14 @@ export async function runPlatformSelfScan(
         low_findings,
         findings_json,
         checks_summary_json,
+        check_results_json,
+        target_url,
         certification_hash,
         triggered_by_user_id,
         duration_ms,
         created_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $14, $15, $11, $12, $13, NOW())
       ON CONFLICT (id) DO NOTHING
       `,
       [
@@ -548,6 +560,8 @@ export async function runPlatformSelfScan(
         report.certification.certificationHash,
         options.triggeredByUserId || 'system',
         durationMs,
+        JSON.stringify(checkResults),
+        targetUrl,
       ]
     );
   } catch (err) {
@@ -573,7 +587,9 @@ export async function getLatestSelfScanReport(): Promise<SelfScanReport | null> 
       medium_findings: number;
       low_findings: number;
       findings_json: RawFinding[];
-      checks_summary_json: Record<string, number>;
+      checks_summary_json: SelfScanReport['summary'];
+      check_results_json: SelfScanCheckResult[];
+      target_url: string | null;
       certification_hash: string;
       duration_ms: number;
       created_at: Date;
@@ -590,29 +606,20 @@ export async function getLatestSelfScanReport(): Promise<SelfScanReport | null> 
 
     return {
       id: row.id,
-      target: 'https://zerivex.com',
+      target: row.target_url || 'Unknown (legacy report)',
       timestamp: row.created_at.toISOString(),
       durationMs: row.duration_ms,
       score: row.score,
       grade: row.grade as SelfScanReport['grade'],
       status: row.status as SelfScanReport['status'],
-      summary: {
-        totalChecks: 15,
-        passedChecks: row.status === 'PASSED' ? 15 : 14,
-        failedChecks: row.status === 'PASSED' ? 0 : 1,
-        criticalFindings: row.critical_findings,
-        highFindings: row.high_findings,
-        mediumFindings: row.medium_findings,
-        lowFindings: row.low_findings,
-        informationalFindings: 0,
-      },
-      checkResults: [],
+      summary: row.checks_summary_json,
+      checkResults: row.check_results_json || [],
       findings: row.findings_json || [],
       certification: {
         certifiedAt: row.created_at.toISOString(),
-        certifiedBy: 'ZERIVEX Autonomous Self-Scan Dogfooding Engine v1.0',
+        certifiedBy: 'Zerivex configuration audit (not a production certification)',
         certificationHash: row.certification_hash,
-        status: row.status === 'PASSED' ? 'CERTIFIED_PRODUCTION_READY' : 'UNCERTIFIED',
+        status: 'UNCERTIFIED',
       },
     };
   } catch {

@@ -102,31 +102,14 @@ export function isProhibitedIpAddress(ip: string): { prohibited: boolean; reason
 
   // Check IPv6
   if (net.isIPv6(cleanIp)) {
-    // Loopback
-    if (cleanIp === '::1' || cleanIp === '0:0:0:0:0:0:0:1') {
-      return { prohibited: true, reason: 'IPv6 Loopback' };
-    }
-    // Unspecified
-    if (cleanIp === '::' || cleanIp === '0:0:0:0:0:0:0:0') {
-      return { prohibited: true, reason: 'IPv6 Unspecified address' };
-    }
-    // Unique Local Address (fc00::/7)
-    if (cleanIp.startsWith('fc') || cleanIp.startsWith('fd')) {
-      return { prohibited: true, reason: 'IPv6 Unique Local Address (RFC 4193)' };
-    }
-    // Link-Local (fe80::/10)
-    if (
-      cleanIp.startsWith('fe8') ||
-      cleanIp.startsWith('fe9') ||
-      cleanIp.startsWith('fea') ||
-      cleanIp.startsWith('feb')
-    ) {
-      return { prohibited: true, reason: 'IPv6 Link-Local address' };
-    }
-    // IPv4-mapped IPv6 (::ffff:127.0.0.1, etc.)
-    if (cleanIp.startsWith('::ffff:')) {
-      const embeddedIpv4 = cleanIp.slice(7);
-      return isProhibitedIpAddress(embeddedIpv4);
+    // Normalize all valid representations before classifying. Only global unicast
+    // 2000::/3 is usable by this public-web scanner; special-use ranges fail closed.
+    const normalized = new URL(`http://[${cleanIp}]/`).hostname.slice(1, -1);
+    const first = parseInt(normalized.split(':')[0] || '0', 16);
+    if (first < 0x2000 || first > 0x3fff ||
+        normalized.startsWith('2001:db8:') || normalized.startsWith('2001:0:') ||
+        normalized.startsWith('2002:')) {
+      return { prohibited: true, reason: 'IPv6 non-global or special-use address' };
     }
 
     return { prohibited: false };

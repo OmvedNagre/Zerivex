@@ -8,6 +8,9 @@ import { query } from '@/core/db/database';
 import { recordAuditEvent } from '@/core/audit/audit-service';
 import { ALL_SCAN_CHECKS } from '@/core/scanner/scan-runner';
 import { ScanCheck, ScanContext, RawFinding } from '@/core/scanner/checks/types';
+import { runAssessment } from '@/core/security/assessment-context';
+import { redactEvidence } from '@/core/scanner/evidence-redactor';
+import { assertTargetScanAuthorization } from '@/core/targets/verification-service';
 import { resolveEntitlements } from '@/core/billing/entitlement-service';
 
 export interface FixVerificationResult {
@@ -49,7 +52,7 @@ function findCheckModuleForRule(ruleId: string): ScanCheck | null {
   if (ruleId.startsWith('ZX-SEC')) {
     return ALL_SCAN_CHECKS.find((c) => c.id === 'check-exposed-secrets') || null;
   }
-  if (ruleId.startsWith('ZX-CKI')) {
+  if (ruleId.startsWith('ZX-CKI') || ruleId.startsWith('ZX-CK-')) {
     return ALL_SCAN_CHECKS.find((c) => c.id === 'check-cookies') || null;
   }
   if (ruleId.startsWith('ZX-AI')) {
@@ -150,7 +153,7 @@ export async function verifyFindingFix(params: {
 
   // 3. Execute targeted re-test
   const scanContext: ScanContext = {
-    targetUrl: finding.targetUrl,
+    targetUrl: check.requiresActiveScan ? finding.resourceEndpoint : finding.targetUrl,
     hostname: finding.hostname,
     scanMode: finding.verificationStatus === 'VERIFIED' ? 'VERIFIED_ACTIVE' : 'PUBLIC_PASSIVE',
     organizationId,
@@ -159,13 +162,14 @@ export async function verifyFindingFix(params: {
 
   let checkFindings: RawFinding[] = [];
   try {
-    checkFindings = await check.run(scanContext);
+    const target = await assertTargetScanAuthorization(finding.targetId, organizationId, scanContext.scanMode);
+    checkFindings = await runAssessment({ targetUrl: target.targetUrl, pathOnly: target.verificationScope === 'URL_PATH' }, () => check.run(scanContext));
   } catch (err) {
     throw new Error(`Fix verification re-test failed to execute: ${(err as Error).message}`);
   }
 
   // 4. Evaluate whether the exact rule still triggered
-  const stillActive = checkFindings.find((rf) => rf.ruleId === finding.ruleId);
+  const stillActive = checkFindings.find((rf) => rf.ruleId === finding.ruleId.replace('ZX-CK-', 'ZX-CKI-'));
   const now = new Date().toISOString();
 
   if (!stillActive) {
@@ -225,7 +229,7 @@ export async function verifyFindingFix(params: {
         ruleId: finding.ruleId,
         previousStatus: finding.status,
         newStatus,
-        activeEvidence: stillActive.evidence,
+        activeEvidence: redactEvidence(stillActive.evidence),
         retestedAt: now,
       },
     });
@@ -237,7 +241,7 @@ export async function verifyFindingFix(params: {
       previousStatus: finding.status,
       newStatus,
       diagnostic: `Verification failed: "${finding.title}" (${finding.ruleId}) is still active on the endpoint. Review remediation instructions and try again.`,
-      remainingEvidence: stillActive.evidence,
+      remainingEvidence: redactEvidence(stillActive.evidence),
       verifiedAt: now,
     };
   }

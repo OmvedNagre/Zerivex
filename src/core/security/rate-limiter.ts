@@ -1,3 +1,4 @@
+import { isIP } from 'node:net';
 export type RateLimitTier = 'AUTH' | 'SCANS' | 'API_STANDARD' | 'PUBLIC';
 
 export interface RateLimitConfig {
@@ -129,7 +130,8 @@ export const defaultRateLimiter = new SlidingWindowRateLimiter();
  * Extract genuine client IP address from request headers with reverse proxy spoofing defenses.
  * Prioritizes CF-Connecting-IP, X-Real-IP, and X-Forwarded-For.
  */
-export function getClientIp(headers: Headers): string {
+export function getClientIp(headers: Headers, trustProxyHeaders = true): string {
+  if (!trustProxyHeaders) return '127.0.0.1';
   // 1. Cloudflare True Client IP (High Confidence)
   const cfIp = headers.get('cf-connecting-ip');
   if (cfIp && isValidIp(cfIp.trim())) {
@@ -156,11 +158,8 @@ export function getClientIp(headers: Headers): string {
   return '127.0.0.1';
 }
 
-const IPV4_REGEX = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-const IPV6_REGEX = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^([0-9a-fA-F]{1,4}:){1,7}:|^:[0-9a-fA-F]{1,7}|::1$/;
-
 function isValidIp(ip: string): boolean {
-  return IPV4_REGEX.test(ip) || IPV6_REGEX.test(ip);
+  return isIP(ip) !== 0;
 }
 
 /**
@@ -176,7 +175,7 @@ export function validateRequestBodySize(
     return { valid: true, length: 0, maxBytes };
   }
 
-  const length = parseInt(clHeader, 10);
+  const length = /^\d+$/.test(clHeader) ? Number(clHeader) : NaN;
   if (isNaN(length) || length < 0) {
     return { valid: false, length: 0, maxBytes, error: 'Invalid Content-Length header' };
   }

@@ -120,7 +120,7 @@ export const SCAN_ENGINES: readonly EngineDefinition[] = [
     version: '1.0.0',
   },
   {
-    id: 'check-security-txt',
+    id: 'security-txt-check',
     displayName: 'security.txt',
     doingLine: 'Checking for a security contact file (RFC 9116)',
     doneLine: (n) => (n === 0 ? 'security.txt contact policy present' : 'Missing RFC 9116 security.txt contact file'),
@@ -148,7 +148,7 @@ export const SCAN_ENGINES: readonly EngineDefinition[] = [
     version: '1.0.0',
   },
   {
-    id: 'check-http-methods',
+    id: 'http-methods-check',
     displayName: 'HTTP Methods',
     doingLine: 'Checking whether risky methods like TRACE, PUT or DELETE are allowed',
     doneLine: (n) => (n === 0 ? 'HTTP verb restrictions validated' : `${n} risky HTTP methods permitted`),
@@ -162,7 +162,7 @@ export const SCAN_ENGINES: readonly EngineDefinition[] = [
     version: '1.0.0',
   },
   {
-    id: 'check-stack-trace',
+    id: 'stack-trace-check',
     displayName: 'Error Leaks',
     doingLine: 'Checking whether errors reveal stack traces or file paths',
     doneLine: (n) => (n === 0 ? 'Error responses properly sanitized' : `${n} verbose stack traces or path disclosures`),
@@ -176,7 +176,7 @@ export const SCAN_ENGINES: readonly EngineDefinition[] = [
     version: '1.0.0',
   },
   {
-    id: 'check-api-security',
+    id: 'api-security-check',
     displayName: 'Open API Endpoints',
     doingLine: 'Checking common API paths for data anyone can read',
     doneLine: (n) => (n === 0 ? 'Common unauthenticated API endpoints protected' : `${n} unauthenticated API endpoints exposed`),

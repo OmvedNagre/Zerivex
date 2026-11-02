@@ -32,7 +32,7 @@ export function TopBar() {
 
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [planChipText, setPlanChipText] = useState('Free Plan');
+  const [planChipText, setPlanChipText] = useState('Loading plan…');
 
   // Derive breadcrumbs
   const pathSegments = pathname.split('/').filter(Boolean);
@@ -47,19 +47,22 @@ export function TopBar() {
     async function loadPlanInfo() {
       try {
         const res = await fetch('/api/billing');
-        if (!res.ok) return;
+        if (!res.ok) { setPlanChipText('Plan unavailable'); return; }
         const data = await res.json();
         if (data?.data?.entitlements) {
           const e = data.data.entitlements;
-          const planName = e.plan?.name || 'Free';
-          const maxScans = e.plan?.limits?.maxMonthlyScans || 5;
-          const usedScans = e.scansCount || 0;
+          const planName = e.plan?.name;
+          const maxScans = e.usage?.monthlyScans?.max;
+          const usedScans = e.usage?.monthlyScans?.current;
+          if (!planName || typeof maxScans !== 'number' || typeof usedScans !== 'number') {
+            setPlanChipText('Plan unavailable'); return;
+          }
           const remaining = Math.max(maxScans - usedScans, 0);
           setPlanChipText(`${planName} · ${remaining} scan${remaining === 1 ? '' : 's'} left`);
         }
       } catch {
         // Fallback default
-        setPlanChipText('Free Plan');
+        setPlanChipText('Plan unavailable');
       }
     }
     loadPlanInfo();

@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   requireApiOrSessionAuth,
@@ -45,7 +46,7 @@ export async function POST(
     await requireOrgRolePermission(auth.userId, auth.organizationId, 'findings:comment', auth.userRole);
 
     const { id: findingId } = await params;
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const { content } = body as { content?: string };
 
     if (!content || !content.trim()) {

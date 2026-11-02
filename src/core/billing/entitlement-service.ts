@@ -122,7 +122,9 @@ export async function resolveEntitlements(
   const orgId = typeof org === 'string' ? org : org?.id || session?.organizationId;
   if (orgId) {
     const subscription = await getSubscriptionByOrgId(orgId);
-    return resolveEntitlementsFromPlan(subscription.planId);
+    const active = ['ACTIVE', 'TRIALING'].includes(subscription.status) &&
+      (resolvePlanId(subscription.planId) === 'STARTER' || new Date(subscription.currentPeriodEnd).getTime() > Date.now());
+    return resolveEntitlementsFromPlan(active ? subscription.planId : 'STARTER');
   }
 
   // 6. Default to Starter tier
@@ -237,7 +239,7 @@ export async function checkTargetQuota(
   const current = await getActiveTargetCount(organizationId);
   const max = entitlements.limits.maxSites;
 
-  if (current >= max && !entitlements.isStaffOverride) {
+  if (current >= max && (!entitlements.isStaffOverride || Boolean(entitlements.previewPlanId))) {
     return {
       allowed: false,
       metric: 'ACTIVE_TARGETS',
@@ -296,7 +298,7 @@ export async function checkScanQuota(
   const current = await getMonthlyScanUsage(organizationId);
   const max = entitlements.limits.maxMonthlyScans;
 
-  if (current >= max && !entitlements.isStaffOverride) {
+  if (current >= max && (!entitlements.isStaffOverride || Boolean(entitlements.previewPlanId))) {
     return {
       allowed: false,
       metric: 'MONTHLY_SCANS',
@@ -342,7 +344,7 @@ export async function checkFeatureAccess(
   const subscription = await getSubscriptionByOrgId(organizationId).catch(() => null);
   const hasAccess = entitlements.features[feature] === true;
 
-  if (!hasAccess && !entitlements.isStaffOverride) {
+  if (!hasAccess && (!entitlements.isStaffOverride || Boolean(entitlements.previewPlanId))) {
     return {
       allowed: false,
       feature,

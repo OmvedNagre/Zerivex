@@ -1,3 +1,5 @@
+> Current implementation and deployment changes: [2 November 2026 remediation](REMEDIATION_2026-11-02.md). Historical readiness and hosting claims below are not deployment evidence.
+
 # Zerivex: Setup Requirements & External Dependency Discovery
 
 > **Project:** ZERIVEX  

@@ -22,7 +22,8 @@ export interface SystemHealthReport {
   environment: string;
   database: DatabaseHealth;
   memory: MemoryHealth;
-  workers: WorkerPoolMetrics;
+  workers: WorkerPoolMetrics & { scope: 'current-process' };
+  scanQueue: { queued: number; running: number; stale: number } | null;
 }
 
 /**
@@ -39,22 +40,29 @@ export async function getSystemHealthReport(): Promise<SystemHealthReport> {
     heapTotalMb: Math.round((mem.heapTotal / (1024 * 1024)) * 100) / 100,
   };
 
-  const workers = defaultWorkerPool.getMetrics();
+  const workers = { ...defaultWorkerPool.getMetrics(), scope: 'current-process' as const };
+  let scanQueue: SystemHealthReport['scanQueue'] = null;
 
   // Test Database Connection with timing
   let database: DatabaseHealth;
   const dbStart = Date.now();
   try {
-    await query('SELECT 1');
+    const jobs = await query<{ queued: number; running: number; stale: number }>(`SELECT
+      COUNT(*) FILTER (WHERE status = 'QUEUED')::integer AS queued,
+      COUNT(*) FILTER (WHERE status = 'RUNNING')::integer AS running,
+      COUNT(*) FILTER (WHERE (status = 'QUEUED' AND created_at < NOW() - INTERVAL '1 minute') OR
+        (status = 'RUNNING' AND COALESCE(heartbeat_at, started_at) < NOW() - INTERVAL '6 minutes'))::integer AS stale
+      FROM scan_jobs WHERE status IN ('QUEUED', 'RUNNING')`);
+    scanQueue = jobs.rows[0] || { queued: 0, running: 0, stale: 0 };
     const latencyMs = Date.now() - dbStart;
     database = {
       status: 'CONNECTED',
       latencyMs,
     };
-  } catch (err: any) {
+  } catch {
     database = {
       status: 'ERROR',
-      error: err.message || 'Database ping failed',
+      error: 'Database or queue storage unavailable',
     };
   }
 
@@ -62,7 +70,7 @@ export async function getSystemHealthReport(): Promise<SystemHealthReport> {
   let status: 'UP' | 'DEGRADED' | 'DOWN' = 'UP';
   if (database.status === 'ERROR') {
     status = 'DOWN';
-  } else if (workers.openCircuits > 0 || (database.latencyMs && database.latencyMs > 1000)) {
+  } else if ((scanQueue?.stale || 0) > 0 || workers.openCircuits > 0 || (database.latencyMs && database.latencyMs > 1000)) {
     status = 'DEGRADED';
   }
 
@@ -75,6 +83,7 @@ export async function getSystemHealthReport(): Promise<SystemHealthReport> {
     database,
     memory,
     workers,
+    scanQueue,
   };
 }
 
@@ -89,7 +98,7 @@ export async function checkReadiness(): Promise<{ ready: boolean; reason?: strin
       return { ready: false, reason: 'Worker pool is shutting down' };
     }
     return { ready: true };
-  } catch (err: any) {
-    return { ready: false, reason: `Database connection unavailable: ${err.message}` };
+  } catch {
+    return { ready: false, reason: 'Database connection unavailable' };
   }
 }

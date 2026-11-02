@@ -1,3 +1,4 @@
+import { readTextBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   verifyStripeWebhookSignature,
@@ -6,7 +7,7 @@ import {
 
 export async function POST(req: NextRequest) {
   try {
-    const rawBody = await req.text();
+    const rawBody = await readTextBody(req);
     const signature = req.headers.get('stripe-signature');
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
     console.error('[STRIPE WEBHOOK ERROR]', (error as Error).message);
     return NextResponse.json(
       { error: (error as Error).message || 'Webhook processing failed' },
-      { status: 500 }
+      { status: (error as { statusCode?: number }).statusCode || 500 }
     );
   }
 }

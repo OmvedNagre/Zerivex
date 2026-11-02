@@ -1,18 +1,21 @@
 import fs from 'fs';
 import path from 'path';
-import { query, withTransaction, closeDbPool } from '@/core/db/database';
+import { withTransaction, closeDbPool } from '@/core/db/database';
 
 /**
  * Ensures the schema_migrations table exists to track applied migrations.
  */
 async function ensureMigrationsTable(): Promise<void> {
-  await query(`
+  await withTransaction(async (client) => {
+    await client.query("SELECT pg_advisory_xact_lock(hashtext('zerivex-schema-migrations'))");
+    await client.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
       id SERIAL PRIMARY KEY,
       migration_name VARCHAR(255) NOT NULL UNIQUE,
       applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+  });
 }
 
 /**
@@ -33,29 +36,20 @@ export async function runMigrations(): Promise<string[]> {
   const appliedMigrations: string[] = [];
 
   for (const file of files) {
-    const existing = await query(
-      'SELECT id FROM schema_migrations WHERE migration_name = $1',
-      [file]
-    );
-
-    if (existing.rows.length === 0) {
-      console.log(`[ZERIVEX MIGRATION] Applying: ${file}...`);
-      const filePath = path.join(migrationsDir, file);
-      const sql = fs.readFileSync(filePath, 'utf8');
-
-      await withTransaction(async (client) => {
-        await client.query(sql);
-        await client.query(
-          'INSERT INTO schema_migrations (migration_name) VALUES ($1)',
-          [file]
-        );
-      });
-
+    const applied = await withTransaction(async (client) => {
+      await client.query("SELECT pg_advisory_xact_lock(hashtext('zerivex-schema-migrations'))");
+      const existing = await client.query('SELECT id FROM schema_migrations WHERE migration_name = $1', [file]);
+      if (existing.rows.length > 0) return false;
+      const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+      await client.query(sql);
+      await client.query('INSERT INTO schema_migrations (migration_name) VALUES ($1)', [file]);
+      return true;
+    });
+    if (applied) {
       appliedMigrations.push(file);
       console.log(`[ZERIVEX MIGRATION] Successfully applied: ${file}`);
-    } else {
-      console.log(`[ZERIVEX MIGRATION] Already applied: ${file}`);
     }
+
   }
 
   return appliedMigrations;

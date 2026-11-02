@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireAuth(req);
     requirePermission(auth, 'findings:read');
 
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
     const searchParams = req.nextUrl.searchParams;
 
     const severity = searchParams.get('severity');

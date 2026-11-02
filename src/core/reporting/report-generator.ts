@@ -61,6 +61,10 @@ export async function getScanReportData(
     throw new Error(`Scan "${scanJobId}" not found or unauthorized`);
   }
 
+  if (scanJob.status !== 'COMPLETED' || scanJob.score === null) {
+    throw Object.assign(new Error('A completed assessment is required to export a security report'), { statusCode: 409 });
+  }
+
   const findingsRes = await query<FindingRecord>(
     `
     SELECT
@@ -528,7 +532,7 @@ export async function generateExecutiveHtmlReport(
           : ''
       }
       <p style="margin: 0 0 4px;">
-        <strong>${branding ? escapeHtml(branding.companyName).toUpperCase() : 'ZERIVEX'} SECURITY GUARANTEE:</strong> Every finding documented in this report was verified through deterministic checks against live endpoint responses. No findings, scores, or evidence in this report are simulated or hallucinated.
+        <strong>${branding ? escapeHtml(branding.companyName).toUpperCase() : 'ZERIVEX'} ASSESSMENT SCOPE:</strong> Findings describe observations from the checks performed. Coverage and confidence are limited to the assessment scope; a clean result is not a guarantee of security.
       </p>
       <p style="margin: 0;">
         All captured evidence was scrubbed synchronously prior to persistence per ADR-0007. Report generated on ${new Date().toUTCString()}.

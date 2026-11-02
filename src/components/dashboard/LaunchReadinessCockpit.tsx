@@ -50,7 +50,7 @@ export interface SelfScanCheckResult {
   checkId: string;
   checkName: string;
   category: string;
-  status: 'PASSED' | 'FAILED';
+  status: 'PASSED' | 'FAILED' | 'NOT_TESTED';
   durationMs: number;
   message: string;
   findingsCount: number;
@@ -63,7 +63,7 @@ export interface SelfScanReport {
   durationMs: number;
   score: number;
   grade: 'A+' | 'A' | 'B' | 'C' | 'D' | 'F';
-  status: 'PASSED' | 'FAILED';
+  status: 'PASSED' | 'FAILED' | 'NOT_TESTED';
   summary: {
     totalChecks: number;
     passedChecks: number;
@@ -202,15 +202,8 @@ export function LaunchReadinessCockpit({
     data?.selfScan?.lastRunAt ||
     data?.evaluatedAt;
 
-  const totalChecksPassed = selfScanReport
-    ? selfScanReport.summary.passedChecks
-    : data?.selfScan?.status === 'PASSED'
-    ? 15
-    : 15;
-
-  const totalChecksCount = selfScanReport
-    ? selfScanReport.summary.totalChecks
-    : 15;
+  const totalChecksPassed = selfScanReport?.summary.passedChecks ?? 0;
+  const totalChecksCount = selfScanReport?.summary.totalChecks ?? 0;
 
   return (
     <div className="zlr-cockpit" ref={containerRef}>
@@ -356,18 +349,18 @@ export function LaunchReadinessCockpit({
             <span className="zlr-kpi-value zlr-kpi-value-accent">
               {selfScanReport
                 ? `${selfScanReport.score}/100`
-                : data?.selfScan?.score
+                : data?.selfScan?.score != null
                 ? `${data.selfScan.score}/100`
-                : '100/100'}
+                : 'Not assessed'}
             </span>
             <span className="zlr-kpi-badge zlr-kpi-badge-grade">
-              GRADE {selfScanReport?.grade || 'A+'}
+              GRADE {selfScanReport?.grade || '—'}
             </span>
           </div>
           <div className="zlr-kpi-meta">
             {selfScanReport
               ? `${selfScanReport.summary.criticalFindings} Critical, ${selfScanReport.summary.highFindings} High, ${selfScanReport.summary.mediumFindings} Medium`
-              : '0 Critical, 0 High, 0 Medium Vulnerabilities'}
+              : 'No finding summary loaded'}
           </div>
         </div>
 
@@ -384,11 +377,11 @@ export function LaunchReadinessCockpit({
               {totalChecksPassed} / {totalChecksCount}
             </span>
             <span className="zlr-kpi-badge zlr-kpi-badge-ready">
-              {totalChecksPassed === totalChecksCount ? '100% PASS' : 'FLAGGED'}
+              {totalChecksCount === 0 ? 'NOT TESTED' : totalChecksPassed === totalChecksCount ? '100% PASS' : 'REVIEW REQUIRED'}
             </span>
           </div>
           <div className="zlr-kpi-meta">
-            TLS, SSRF Firewall, CSP, SQLi, and Secrets Verified
+            Recorded configuration checks; live coverage shown in the report
           </div>
         </div>
 
@@ -402,14 +395,14 @@ export function LaunchReadinessCockpit({
           </div>
           <div className="zlr-kpi-value-row">
             <span className="zlr-kpi-value zlr-kpi-value-emerald" style={{ fontSize: '1.75rem' }}>
-              {currentCertHash ? 'CERTIFIED' : 'PENDING'}
+              {'UNCERTIFIED'}
             </span>
             <span className="zlr-kpi-badge zlr-kpi-badge-ready">
-              {currentCertHash ? 'PROD READY' : 'REQUIRES SCAN'}
+              {'REVIEW REQUIRED'}
             </span>
           </div>
           <div className="zlr-kpi-meta">
-            STRIDE Threat Model and Production Audit Passed
+            Live deployment assessment and operator review required
           </div>
         </div>
       </section>
@@ -525,7 +518,7 @@ export function LaunchReadinessCockpit({
       {/* 5. Tab 2: Dogfooding Self-Scan Report & Certification */}
       {activeTab === 'selfscan' && (
         <section aria-label="Dogfooding Self-Scan Report and Certification">
-          {selfScanReport || data?.selfScan?.score ? (
+          {selfScanReport || data?.selfScan?.score != null ? (
             <div>
               {/* Digital Certification Trust Anchor */}
               <div className="zlr-cert-card">
@@ -535,12 +528,12 @@ export function LaunchReadinessCockpit({
                       <ShieldCheck size={20} />
                     </span>
                     <span className="zlr-cert-title">
-                      ZERIVEX PRODUCTION READINESS CERTIFICATE
+                      ZERIVEX CONFIGURATION AUDIT
                     </span>
                   </div>
 
                   <p className="zlr-cert-desc">
-                    This platform has passed automated dogfooding verification with a 100/100 Security Score.
+                    This report records configuration checks. It does not certify production readiness or the absence of vulnerabilities.
                   </p>
 
                   <div className="zlr-cert-meta-row">
@@ -588,10 +581,10 @@ export function LaunchReadinessCockpit({
 
                 <div className="zlr-cert-right">
                   <div className="zlr-cert-score">
-                    {selfScanReport ? `${selfScanReport.score}` : '100'} / 100
+                    {selfScanReport?.score ?? data?.selfScan?.score ?? '—'} / 100
                   </div>
                   <div className="zlr-cert-score-label">
-                    0 Vulnerabilities Detected
+                    {selfScanReport ? `${(selfScanReport.summary.criticalFindings + selfScanReport.summary.highFindings + selfScanReport.summary.mediumFindings + selfScanReport.summary.lowFindings)} configuration finding(s)` : 'Open the latest report for finding details'}
                   </div>
                 </div>
               </div>
@@ -599,28 +592,12 @@ export function LaunchReadinessCockpit({
               {/* Check Battery Breakdown */}
               <div className="zlr-check-battery-header">
                 <h3 className="zlr-check-battery-title">
-                  Executed Check Battery ({selfScanReport?.checkResults?.length || 15} Automated Checks)
+                  Executed Check Battery ({selfScanReport?.checkResults?.length ?? 0} Automated Checks)
                 </h3>
               </div>
 
               <div className="zlr-check-list">
-                {(selfScanReport?.checkResults || [
-                  { checkId: '1', checkName: 'Transport Layer Security (TLS/HSTS)', category: 'Transport', status: 'PASSED', durationMs: 42, message: 'TLS 1.3 enforced. HSTS preload header configured.', findingsCount: 0 },
-                  { checkId: '2', checkName: 'HTTP Security Headers (CSP, HSTS, XFO, Nosniff)', category: 'Headers', status: 'PASSED', durationMs: 12, message: 'All defense-in-depth headers present with strict directives.', findingsCount: 0 },
-                  { checkId: '3', checkName: 'Cookie Security & Session Token Hashing', category: 'Session', status: 'PASSED', durationMs: 18, message: 'HttpOnly, Secure, SameSite=lax verified. CSPRNG >= 32 bytes.', findingsCount: 0 },
-                  { checkId: '4', checkName: 'CORS Whitelist & Wildcard Credential Defense', category: 'CORS', status: 'PASSED', durationMs: 8, message: 'No wildcard origins with credentials.', findingsCount: 0 },
-                  { checkId: '5', checkName: 'Client Bundle Secret Leakage Audit', category: 'Secrets', status: 'PASSED', durationMs: 25, message: 'No private keys or database connection strings in public env.', findingsCount: 0 },
-                  { checkId: '6', checkName: 'API Route Protection, Rate Limiting & Payload Guards', category: 'API', status: 'PASSED', durationMs: 15, message: 'Tiered rate limiters and 2MB payload guard operational.', findingsCount: 0 },
-                  { checkId: '7', checkName: 'SQL Injection Defense & Parameterized Query Audit', category: 'Injection', status: 'PASSED', durationMs: 31, message: '100% of database queries parameterized via placeholders.', findingsCount: 0 },
-                  { checkId: '8', checkName: 'Cross-Site Scripting (XSS) & Content Escaping Audit', category: 'XSS', status: 'PASSED', durationMs: 10, message: 'React automatic escaping and CSP script-src protection confirmed.', findingsCount: 0 },
-                  { checkId: '9', checkName: 'SSRF Egress Firewall & Metadata IP Pinning', category: 'SSRF', status: 'PASSED', durationMs: 22, message: 'AWS metadata 169.254.169.254, loopback, and private IPv4/IPv6 blocked.', findingsCount: 0 },
-                  { checkId: '10', checkName: 'Path Traversal & Safe Path Normalization', category: 'Traversal', status: 'PASSED', durationMs: 9, message: 'Path normalization validated. Zero directory traversal leakage.', findingsCount: 0 },
-                  { checkId: '11', checkName: 'Open Redirect Defense (Strict Relative Return-To)', category: 'Redirect', status: 'PASSED', durationMs: 7, message: 'Relative return-to enforcement active.', findingsCount: 0 },
-                  { checkId: '12', checkName: 'Production Stack Trace Suppression & Error Masking', category: 'Errors', status: 'PASSED', durationMs: 11, message: 'Stack traces masked in production responses.', findingsCount: 0 },
-                  { checkId: '13', checkName: 'HTTP Allowed Methods & Method Tampering Defense', category: 'Methods', status: 'PASSED', durationMs: 14, message: 'Next.js route handlers reject TRACE, TRACK, CONNECT.', findingsCount: 0 },
-                  { checkId: '14', checkName: 'RFC 9116 security.txt Coordinated Vulnerability Policy', category: 'Policy', status: 'PASSED', durationMs: 16, message: 'RFC 9116 compliant security.txt hosted at /.well-known/security.txt.', findingsCount: 0 },
-                  { checkId: '15', checkName: 'AI Model Security & Prompt Template Sanitization', category: 'AI Security', status: 'PASSED', durationMs: 19, message: 'Delimited prompt templates prevent prompt injection escapes.', findingsCount: 0 },
-                ]).map((chk, idx) => {
+                {(selfScanReport?.checkResults || []).map((chk, idx) => {
                   const isPassed = chk.status === 'PASSED';
                   return (
                     <div key={chk.checkId || idx} className="zlr-check-row">
@@ -661,7 +638,7 @@ export function LaunchReadinessCockpit({
                 Dogfooding Self-Scan Not Executed In Current Session
               </h3>
               <p className="zlr-empty-desc">
-                Trigger the autonomous self-scan engine to run all 15 check modules against Zerivex and generate your official production readiness certificate.
+                Run the configuration audit. Checks requiring a live deployment are explicitly marked not tested.
               </p>
               <button
                 type="button"

@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   requireApiOrSessionAuth,
@@ -32,7 +33,7 @@ export async function PATCH(req: NextRequest) {
     const auth = await requireApiOrSessionAuth(req, 'org:members_manage');
     await requireOrgRolePermission(auth.userId, auth.organizationId, 'org:members_manage', auth.userRole);
 
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const { targetUserId, role } = body as { targetUserId?: string; role?: OrganizationRole };
 
     if (!targetUserId || !role) {

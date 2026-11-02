@@ -170,14 +170,14 @@ export const sqliCheck: ScanCheck = {
           if (trueMatchesBaseline && falseDiffers) {
             findings.push({
               ruleId: 'ZX-ACT-SQLI-001',
-              title: `Boolean-Differential SQL Injection in Parameter "${param}"`,
+              title: `Potential Boolean-Differential SQL Injection in Parameter "${param}"`,
               severity: 'CRITICAL',
-              confidence: 'CONFIRMED',
+              confidence: 'HIGH',
               category: 'Injection',
               resourceEndpoint: trueUrl.toString(),
               cweId: 'CWE-89',
               owaspCategory: 'A03:2021-Injection',
-              description: `The application responded differentially to boolean conditions (1' AND '1'='1 vs 1' AND '1'='2) in parameter "${param}". This confirms that input modifies SQL query execution logic.`,
+              description: `The application responded differentially to boolean conditions (1' AND '1'='1 vs 1' AND '1'='2) in parameter "${param}". This suggests possible SQL injection and requires corroboration; response differences can also result from filtering or dynamic content.`,
               remediation: `Use parameterized queries and prepared statements. Ensure all dynamic query inputs are strongly typed and bound using parameterized placeholders.`,
               evidence: {
                 parameter: param,

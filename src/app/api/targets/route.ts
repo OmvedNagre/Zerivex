@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, requirePermission, handleAuthError } from '@/core/rbac/authorization-guard';
 import { getUserActiveOrganization } from '@/core/auth/organization-context';
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireAuth(req);
     requirePermission(auth, 'targets:read');
 
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
     const targets = await listTargetsForOrg(orgCtx.organizationId);
 
     return NextResponse.json({
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
     auth = await requireAuth(req);
     requirePermission(auth, 'targets:create');
 
-    const body = await req.json();
+    const body = await readJsonBody(req);
     let rawUrl = (body.targetUrl || body.url || '').toString().trim();
 
     if (!rawUrl) {
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
     targetUrlInput = rawUrl;
 
     const { verificationMethod, verificationScope, projectId } = body;
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
 
     // Enforce billing target quota
     const quota = await checkTargetQuota(orgCtx.organizationId, auth);
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
     // If target is already registered, return existing target gracefully
     if (message.includes('already registered') && auth) {
       try {
-        const orgCtx = await getUserActiveOrganization(auth.user.id);
+        const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
         const existingRes = await query<Target>(
           `
           SELECT

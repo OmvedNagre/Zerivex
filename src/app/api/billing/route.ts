@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, requirePermission, handleAuthError } from '@/core/rbac/authorization-guard';
 import { getUserActiveOrganization } from '@/core/auth/organization-context';
@@ -11,10 +12,10 @@ export async function GET(req: NextRequest) {
     const auth = await requireAuth(req);
     requirePermission(auth, 'billing:read');
 
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
     const summary = await getOrganizationEntitlementSummary(
       orgCtx.organizationId,
-      auth.user.role
+      auth
     );
 
     return NextResponse.json({
@@ -40,10 +41,10 @@ export async function PATCH(req: NextRequest) {
     const auth = await requireAuth(req);
     requirePermission(auth, 'billing:manage');
 
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const { cancelAtPeriodEnd } = body;
 
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
 
     const updated = await upsertSubscription({
       organizationId: orgCtx.organizationId,

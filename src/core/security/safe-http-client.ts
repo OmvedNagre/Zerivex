@@ -2,6 +2,7 @@ import http from 'http';
 import https from 'https';
 import dns from 'dns/promises';
 import net from 'net';
+import { assertAssessmentUrl, assessmentSignal, recordAssessmentRequest } from './assessment-context';
 import { isProhibitedHostname, isProhibitedIpAddress } from './ip-validator';
 
 export class SecuritySSRFError extends Error {
@@ -79,6 +80,7 @@ export function validateTargetUrl(rawUrl: string): URL {
  * Returns the first verified safe IP for socket pinning.
  */
 export async function resolveAndValidateIp(hostname: string): Promise<string> {
+  hostname = hostname.replace(/^\[|\]$/g, '');
   // If hostname is already a raw IP
   if (net.isIP(hostname)) {
     const check = isProhibitedIpAddress(hostname);
@@ -116,7 +118,7 @@ export async function resolveAndValidateIp(hostname: string): Promise<string> {
  * Execute an SSRF-protected HTTP request with pre-flight DNS validation,
  * socket IP pinning, and verified chained redirect resolution.
  */
-export async function safeFetch(
+async function performSafeFetch(
   rawUrl: string,
   options: SafeFetchOptions = {}
 ): Promise<SafeHttpResponse> {
@@ -129,6 +131,7 @@ export async function safeFetch(
   let redirectCount = 0;
 
   while (redirectCount <= maxRedirects) {
+    assertAssessmentUrl(currentUrl.toString());
     const pinnedIp = await resolveAndValidateIp(currentUrl.hostname);
     const isHttps = currentUrl.protocol === 'https:';
     const port = currentUrl.port
@@ -178,6 +181,7 @@ export async function safeFetch(
           headers: reqHeaders,
           agent,
           timeout: timeoutMs,
+          signal: assessmentSignal(),
         },
         (res) => {
           let receivedBytes = 0;
@@ -226,6 +230,10 @@ export async function safeFetch(
       request.end();
     });
 
+    if (response.statusCode === 429 || response.statusCode >= 500) {
+      recordAssessmentRequest(false);
+    }
+
     // If followRedirects is explicitly disabled, return immediately
     if (options.followRedirects === false) {
       return response;
@@ -249,4 +257,16 @@ export async function safeFetch(
   }
 
   throw new SecuritySSRFError('Exceeded redirect loop limit');
+}
+
+/** Record transport failures even when a check catches the exception. */
+export async function safeFetch(rawUrl: string, options: SafeFetchOptions = {}): Promise<SafeHttpResponse> {
+  try {
+    const result = await performSafeFetch(rawUrl, options);
+    recordAssessmentRequest(true);
+    return result;
+  } catch (error) {
+    recordAssessmentRequest(false);
+    throw error;
+  }
 }

@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     const auth = await requireAuth(req);
     requirePermission(auth, 'billing:manage');
 
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
 
     // Section C6: Billing disabled for internal organizations
     const orgCheck = await query<{ isInternal: boolean }>(

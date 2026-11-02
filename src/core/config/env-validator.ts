@@ -29,9 +29,9 @@ const envSchema = z.object({
   GITHUB_CLIENT_SECRET: z.string().optional(),
 
   // Scanner Configuration & Bounds
-  SCANNER_MAX_CONCURRENT_JOBS: z.string().transform(Number).default('5'),
-  SCANNER_REQUEST_TIMEOUT_MS: z.string().transform(Number).default('15000'),
-  SCANNER_MAX_RESPONSE_BYTES: z.string().transform(Number).default('10485760'), // 10MB
+  SCANNER_MAX_CONCURRENT_JOBS: z.coerce.number().int().min(1).max(32).default(5),
+  SCANNER_REQUEST_TIMEOUT_MS: z.coerce.number().int().min(100).max(60000).default(15000),
+  SCANNER_MAX_RESPONSE_BYTES: z.coerce.number().int().min(1024).max(10485760).default(10485760), // 10MB
 
   // Staff Portal & Console (Phase C)
   STAFF_ALLOWED_EMAIL_DOMAINS: z

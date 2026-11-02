@@ -172,9 +172,16 @@ export async function validateSessionToken(rawToken: string): Promise<SessionCon
     const internalOrg = await query<{ id: string }>(
       `SELECT id FROM organizations WHERE is_internal = true LIMIT 1`
     );
-    if (internalOrg.rows[0]) {
-      effectiveOrgId = internalOrg.rows[0].id;
-    }
+    if (!internalOrg.rows[0]) return null;
+    effectiveOrgId = internalOrg.rows[0].id;
+  }
+
+  if (effectiveOrgId) {
+    const orgAccess = await query(
+      'SELECT 1 FROM organizations o JOIN memberships m ON m.organization_id = o.id WHERE o.id = $1 AND m.user_id = $2 AND o.suspended_at IS NULL',
+      [effectiveOrgId, row.userId],
+    );
+    if (orgAccess.rows.length === 0) return null;
   }
 
   // Touch last_used_at timestamp asynchronously
@@ -192,7 +199,9 @@ export async function validateSessionToken(rawToken: string): Promise<SessionCon
       status: row.status,
     },
     organizationId: effectiveOrgId,
-    organizationRole: row.viaStaffPortal ? 'ORG_OWNER' : row.organizationRole,
+    organizationRole: row.viaStaffPortal
+      ? staffRole === 'STAFF_OWNER' ? 'ORG_OWNER' : staffRole === 'STAFF_ADMIN' ? 'ORG_ADMIN' : 'ORG_MEMBER'
+      : row.organizationRole,
     viaStaffPortal: row.viaStaffPortal,
     previewPlanId: row.previewPlanId,
     staffRole,

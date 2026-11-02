@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from '@/components/ui/Toast';
+
 import { useState, useEffect } from 'react';
 import {
   AlertTriangle,
@@ -111,13 +113,13 @@ export default function StaffOrgsPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || 'Failed to unsuspend organization');
+        toast.error(data.error || 'Failed to unsuspend organization');
         return;
       }
 
       await loadOrgs();
     } catch {
-      alert('Error unsuspending organization');
+      toast.error('Error unsuspending organization');
     } finally {
       setActionLoading(false);
     }

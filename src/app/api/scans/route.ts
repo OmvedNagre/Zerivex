@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, requirePermission, handleAuthError } from '@/core/rbac/authorization-guard';
 import { getUserActiveOrganization } from '@/core/auth/organization-context';
@@ -10,7 +11,6 @@ import { ScanMode } from '@/core/scanner/checks/types';
 import {
   checkScanQuota,
   checkFeatureAccess,
-  recordScanUsage,
 } from '@/core/billing/entitlement-service';
 
 export async function GET(req: NextRequest) {
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireAuth(req);
     requirePermission(auth, 'scans:read');
 
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
     const targetId = req.nextUrl.searchParams.get('targetId') ?? undefined;
 
     const scans = await listScanJobsForOrg(orgCtx.organizationId, targetId);
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     const auth = await requireAuth(req);
     requirePermission(auth, 'scans:create');
 
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const { targetId, scanMode } = body;
 
     if (!targetId || typeof targetId !== 'string') {
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
     const selectedMode: ScanMode = (scanMode as ScanMode) || 'PUBLIC_PASSIVE';
 
     // 1. Enforce monthly scan quota
@@ -91,10 +91,11 @@ export async function POST(req: NextRequest) {
       targetId,
       requesterUserId: auth.user.id,
       scanMode: selectedMode,
+      session: auth,
     });
 
     // 4. Record monthly scan usage
-    await recordScanUsage(orgCtx.organizationId);
+    // Usage is reserved atomically with job creation.
 
     // 2. Execute scan job
     const result = await executeScanJob(scanJob.id);

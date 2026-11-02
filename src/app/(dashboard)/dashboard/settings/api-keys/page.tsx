@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from '@/components/ui/Toast';
+
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { ApiKeyRecord } from '@/core/auth/api-key-service';
@@ -68,7 +70,7 @@ export default function ApiKeysSettingsPage() {
       setName('');
       fetchApiKeys();
     } catch (err) {
-      alert(`Error creating API key: ${(err as Error).message}`);
+      toast.error(`Error creating API key: ${(err as Error).message}`);
     } finally {
       setSubmitting(false);
     }
@@ -86,7 +88,7 @@ export default function ApiKeysSettingsPage() {
       if (!res.ok) throw new Error(data.error || 'Failed to revoke API key');
       fetchApiKeys();
     } catch (err) {
-      alert(`Error revoking API key: ${(err as Error).message}`);
+      toast.error(`Error revoking API key: ${(err as Error).message}`);
     } finally {
       setRevokingId(null);
     }

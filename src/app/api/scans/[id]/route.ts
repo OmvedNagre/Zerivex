@@ -12,7 +12,7 @@ export async function GET(
     requirePermission(auth, 'scans:read');
 
     const { id: scanId } = await params;
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
 
     const { scanJob, findings } = await getScanJobById(scanId, orgCtx.organizationId);
 

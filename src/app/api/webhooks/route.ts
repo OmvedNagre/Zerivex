@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiOrSessionAuth, handleAuthError } from '@/core/rbac/authorization-guard';
 import { createWebhook, getWebhooksByOrg } from '@/core/webhooks/webhook-repository';
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireApiOrSessionAuth(req, 'webhooks:create');
-    const body = await req.json();
+    const body = await readJsonBody(req);
 
     const { name, url, events, secret } = body as {
       name: string;

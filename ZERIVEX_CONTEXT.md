@@ -1,3 +1,5 @@
+> Current implementation and deployment changes: [2 November 2026 remediation](docs/REMEDIATION_2026-11-02.md). Historical readiness and hosting claims below are not deployment evidence.
+
 # ZERIVEX_CONTEXT.md: Long-Term AI Continuity & State Tracker
 
 > **Project:** ZERIVEX  

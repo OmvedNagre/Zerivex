@@ -17,7 +17,7 @@ export async function GET(
     requirePermission(auth, 'targets:read');
 
     const { id } = await params;
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
 
     // Verify target ownership
     const target = await getTargetById(id, orgCtx.organizationId);

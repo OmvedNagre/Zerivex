@@ -53,9 +53,7 @@ const FOOTER_COLUMNS = [
   {
     title: 'Legal',
     links: [
-      { label: 'Terms of Service', href: '/terms' },
-      { label: 'Privacy Policy', href: '/privacy' },
-      { label: 'Acceptable Use Policy', href: '/acceptable-use' },
+      { label: 'Policy Enquiries', href: 'mailto:security@zerivex.com' },
       { label: 'Responsible Disclosure', href: '/.well-known/security.txt' },
     ],
   },

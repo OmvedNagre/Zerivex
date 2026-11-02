@@ -9,14 +9,17 @@ let pool: Pool | null = null;
 export function getDbPool(): Pool {
   if (!pool) {
     const config = getEnvConfig();
+    const connectionUrl = new URL(config.DATABASE_URL);
+    const useTls = config.NODE_ENV === 'production' ||
+      ['require', 'verify-ca', 'verify-full'].includes(connectionUrl.searchParams.get('sslmode') || '');
+    // pg connection-string SSL parameters must not override certificate validation.
+    if (useTls) connectionUrl.searchParams.delete('sslmode');
     pool = new Pool({
-      connectionString: config.DATABASE_URL,
+      connectionString: connectionUrl.toString(),
       max: 20, // Max clients in the pool
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
-      ssl: config.DATABASE_URL.includes('sslmode=require') || config.NODE_ENV === 'production'
-        ? { rejectUnauthorized: false }
-        : undefined,
+      ssl: useTls ? { rejectUnauthorized: true, ca: process.env.DATABASE_SSL_CA || undefined } : undefined,
     });
 
     pool.on('error', (err) => {

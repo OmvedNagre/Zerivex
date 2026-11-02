@@ -4,6 +4,7 @@ import {
   PlanId,
   SubscriptionStatus,
   BillingCycle,
+  resolvePlanId,
 } from './types';
 
 /**
@@ -65,7 +66,7 @@ export async function getSubscriptionByOrgId(organizationId: string): Promise<Su
   // Provision default FREE_DEVELOPER tier lazily
   const defaultSub = await upsertSubscription({
     organizationId,
-    planId: 'FREE_DEVELOPER',
+    planId: 'STARTER',
     status: 'ACTIVE',
     billingCycle: 'MONTHLY',
     currency: 'INR',
@@ -92,7 +93,7 @@ export async function upsertSubscription(params: {
   stripeCustomerId?: string | null;
   stripeSubscriptionId?: string | null;
 }): Promise<SubscriptionRecord> {
-  const planId = params.planId || 'FREE_DEVELOPER';
+  const planId = resolvePlanId(params.planId);
   const status = params.status || 'ACTIVE';
   const billingCycle = params.billingCycle || 'MONTHLY';
   const currency = params.currency || 'INR';
@@ -126,15 +127,15 @@ export async function upsertSubscription(params: {
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
     ON CONFLICT (organization_id)
     DO UPDATE SET
-      plan_id = COALESCE(EXCLUDED.plan_id, subscriptions.plan_id),
-      status = COALESCE(EXCLUDED.status, subscriptions.status),
-      billing_cycle = COALESCE(EXCLUDED.billing_cycle, subscriptions.billing_cycle),
-      currency = COALESCE(EXCLUDED.currency, subscriptions.currency),
-      current_period_start = COALESCE(EXCLUDED.current_period_start, subscriptions.current_period_start),
-      current_period_end = COALESCE(EXCLUDED.current_period_end, subscriptions.current_period_end),
-      cancel_at_period_end = COALESCE(EXCLUDED.cancel_at_period_end, subscriptions.cancel_at_period_end),
-      stripe_customer_id = COALESCE(EXCLUDED.stripe_customer_id, subscriptions.stripe_customer_id),
-      stripe_subscription_id = COALESCE(EXCLUDED.stripe_subscription_id, subscriptions.stripe_subscription_id),
+      plan_id = CASE WHEN $11::boolean THEN EXCLUDED.plan_id ELSE subscriptions.plan_id END,
+      status = CASE WHEN $12::boolean THEN EXCLUDED.status ELSE subscriptions.status END,
+      billing_cycle = CASE WHEN $13::boolean THEN EXCLUDED.billing_cycle ELSE subscriptions.billing_cycle END,
+      currency = CASE WHEN $14::boolean THEN EXCLUDED.currency ELSE subscriptions.currency END,
+      current_period_start = CASE WHEN $15::boolean THEN EXCLUDED.current_period_start ELSE subscriptions.current_period_start END,
+      current_period_end = CASE WHEN $16::boolean THEN EXCLUDED.current_period_end ELSE subscriptions.current_period_end END,
+      cancel_at_period_end = CASE WHEN $17::boolean THEN EXCLUDED.cancel_at_period_end ELSE subscriptions.cancel_at_period_end END,
+      stripe_customer_id = CASE WHEN $18::boolean THEN EXCLUDED.stripe_customer_id ELSE subscriptions.stripe_customer_id END,
+      stripe_subscription_id = CASE WHEN $19::boolean THEN EXCLUDED.stripe_subscription_id ELSE subscriptions.stripe_subscription_id END,
       updated_at = NOW()
     RETURNING *
     `,
@@ -149,6 +150,15 @@ export async function upsertSubscription(params: {
       cancelAtPeriodEnd,
       stripeCustId,
       stripeSubId,
+      params.planId !== undefined,
+      params.status !== undefined,
+      params.billingCycle !== undefined,
+      params.currency !== undefined,
+      params.currentPeriodStart !== undefined,
+      params.currentPeriodEnd !== undefined,
+      params.cancelAtPeriodEnd !== undefined,
+      params.stripeCustomerId !== undefined,
+      params.stripeSubscriptionId !== undefined,
     ]
   );
 

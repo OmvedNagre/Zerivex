@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from '@/components/ui/Toast';
+
 import { useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -127,7 +129,7 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
         router.push('/dashboard/scans');
       }
     } catch (err) {
-      alert((err as Error).message);
+      toast.error((err as Error).message);
     } finally {
       setScanning(false);
     }

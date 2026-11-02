@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, requirePermission, handleAuthError } from '@/core/rbac/authorization-guard';
 import { getUserActiveOrganization } from '@/core/auth/organization-context';
@@ -18,7 +19,7 @@ export async function GET(
     requirePermission(auth, 'schedules:read');
 
     const { id } = await params;
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
 
     const schedule = await getScanScheduleById(id, orgCtx.organizationId);
     if (!schedule) {
@@ -43,8 +44,8 @@ export async function PATCH(
     requirePermission(auth, 'schedules:update');
 
     const { id } = await params;
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
-    const body = await req.json();
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
+    const body = await readJsonBody(req);
 
     const { name, frequency, customCron, scanMode, isActive } = body as {
       name?: string;
@@ -79,7 +80,7 @@ export async function DELETE(
     requirePermission(auth, 'schedules:delete');
 
     const { id } = await params;
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
 
     const deleted = await deleteScanScheduleWithValidation(id, orgCtx.organizationId, auth.user.id);
     if (!deleted) {

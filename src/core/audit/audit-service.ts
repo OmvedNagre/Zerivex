@@ -1,3 +1,4 @@
+import { redactEvidence } from '@/core/scanner/evidence-redactor';
 import { query } from '@/core/db/database';
 
 export type AuditAction =
@@ -111,6 +112,8 @@ function sanitizeMetadata(data?: Record<string, unknown>): Record<string, unknow
     const lowerKey = key.toLowerCase();
     if (SENSITIVE_KEYS.has(lowerKey) || lowerKey.includes('secret') || lowerKey.includes('token')) {
       sanitized[key] = '[REDACTED_BY_AUDIT_LOG]';
+    } else if (Array.isArray(value)) {
+      sanitized[key] = value.map((item) => typeof item === 'object' && item !== null ? sanitizeMetadata(item as Record<string, unknown>) : item);
     } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
       sanitized[key] = sanitizeMetadata(value as Record<string, unknown>);
     } else {
@@ -140,7 +143,7 @@ export async function recordAuditEvent(
   },
   client?: { query: <R extends import('pg').QueryResultRow = import('pg').QueryResultRow>(text: string, params?: unknown[]) => Promise<import('pg').QueryResult<R>> }
 ): Promise<AuditLogEntry> {
-  const sanitizedMeta = sanitizeMetadata(params.metadata);
+  const sanitizedMeta = redactEvidence(sanitizeMetadata(params.metadata));
   const dbExecutor = client || { query };
 
   const res = await dbExecutor.query<AuditLogEntry>(

@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from '@/components/ui/Toast';
+
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus, RefreshCw } from 'lucide-react';
@@ -128,7 +130,7 @@ export default function TargetsPage() {
       }
       await fetchData();
     } catch (err: any) {
-      alert(`Deletion failed: ${err.message}`);
+      toast.error(`Deletion failed: ${err.message}`);
     }
   };
 

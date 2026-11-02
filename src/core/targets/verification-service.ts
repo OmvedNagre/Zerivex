@@ -199,13 +199,13 @@ async function verifyViaDnsTxt(hostname: string, token: string): Promise<{ succe
  * Perform HTTP /.well-known/ file verification check via SSRF-safe HTTP client.
  */
 async function verifyViaHttpFile(targetUrl: string, token: string): Promise<{ success: boolean; diagnostic: string }> {
-  const baseUrl = targetUrl.replace(/\/+$/, '');
-  const verificationFileUrl = `${baseUrl}/.well-known/zerivex-verification.txt`;
+  const verificationFileUrl = new URL('/.well-known/zerivex-verification.txt', targetUrl).toString();
 
   try {
     const response = await safeFetch(verificationFileUrl, {
       method: 'GET',
       timeoutMs: 12000,
+      followRedirects: false,
       headers: { Accept: 'text/plain,*/*' },
     });
 
@@ -243,6 +243,7 @@ async function verifyViaHtmlMeta(targetUrl: string, token: string): Promise<{ su
     const response = await safeFetch(targetUrl, {
       method: 'GET',
       timeoutMs: 12000,
+      followRedirects: false,
       headers: { Accept: 'text/html,application/xhtml+xml' },
     });
 
@@ -287,6 +288,7 @@ async function verifyViaHttpHeader(targetUrl: string, token: string): Promise<{ 
     const response = await safeFetch(targetUrl, {
       method: 'GET',
       timeoutMs: 12000,
+      followRedirects: false,
     });
 
     const headerVal = response.headers['x-zerivex-verification'];
@@ -485,7 +487,8 @@ export async function assertTargetScanAuthorization(
   const target = await getTargetById(targetId, organizationId);
 
   if (scanMode === 'VERIFIED_ACTIVE') {
-    if (target.verificationStatus !== 'VERIFIED') {
+    if (target.verificationStatus !== 'VERIFIED' || !target.verifiedAt ||
+        new Date(target.verifiedAt).getTime() < Date.now() - 365 * 24 * 60 * 60 * 1000) {
       throw new Error(
         `[ZERIVEX CRITICAL SECURITY] Target ownership must be verified before performing active intrusive scanning. Current verification status is "${target.verificationStatus}". Complete verification via DNS TXT, HTML Meta tag, or HTTP response header before launching an active scan.`
       );

@@ -2,12 +2,6 @@ import { query, closeDbPool } from '@/core/db/database';
 import { recordAuditEvent } from '@/core/audit/audit-service';
 import { getZerivexInternalOrgId } from '@/core/staff/staff-session-service';
 
-if (typeof process.loadEnvFile === 'function') {
-  try {
-    process.loadEnvFile('.env.local');
-  } catch {}
-}
-
 export async function seedStaffOwner() {
   const email = process.env.STAFF_BOOTSTRAP_OWNER_EMAIL || process.env.INITIAL_OWNER_EMAIL;
   if (!email) {
@@ -78,8 +72,12 @@ export async function seedStaffOwner() {
   await closeDbPool();
 }
 
+if (require.main === module) {
+  try { process.loadEnvFile('.env.local'); } catch { /* environment may be supplied */ }
 seedStaffOwner().catch(async (err) => {
   console.error('[STAFF BOOTSTRAP FATAL]', err);
   await closeDbPool();
   process.exit(1);
 });
+
+}

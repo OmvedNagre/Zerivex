@@ -7,9 +7,6 @@ Contact: mailto:security@zerivex.com
 Expires: 2028-12-31T23:59:59.000Z
 Preferred-Languages: en
 Canonical: https://zerivex.com/.well-known/security.txt
-Policy: https://zerivex.com/security
-Acknowledgments: https://zerivex.com/security/hall-of-fame
-Hiring: https://zerivex.com/careers
 `;
 
 export async function GET() {

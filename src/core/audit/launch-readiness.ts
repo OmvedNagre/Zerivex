@@ -66,7 +66,7 @@ const DEFAULT_LAUNCH_CHECKLIST: LaunchChecklistItem[] = [
     title: 'Enforce Production TLS & HSTS Preload',
     category: 'Network & Infrastructure',
     description: 'Strict-Transport-Security configured with 2-year max-age and preload flag enabled.',
-    status: 'COMPLETED',
+    status: 'PENDING',
     critical: true,
   },
   {
@@ -74,7 +74,7 @@ const DEFAULT_LAUNCH_CHECKLIST: LaunchChecklistItem[] = [
     title: 'Neon PostgreSQL SSL & Connection Pool',
     category: 'Database & Storage',
     description: 'Neon serverless pool configured with sslmode=require and schema migrations at 008.',
-    status: 'COMPLETED',
+    status: 'PENDING',
     critical: true,
   },
   {
@@ -82,7 +82,7 @@ const DEFAULT_LAUNCH_CHECKLIST: LaunchChecklistItem[] = [
     title: 'SSRF Multi-A/AAAA Egress Firewall',
     category: 'Egress Security',
     description: 'Blocks private IP ranges, loopback addresses, and cloud metadata (169.254.169.254).',
-    status: 'COMPLETED',
+    status: 'PENDING',
     critical: true,
   },
   {
@@ -90,7 +90,7 @@ const DEFAULT_LAUNCH_CHECKLIST: LaunchChecklistItem[] = [
     title: 'Edge Middleware Rate Limiting',
     category: 'Availability & DoS',
     description: 'Tiered sliding-window rate limiters active for Auth, Scans, and API mutations.',
-    status: 'COMPLETED',
+    status: 'PENDING',
     critical: true,
   },
   {
@@ -98,7 +98,7 @@ const DEFAULT_LAUNCH_CHECKLIST: LaunchChecklistItem[] = [
     title: 'Sole Owner Protection Guard',
     category: 'Auth & Access Control',
     description: 'Immutable rule preventing sole owner removal or demotion across all organizations.',
-    status: 'COMPLETED',
+    status: 'PENDING',
     critical: true,
   },
   {
@@ -106,7 +106,7 @@ const DEFAULT_LAUNCH_CHECKLIST: LaunchChecklistItem[] = [
     title: 'Tamper-Evident Audit Vault & Exports',
     category: 'Compliance & Audit',
     description: 'Actor attribution and RFC 4180 CSV / SIEM JSON exports fully operational.',
-    status: 'COMPLETED',
+    status: 'PENDING',
     critical: true,
   },
   {
@@ -114,7 +114,7 @@ const DEFAULT_LAUNCH_CHECKLIST: LaunchChecklistItem[] = [
     title: 'Autonomous Health & Readiness Probes',
     category: 'Reliability & Operations',
     description: '/api/health, /api/health/live, and /api/health/ready endpoints monitored.',
-    status: 'COMPLETED',
+    status: 'PENDING',
     critical: true,
   },
   {
@@ -122,7 +122,7 @@ const DEFAULT_LAUNCH_CHECKLIST: LaunchChecklistItem[] = [
     title: 'RFC 9116 Vulnerability Disclosure Policy',
     category: 'Coordinated Disclosure',
     description: '/.well-known/security.txt published with active security contact and future expiry.',
-    status: 'COMPLETED',
+    status: 'PENDING',
     critical: false,
   },
   {
@@ -130,7 +130,7 @@ const DEFAULT_LAUNCH_CHECKLIST: LaunchChecklistItem[] = [
     title: 'Disaster Recovery Runbook Published',
     category: 'Operations',
     description: 'RTO < 60 min, RPO < 15 min runbook validated in docs/runbooks/DISASTER_RECOVERY.md.',
-    status: 'COMPLETED',
+    status: 'PENDING',
     critical: true,
   },
 ];
@@ -189,7 +189,7 @@ export async function evaluateLaunchReadiness(): Promise<LaunchReadinessReport> 
       name: 'Multi-Tenant Isolation & Scoped Queries',
       description: 'Foreign key organization_id scoping and cross-tenant query prevention.',
       category: 'Data Governance',
-      status: 'READY',
+      status: 'DEGRADED',
       critical: true,
       details: `Tenant boundary constraints operational across ${orgCount.rows[0]?.count || 0} organization(s).`,
       lastChecked: evaluatedAt,
@@ -210,7 +210,7 @@ export async function evaluateLaunchReadiness(): Promise<LaunchReadinessReport> 
 
   // 3. Target Ownership Verification & SSRF Egress Defense
   try {
-    const firewallHealthy = isProhibitedIpAddress('169.254.169.254') && isProhibitedIpAddress('127.0.0.1');
+    const firewallHealthy = isProhibitedIpAddress('169.254.169.254').prohibited && isProhibitedIpAddress('127.0.0.1').prohibited;
     const targetCount = await query<{ count: string }>('SELECT COUNT(*) as count FROM targets');
     recordSubsystem({
       id: 'subsystem-target-ssrf',
@@ -245,7 +245,7 @@ export async function evaluateLaunchReadiness(): Promise<LaunchReadinessReport> 
     name: 'Scanner Engine, Worker Pool & Check Modules',
     description: 'Concurrent worker pool with watchdog timeouts, circuit breakers, and 14 security checks.',
     category: 'Vulnerability Detection',
-    status: checksCount >= 14 ? 'READY' : 'DEGRADED',
+    status: checksCount >= 14 ? 'DEGRADED' : 'NOT_READY',
     critical: true,
     details: `${checksCount} check modules registered and active with domain circuit breakers.`,
     lastChecked: evaluatedAt,
@@ -258,7 +258,7 @@ export async function evaluateLaunchReadiness(): Promise<LaunchReadinessReport> 
     name: 'Remediation Engine & Evidence Redaction',
     description: 'Catalog with 15+ actionable playbooks, SIEM JSON / CSV exports, and recursive PII scrubbing.',
     category: 'Remediation & Compliance',
-    status: 'READY',
+    status: 'DEGRADED',
     critical: true,
     details: 'Evidence redactor active for AWS/GCP keys, JWTs, and database URLs. RFC 4180 CSV export ready.',
     lastChecked: evaluatedAt,
@@ -272,7 +272,7 @@ export async function evaluateLaunchReadiness(): Promise<LaunchReadinessReport> 
       name: 'Attack Surface Crawler & Asset Discovery',
       description: 'Automated sitemap discovery, robots.txt parsing, and technology fingerprinting.',
       category: 'Attack Surface Management',
-      status: 'READY',
+      status: 'DEGRADED',
       critical: false,
       details: `Surface discovery engine active. Total discovered asset endpoints: ${epCount.rows[0]?.count || 0}.`,
       lastChecked: evaluatedAt,
@@ -284,7 +284,7 @@ export async function evaluateLaunchReadiness(): Promise<LaunchReadinessReport> 
       name: 'Attack Surface Crawler & Asset Discovery',
       description: 'Automated sitemap discovery, robots.txt parsing, and technology fingerprinting.',
       category: 'Attack Surface Management',
-      status: 'READY',
+      status: 'DEGRADED',
       critical: false,
       details: 'Attack surface discovery engine operational.',
       lastChecked: evaluatedAt,
@@ -299,7 +299,7 @@ export async function evaluateLaunchReadiness(): Promise<LaunchReadinessReport> 
       name: 'Continuous Monitoring, Regressions & Webhooks',
       description: 'Automated recurring scan schedules, regression detection, and HMAC-SHA256 webhooks.',
       category: 'Monitoring & Alerting',
-      status: 'READY',
+      status: 'DEGRADED',
       critical: true,
       details: `Scheduler active with ${schedCount.rows[0]?.count || 0} schedule(s) configured. Regression engine armed.`,
       lastChecked: evaluatedAt,
@@ -311,9 +311,9 @@ export async function evaluateLaunchReadiness(): Promise<LaunchReadinessReport> 
       name: 'Continuous Monitoring, Regressions & Webhooks',
       description: 'Automated recurring scan schedules, regression detection, and HMAC-SHA256 webhooks.',
       category: 'Monitoring & Alerting',
-      status: 'READY',
+      status: 'DEGRADED',
       critical: true,
-      details: 'Monitoring and regression detector operational.',
+      details: 'Unable to verify scheduler health.',
       lastChecked: evaluatedAt,
     });
   }
@@ -324,7 +324,7 @@ export async function evaluateLaunchReadiness(): Promise<LaunchReadinessReport> 
     name: 'CI/CD Quality Gates & Build Integration',
     description: 'CLI scanner client, threshold enforcement (Critical/High findings), and SARIF reporting.',
     category: 'DevSecOps',
-    status: 'READY',
+    status: 'DEGRADED',
     critical: true,
     details: 'Quality gate threshold engine ready for GitHub Actions, GitLab CI, and custom webhooks.',
     lastChecked: evaluatedAt,
@@ -339,7 +339,7 @@ export async function evaluateLaunchReadiness(): Promise<LaunchReadinessReport> 
       name: 'Stripe Billing, Teams & Compliance Audit Vault',
       description: 'Stripe customer subscriptions, enterprise invitations, and immutable audit logs.',
       category: 'Enterprise Governance',
-      status: 'READY',
+      status: 'DEGRADED',
       critical: true,
       details: `Compliance audit vault operational with ${auditCount.rows[0]?.count || 0} recorded audit event(s).`,
       lastChecked: evaluatedAt,
@@ -351,9 +351,9 @@ export async function evaluateLaunchReadiness(): Promise<LaunchReadinessReport> 
       name: 'Stripe Billing, Teams & Compliance Audit Vault',
       description: 'Stripe customer subscriptions, enterprise invitations, and immutable audit logs.',
       category: 'Enterprise Governance',
-      status: 'READY',
+      status: 'DEGRADED',
       critical: true,
-      details: 'Audit vault and billing subsystem operational.',
+      details: 'Unable to verify billing or audit storage.',
       lastChecked: evaluatedAt,
     });
   }
@@ -394,7 +394,7 @@ export async function evaluateLaunchReadiness(): Promise<LaunchReadinessReport> 
   const latestSelfScan: SelfScanReport | null = await getLatestSelfScanReport();
 
   return {
-    overallStatus,
+    overallStatus: overallStatus === 'READY_FOR_LAUNCH' ? 'ACTION_REQUIRED' : overallStatus,
     readinessScore,
     evaluatedAt,
     subsystems,
@@ -411,6 +411,6 @@ export async function evaluateLaunchReadiness(): Promise<LaunchReadinessReport> 
       certified: Boolean(latestSelfScan?.certification?.status === 'CERTIFIED_PRODUCTION_READY'),
       certificationHash: latestSelfScan?.certification?.certificationHash || null,
     },
-    checklist: DEFAULT_LAUNCH_CHECKLIST,
+    checklist: DEFAULT_LAUNCH_CHECKLIST.map((item) => ({ ...item, status: 'PENDING', description: `${item.description} Requires deployment evidence and operator review.` })),
   };
 }

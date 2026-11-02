@@ -306,35 +306,19 @@ export async function deleteScanSchedule(
  */
 export async function pollDueSchedules(limit = 10): Promise<ScanScheduleRecord[]> {
   const res = await query<ScanScheduleRecord>(
-    `
-    SELECT
-      s.id,
-      s.organization_id as "organizationId",
-      s.project_id as "projectId",
-      s.target_id as "targetId",
-      s.name,
-      s.frequency,
-      s.cron_expression as "cronExpression",
-      s.scan_mode as "scanMode",
-      s.is_active as "isActive",
-      s.next_run_at as "nextRunAt",
-      s.last_run_at as "lastRunAt",
-      s.last_scan_job_id as "lastScanJobId",
-      s.created_by_user_id as "createdByUserId",
-      s.created_at as "createdAt",
-      s.updated_at as "updatedAt",
-      t.target_url as "targetUrl",
-      t.hostname as "targetHostname",
-      t.verification_status as "verificationStatus"
-    FROM scan_schedules s
-    JOIN targets t ON t.id = s.target_id
-    WHERE s.is_active = true AND s.next_run_at <= NOW()
-    ORDER BY s.next_run_at ASC
-    LIMIT $1
-    FOR UPDATE OF s SKIP LOCKED
-    `,
-    [limit]
-  );
+    `WITH due AS (
+      SELECT id FROM scan_schedules
+      WHERE is_active = true AND next_run_at <= NOW()
+        AND (dispatch_claimed_until IS NULL OR dispatch_claimed_until < NOW())
+      ORDER BY next_run_at ASC LIMIT $1 FOR UPDATE SKIP LOCKED
+    ), claimed AS (
+      UPDATE scan_schedules s SET dispatch_claimed_until = NOW() + INTERVAL '10 minutes'
+      FROM due WHERE s.id = due.id RETURNING s.*
+    ) SELECT s.id, s.organization_id as "organizationId", s.project_id as "projectId",
+      s.target_id as "targetId", s.name, s.frequency, s.cron_expression as "cronExpression",
+      s.scan_mode as "scanMode", s.is_active as "isActive", s.next_run_at as "nextRunAt",
+      s.created_by_user_id as "createdByUserId", s.created_at as "createdAt", s.updated_at as "updatedAt"
+      FROM claimed s`, [limit]);
 
   return res.rows;
 }
@@ -351,6 +335,7 @@ export async function recordScheduleExecution(
     `
     UPDATE scan_schedules
     SET
+      dispatch_claimed_until = NULL,
       last_run_at = NOW(),
       last_scan_job_id = $2,
       next_run_at = $3,

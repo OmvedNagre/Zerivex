@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from '@/components/ui/Toast';
+
 import { useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
 import { Target } from '@/core/targets/target-service';
@@ -86,7 +88,7 @@ export default function TargetCiCdPage({ params }: { params: Promise<{ id: strin
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
-      alert(`Error saving policy: ${(err as Error).message}`);
+      toast.error(`Error saving policy: ${(err as Error).message}`);
     } finally {
       setSavingPolicy(false);
     }

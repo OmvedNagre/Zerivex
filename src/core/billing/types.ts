@@ -26,7 +26,7 @@ export const LEGACY_PLAN_ALIASES: Record<string, PlanId> = {
 
 export function resolvePlanId(id?: string | null): PlanId {
   if (!id) return 'STARTER';
-  return LEGACY_PLAN_ALIASES[id] || (id as PlanId) || 'STARTER';
+  return LEGACY_PLAN_ALIASES[id] || 'STARTER';
 }
 
 export type BillingCycle = 'MONTHLY' | 'YEARLY';

@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   requireStaffPermission,
@@ -15,7 +16,7 @@ export async function POST(
     requireStaffReauth(staff);
 
     const { id } = await params;
-    const body = await req.json().catch(() => ({}));
+    const body = await readJsonBody(req);
     const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
 
     if (!reason) {
@@ -29,7 +30,7 @@ export async function POST(
       `
       UPDATE organizations
       SET suspended_at = NOW(), suspended_reason = $1, updated_at = NOW()
-      WHERE id = $2
+      WHERE id = $2 AND is_internal = false
       RETURNING name, is_internal as "isInternal"
       `,
       [reason, id]

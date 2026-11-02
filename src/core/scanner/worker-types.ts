@@ -25,6 +25,7 @@ export interface WorkerJob<T = any> {
   abortController?: AbortController;
   result?: T;
   error?: string;
+  reject?: (error: Error) => void;
 }
 
 export interface WorkerPoolOptions {

@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiOrSessionAuth, handleAuthError } from '@/core/rbac/authorization-guard';
 import { createScanJob, runScanJob } from '@/core/scanner/scan-runner';
@@ -10,7 +11,7 @@ import { ScanMode } from '@/core/scanner/checks/types';
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireApiOrSessionAuth(req, 'scans:create');
-    const body = await req.json();
+    const body = await readJsonBody(req);
 
     const {
       targetId,
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest) {
       targetId,
       requesterUserId: auth.userId,
       scanMode,
+      session: auth.sessionContext,
     });
 
     await recordAuditEvent({

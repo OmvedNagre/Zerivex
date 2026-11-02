@@ -1,3 +1,5 @@
+import { checkFeatureAccess } from '@/core/billing/entitlement-service';
+import { PlanFeatures } from '@/core/billing/types';
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/core/db/database';
 import { validateSessionToken, SessionContext, SESSION_COOKIE_NAME } from '@/core/auth/session-service';
@@ -22,6 +24,20 @@ export class ForbiddenError extends Error {
   }
 }
 
+
+async function requireRouteEntitlement(req: NextRequest, organizationId: string, session?: SessionContext): Promise<void> {
+  const path = req.nextUrl.pathname;
+  const routes: Array<[string, keyof PlanFeatures]> = [
+    ['/api/v1/ci/', 'ciGates'], ['/api/api-keys', 'apiKeys'], ['/api/webhooks', 'webhooks'],
+    ['/api/quality-gates', 'ciGates'], ['/api/schedules', 'scheduledScans'],
+    ['/api/audit-vault', 'auditVault'], ['/api/agency/', 'agencyHub'], ['/api/monitoring/', 'alerts'],
+  ];
+  const feature = routes.find(([prefix]) => path.startsWith(prefix))?.[1];
+  if (!feature) return;
+  const result = await checkFeatureAccess(organizationId, feature, session);
+  if (!result.allowed) throw new ForbiddenError(result.reason || 'Feature unavailable on current plan');
+}
+
 export interface RequestAuthContext {
   authType: 'SESSION' | 'API_KEY';
   userId: string;
@@ -37,6 +53,7 @@ export interface RequestAuthContext {
  * Throws UnauthorizedError (401) if unauthenticated.
  */
 export async function requireAuthenticatedUser(req: NextRequest): Promise<SessionContext> {
+  verifyCsrfProtection(req);
   const cookie = req.cookies.get(SESSION_COOKIE_NAME);
   if (!cookie?.value) {
     throw new UnauthorizedError('Missing or expired session cookie');
@@ -47,6 +64,12 @@ export async function requireAuthenticatedUser(req: NextRequest): Promise<Sessio
     throw new UnauthorizedError('Invalid, expired, or revoked session');
   }
 
+  if (!context.organizationId) {
+    const org = await getUserActiveOrganization(context.user.id);
+    context.organizationId = org.organizationId;
+    context.organizationRole = org.role;
+  }
+  await requireRouteEntitlement(req, context.organizationId, context);
   return context;
 }
 
@@ -61,6 +84,10 @@ export function requirePermission(context: SessionContext, permission: Permissio
 
   if (!roleHasPermission(context.user.role, permission)) {
     throw new ForbiddenError(`Role '${context.user.role}' lacks required permission: '${permission}'`);
+  }
+  if (!permission.startsWith('platform:') && !permission.startsWith('users:') &&
+      (!context.organizationRole || !orgRoleHasPermission(context.organizationRole as OrganizationRole, permission))) {
+    throw new ForbiddenError('Organization role lacks the required permission');
   }
 }
 
@@ -92,6 +119,11 @@ export async function requireApiOrSessionAuth(
         }
       }
 
+      if (requiredPermission) {
+        if (!roleHasPermission(apiKeyCtx.userRole, requiredPermission)) throw new ForbiddenError('Account role lacks required permission');
+        await requireOrgRolePermission(apiKeyCtx.userId, apiKeyCtx.organizationId, requiredPermission, apiKeyCtx.userRole);
+      }
+      await requireRouteEntitlement(req, apiKeyCtx.organizationId);
       return {
         authType: 'API_KEY',
         userId: apiKeyCtx.userId,
@@ -231,6 +263,9 @@ export function verifyCsrfProtection(req: NextRequest): void {
   const requestedWith = req.headers.get('x-requested-with');
   const secFetchSite = req.headers.get('sec-fetch-site');
 
+  if (secFetchSite && !['same-origin', 'none'].includes(secFetchSite)) {
+    throw new ForbiddenError('Cross-origin mutation rejected');
+  }
   if (requestedWith === 'XMLHttpRequest' || secFetchSite === 'same-origin') {
     return;
   }
@@ -266,6 +301,10 @@ export function handleAuthError(error: unknown): NextResponse {
   }
   if (error instanceof ForbiddenError) {
     return NextResponse.json({ error: error.message }, { status: 403 });
+  }
+  if (error && typeof error === 'object' && 'statusCode' in error &&
+      [400, 403, 409, 413, 429, 503].includes(Number(error.statusCode))) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Request rejected' }, { status: Number(error.statusCode) });
   }
   return NextResponse.json(
     { error: (error as Error).message || 'Internal server error' },

@@ -1,4 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import dns from 'node:dns/promises';
+import { query } from '@/core/db/database';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   EgressFirewall,
   EgressBlockedError,
@@ -27,6 +29,8 @@ import { GET as getHealth } from '@/app/api/health/route';
 import { GET as getLive } from '@/app/api/health/live/route';
 import { GET as getReady } from '@/app/api/health/ready/route';
 
+vi.mock('@/core/db/database', () => ({ query: vi.fn(async () => ({ rows: [{ queued: 0, running: 0, stale: 0 }] })) }));
+
 describe('Phase 14: Production Hardening & Resilience Controls', () => {
   // =========================================================================
   // 1. Network Egress Firewall & SSRF Defense
@@ -35,7 +39,9 @@ describe('Phase 14: Production Hardening & Resilience Controls', () => {
     const firewall = new EgressFirewall();
 
     it('permits legitimate public HTTP and HTTPS target URLs', async () => {
+      const lookup = vi.spyOn(dns, 'lookup').mockResolvedValue([{ address: '93.184.216.34', family: 4 }] as never);
       const res = await firewall.validateUrl('https://example.com');
+      lookup.mockRestore();
       expect(res.allowed).toBe(true);
       expect(res.resolvedIps).toBeDefined();
       expect(res.resolvedIps!.length).toBeGreaterThan(0);
@@ -488,6 +494,16 @@ describe('Phase 14: Production Hardening & Resilience Controls', () => {
       expect(data).toHaveProperty('database');
       expect(data).toHaveProperty('memory');
       expect(data).toHaveProperty('workers');
+    });
+
+    it('reports database failures as not ready', async () => {
+      vi.mocked(query).mockRejectedValueOnce(new Error('database unavailable'));
+      expect((await checkReadiness()).ready).toBe(false);
+    });
+
+    it('reports stale durable work as degraded', async () => {
+      vi.mocked(query).mockResolvedValueOnce({ rows: [{ queued: 1, running: 0, stale: 1 }] } as never);
+      expect((await getSystemHealthReport()).status).toBe('DEGRADED');
     });
 
     it('GET /api/health/live returns 200 OK liveness confirmation', async () => {

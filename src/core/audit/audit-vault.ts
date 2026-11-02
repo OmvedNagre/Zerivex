@@ -371,52 +371,27 @@ export async function verifyAuditVaultIntegrity(
   organizationId: string
 ): Promise<AuditVaultIntegrityResult> {
   const res = await query<{
-    id: string;
-    createdAt: Date;
-  }>(
-    `
-    SELECT id, created_at as "createdAt"
-    FROM audit_logs
-    WHERE organization_id = $1
-    ORDER BY created_at ASC
-    `,
-    [organizationId]
-  );
-
+    createdAt: Date; sequence: string; previousHash: string; recordHash: string; computedHash: string;
+  }>(`SELECT a.created_at as "createdAt", a.audit_sequence::text as sequence,
+    a.previous_hash as "previousHash", a.record_hash as "recordHash",
+    zerivex_audit_hash(to_jsonb(a), a.previous_hash) as "computedHash"
+    FROM audit_logs a WHERE organization_id = $1 ORDER BY audit_sequence`, [organizationId]);
   const logs = res.rows;
-  if (logs.length === 0) {
-    return {
-      verified: true,
-      totalRecords: 0,
-      firstTimestamp: null,
-      lastTimestamp: null,
-      isMonotonic: true,
-      message: 'Audit vault is empty. No integrity violations detected.',
-    };
-  }
-
+  let previous = '';
+  let verified = true;
   let isMonotonic = true;
-  for (let i = 1; i < logs.length; i++) {
-    const prevEntry = logs[i - 1];
-    const currEntry = logs[i];
-    if (prevEntry && currEntry) {
-      const prevTime = new Date(prevEntry.createdAt).getTime();
-      const currTime = new Date(currEntry.createdAt).getTime();
-      if (currTime < prevTime) {
-        isMonotonic = false;
-        break;
-      }
-    }
+  for (let index = 0; index < logs.length; index++) {
+    const entry = logs[index]!;
+    if (entry.sequence !== String(index + 1) || entry.previousHash !== previous ||
+        !entry.recordHash || entry.recordHash !== entry.computedHash) verified = false;
+    if (index > 0 && new Date(entry.createdAt) < new Date(logs[index - 1]!.createdAt)) isMonotonic = false;
+    previous = entry.recordHash;
   }
-
   return {
-    verified: isMonotonic,
-    totalRecords: logs.length,
-    firstTimestamp: logs[0]?.createdAt ?? null,
-    lastTimestamp: logs[logs.length - 1]?.createdAt ?? null,
-    isMonotonic,
-    message: isMonotonic
-      ? `Audit vault verified successfully across ${logs.length} chronological records.`
-      : 'Timestamp monotonicity violation detected in audit vault sequence.',
+    verified, totalRecords: logs.length, firstTimestamp: logs[0]?.createdAt ?? null,
+    lastTimestamp: logs[logs.length - 1]?.createdAt ?? null, isMonotonic,
+    message: verified
+      ? `Hash chain verified across ${logs.length} records. Legacy records were baselined at migration; database administrators can replace the chain.`
+      : 'Audit hash chain mismatch, missing sequence, or modified record detected.',
   };
 }

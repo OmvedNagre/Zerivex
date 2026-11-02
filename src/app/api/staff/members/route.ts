@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   requireStaffPermission,
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
     const staff = await requireStaffPermission(req, 'MANAGE_STAFF');
     requireStaffReauth(staff);
 
-    const body = await req.json().catch(() => ({}));
+    const body = await readJsonBody(req);
     const email = typeof body.email === 'string' ? body.email.toLowerCase().trim() : '';
     const role = body.role as StaffRole;
 
@@ -160,7 +161,7 @@ export async function PATCH(req: NextRequest) {
     const staff = await requireStaffPermission(req, 'MANAGE_STAFF');
     requireStaffReauth(staff);
 
-    const body = await req.json().catch(() => ({}));
+    const body = await readJsonBody(req);
     const targetUserId = body.userId as string;
     const newRole = body.role as StaffRole;
 

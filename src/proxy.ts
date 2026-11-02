@@ -1,3 +1,4 @@
+import { checkDistributedRateLimit } from '@/core/security/distributed-rate-limiter';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   defaultRateLimiter,
@@ -9,9 +10,9 @@ import {
 /**
  * Production Security & Rate Limiting Edge Proxy (Next.js 16)
  */
-export function proxy(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const ip = getClientIp(req.headers);
+  const ip = getClientIp(req.headers, process.env.TRUST_PROXY_HEADERS === 'true');
 
   // 1. Staff Portal Kill Switch & Edge Protection
   if (pathname.startsWith('/staff') || pathname.startsWith('/api/staff')) {
@@ -81,7 +82,14 @@ export function proxy(req: NextRequest) {
     }
 
     const rateLimitKey = `${tier}:${ip}`;
-    const result = defaultRateLimiter.check(rateLimitKey, tier);
+    let result;
+    try {
+      result = process.env.NODE_ENV === 'production' && pathname !== '/api/health/live'
+        ? await checkDistributedRateLimit(rateLimitKey, tier)
+        : defaultRateLimiter.check(rateLimitKey, tier);
+    } catch {
+      return NextResponse.json({ error: 'Request protection temporarily unavailable' }, { status: 503 });
+    }
 
     if (!result.allowed) {
       return NextResponse.json(

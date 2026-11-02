@@ -1,9 +1,10 @@
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
-const WebSocket = require('/Users/omvednagre/node_modules/ws');
+const WebSocket = globalThis.WebSocket;
 
-const ARTIFACTS_DIR = '/Users/omvednagre/.gemini/antigravity-ide/brain/071a94ab-99be-4587-ab58-65d50ff790d6';
+const ARTIFACTS_DIR = path.resolve(process.env.ZERIVEX_SCREENSHOT_DIR || path.join(process.cwd(), 'artifacts', 'screenshots'));
+fs.mkdirSync(ARTIFACTS_DIR, { recursive: true });
 
 function getPages() {
   return new Promise((resolve, reject) => {
@@ -18,15 +19,15 @@ function getPages() {
 function sendCDP(ws, method, params = {}) {
   return new Promise((resolve, reject) => {
     const id = Math.floor(Math.random() * 100000);
-    const handler = (data) => {
-      const msg = JSON.parse(data);
+    const handler = (event) => {
+      const msg = JSON.parse(event.data);
       if (msg.id === id) {
-        ws.off('message', handler);
+        ws.removeEventListener('message', handler);
         if (msg.error) reject(msg.error);
         else resolve(msg.result);
       }
     };
-    ws.on('message', handler);
+    ws.addEventListener('message', handler);
     ws.send(JSON.stringify({ id, method, params }));
   });
 }
@@ -42,7 +43,7 @@ async function run() {
   console.log('Connecting to page:', page.title, page.url);
   const ws = new WebSocket(page.webSocketDebuggerUrl);
 
-  await new Promise(res => ws.on('open', res));
+  await new Promise(res => ws.addEventListener('open', res, { once: true }));
 
   // Enable Page, Runtime, DOM
   await sendCDP(ws, 'Page.enable');

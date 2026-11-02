@@ -1,3 +1,5 @@
+> Current implementation and deployment changes: [2 November 2026 remediation](docs/REMEDIATION_2026-11-02.md). Historical readiness and hosting claims below are not deployment evidence.
+
 # HANDOFF.md: Short-Term AI Agent Continuation State
 
 > **Last Updated:** 2026-09-26T11:15:00+05:30  

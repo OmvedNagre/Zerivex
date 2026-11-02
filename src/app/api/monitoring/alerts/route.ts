@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, requirePermission, handleAuthError } from '@/core/rbac/authorization-guard';
 import { getUserActiveOrganization } from '@/core/auth/organization-context';
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireAuth(req);
     requirePermission(auth, 'monitoring:read');
 
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
     const { searchParams } = new URL(req.url);
     const unreadOnly = searchParams.get('unreadOnly') === 'true';
     const limit = parseInt(searchParams.get('limit') || '50', 10);
@@ -38,8 +39,8 @@ export async function PATCH(req: NextRequest) {
     const auth = await requireAuth(req);
     requirePermission(auth, 'monitoring:read');
 
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
-    const body = await req.json();
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
+    const body = await readJsonBody(req);
     const { alertId, markAll } = body as { alertId?: string; markAll?: boolean };
 
     if (markAll) {

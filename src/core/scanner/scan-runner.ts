@@ -1,4 +1,10 @@
-import { query } from '@/core/db/database';
+import { randomUUID } from 'node:crypto';
+import { resolveEntitlements, resolveEntitlementsFromPlan } from '@/core/billing/entitlement-service';
+import { getCurrentMonthWindow } from '@/core/billing/subscription-repository';
+import { SessionContext } from '@/core/auth/session-service';
+import { AssessmentIncompleteError, runAssessment, withinAssessmentScope } from '@/core/security/assessment-context';
+import { defaultWorkerPool } from './worker-pool';
+import { query, withTransaction } from '@/core/db/database';
 import { assertTargetScanAuthorization } from '@/core/targets/verification-service';
 import { getTargetById } from '@/core/targets/target-service';
 import { recordAuditEvent } from '@/core/audit/audit-service';
@@ -25,6 +31,8 @@ import { upsertDiscoveredEndpoints, upsertTechnologyFingerprints } from '@/core/
 import { evaluateScanRegression } from '@/core/monitoring/regression-detector';
 import { createMonitoringAlert } from '@/core/monitoring/monitoring-repository';
 import { dispatchWebhookEvent } from '@/core/webhooks/webhook-dispatcher';
+
+export const SCAN_WORKER_ID = randomUUID();
 
 export const ALL_SCAN_CHECKS: ScanCheck[] = [
   tlsCheck,
@@ -56,8 +64,16 @@ export interface ScanJobRecord {
   workerId: string | null;
   errorMessage: string | null;
   createdAt: Date;
+  executionPlanId?: string;
+  checkResults?: CheckResult[];
   targetUrl?: string;
   targetHostname?: string;
+}
+
+export interface CheckResult {
+  checkId: string;
+  status: 'PASSED' | 'FAILED' | 'SKIPPED';
+  reason?: string;
 }
 
 export interface FindingRecord {
@@ -124,28 +140,54 @@ export async function createScanJob(params: {
   targetId: string;
   requesterUserId: string;
   scanMode?: ScanMode;
+  session?: SessionContext;
 }): Promise<ScanJobRecord> {
   const scanMode = params.scanMode ?? 'PUBLIC_PASSIVE';
+  if (!['PUBLIC_PASSIVE', 'VERIFIED_ACTIVE'].includes(scanMode)) throw new Error('Invalid scan mode');
+  const entitlements = await resolveEntitlements(params.organizationId, params.session);
+  if (scanMode === 'VERIFIED_ACTIVE' && !entitlements.features.activeVerifiedTests) {
+    throw Object.assign(new Error('Active scanning requires an upgraded plan'), { statusCode: 403 });
+  }
+
 
   // 1. Enforce authorization gate: unverified targets CANNOT undergo active scans
   await assertTargetScanAuthorization(params.targetId, params.organizationId, scanMode);
 
   // 2. Insert into scan_jobs
-  const res = await query<ScanJobRecord>(
+  const res = await withTransaction(async (client) => {
+    const access = await client.query(`SELECT 1 FROM organizations o
+      JOIN memberships m ON m.organization_id = o.id
+      JOIN users u ON u.id = m.user_id AND u.status = 'ACTIVE'
+      WHERE o.id = $1 AND m.user_id = $2 AND (u.role = 'OWNER' OR m.role IN ('ORG_OWNER', 'ORG_ADMIN', 'ORG_MEMBER')) AND o.suspended_at IS NULL FOR SHARE OF o, m, u`,
+      [params.organizationId, params.requesterUserId]);
+    if (!access.rows.length) throw Object.assign(new Error('Organization unavailable or membership revoked'), { statusCode: 403 });
+    const { start, end } = getCurrentMonthWindow();
+    const usage = await client.query(`INSERT INTO usage_ledgers
+      (organization_id, metric, period_start, period_end, value)
+      VALUES ($1, 'MONTHLY_SCANS', $2, $3, 1)
+      ON CONFLICT (organization_id, metric, period_start) DO UPDATE
+      SET value = usage_ledgers.value + 1, updated_at = NOW()
+      WHERE usage_ledgers.value < $4 RETURNING value`,
+      [params.organizationId, start, end, entitlements.limits.maxMonthlyScans]);
+    if (!usage.rows.length) throw Object.assign(new Error('Monthly scan quota exceeded'), { statusCode: 403 });
+    return client.query<ScanJobRecord>(
     `
     INSERT INTO scan_jobs (
       organization_id,
       target_id,
       requester_user_id,
       scan_mode,
+      execution_plan_id,
       status
     )
-    VALUES ($1, $2, $3, $4, 'QUEUED')
+    VALUES ($1, $2, $3, $4, $5, 'QUEUED')
     RETURNING
       id,
       organization_id as "organizationId",
       target_id as "targetId",
       requester_user_id as "requesterUserId",
+      execution_plan_id as "executionPlanId",
+      check_results as "checkResults",
       scan_mode as "scanMode",
       status,
       score,
@@ -155,8 +197,9 @@ export async function createScanJob(params: {
       error_message as "errorMessage",
       created_at as "createdAt"
     `,
-    [params.organizationId, params.targetId, params.requesterUserId, scanMode]
-  );
+    [params.organizationId, params.targetId, params.requesterUserId, scanMode, entitlements.planId]
+    );
+  });
 
   const scanJob = res.rows[0]!;
 
@@ -180,7 +223,7 @@ export async function createScanJob(params: {
  * Execute a scan job deterministically.
  * Runs check modules, redacts evidence synchronously, calculates score, and updates DB.
  */
-export async function executeScanJob(scanJobId: string): Promise<{
+async function performScanJob(scanJobId: string, signal?: AbortSignal): Promise<{
   scanJob: ScanJobRecord;
   findings: FindingRecord[];
 }> {
@@ -192,6 +235,8 @@ export async function executeScanJob(scanJobId: string): Promise<{
       organization_id as "organizationId",
       target_id as "targetId",
       requester_user_id as "requesterUserId",
+      execution_plan_id as "executionPlanId",
+      check_results as "checkResults",
       scan_mode as "scanMode",
       status,
       score,
@@ -211,26 +256,29 @@ export async function executeScanJob(scanJobId: string): Promise<{
     throw new Error(`Scan job "${scanJobId}" not found`);
   }
 
-  // 2. Fetch target
-  const target = await getTargetById(job.targetId, job.organizationId);
-
-  // Re-verify authorization gate
-  await assertTargetScanAuthorization(target.id, job.organizationId, job.scanMode);
-
-  // 3. Transition status to RUNNING
-  await query("UPDATE scan_jobs SET status = 'RUNNING', started_at = NOW() WHERE id = $1", [job.id]);
-
+  // A compare-and-set claim prevents both HTTP and background workers executing a job twice.
+  const claim = await query(`UPDATE scan_jobs SET status = 'RUNNING', started_at = NOW(), heartbeat_at = NOW(), worker_id = $2
+    WHERE id = $1 AND status = 'QUEUED' RETURNING id`, [job.id, SCAN_WORKER_ID]);
+  if (!claim.rows.length) throw new Error('Scan job has already been claimed or completed');
   const rawFindings: RawFinding[] = [];
-
+  let target: Awaited<ReturnType<typeof getTargetById>> | undefined;
   try {
+    target = await assertTargetScanAuthorization(job.targetId, job.organizationId, job.scanMode);
+    const access = await query(`SELECT 1 FROM organizations o JOIN memberships m ON m.organization_id = o.id
+      JOIN users u ON u.id = m.user_id AND u.status = 'ACTIVE'
+      WHERE o.id = $1 AND m.user_id = $2 AND (u.role = 'OWNER' OR m.role IN ('ORG_OWNER', 'ORG_ADMIN', 'ORG_MEMBER')) AND o.suspended_at IS NULL`, [job.organizationId, job.requesterUserId]);
+    if (!access.rows.length) throw new Error('Scan authorization revoked');
+    const entitlements = resolveEntitlementsFromPlan(job.executionPlanId || 'STARTER');
+    const scope = { targetUrl: target.targetUrl, pathOnly: target.verificationScope === 'URL_PATH', signal };
     // 4. Map Attack Surface & Detect Technologies
     let discoveredEndpoints: any[] = [];
     try {
-      const surfaceResult = await crawlAttackSurface(target.targetUrl, {
-        maxDepth: 2,
-        maxPages: 15,
+      if (entitlements.limits.crawl.enabled) {
+      const surfaceResult = await withinAssessmentScope(scope, () => crawlAttackSurface(scope.targetUrl, {
+        maxDepth: entitlements.limits.crawl.maxDepth,
+        maxPages: entitlements.limits.crawl.maxPages,
         scanId: job.id,
-      });
+      }));
 
       if (surfaceResult.endpoints.length > 0) {
         discoveredEndpoints = surfaceResult.endpoints;
@@ -250,6 +298,7 @@ export async function executeScanJob(scanJobId: string): Promise<{
           surfaceResult.technologies
         );
       }
+      }
     } catch (crawlErr) {
       console.warn('[ZERIVEX SCANNER] Attack surface crawl encountered a non-fatal error:', crawlErr);
     }
@@ -263,31 +312,42 @@ export async function executeScanJob(scanJobId: string): Promise<{
       discoveredEndpoints,
     };
 
-    // 5. Run all registered check modules with fault tolerance
-    const results = await Promise.allSettled(
-      ALL_SCAN_CHECKS.map(async (check) => {
-        if (check.requiresActiveScan && job.scanMode !== 'VERIFIED_ACTIVE') {
-          return [];
-        }
-        return check.run(scanContext);
-      })
-    );
-
-    for (const result of results) {
-      if (result.status === 'fulfilled') {
-        rawFindings.push(...result.value);
-      } else {
-        console.error(`[ZERIVEX SCANNER ERROR] Module execution failed:`, result.reason);
+    const checkResults: CheckResult[] = [];
+    const results = await Promise.all(ALL_SCAN_CHECKS.map(async (check) => {
+      if (!entitlements.engineIds.includes(check.id) || (check.requiresActiveScan && job.scanMode !== 'VERIFIED_ACTIVE')) {
+        return { checkId: check.id, status: 'SKIPPED' as const, findings: [] as RawFinding[] };
       }
+      try {
+        const findings = await runAssessment(scope, async () => {
+          const urls = check.requiresActiveScan ? Array.from(new Set([scanContext.targetUrl,
+            ...discoveredEndpoints.filter((endpoint) => endpoint.httpMethod === 'GET' && endpoint.parameters?.length)
+              .slice(0, 9).map((endpoint) => endpoint.url as string)])) : [scanContext.targetUrl];
+          const observations: RawFinding[] = [];
+          for (const targetUrl of urls) {
+            signal?.throwIfAborted();
+            observations.push(...await check.run({ ...scanContext, targetUrl }));
+          }
+          return observations;
+        });
+        return { checkId: check.id, status: 'PASSED' as const, findings };
+      } catch (error) {
+        return { checkId: check.id, status: 'FAILED' as const, findings: error instanceof AssessmentIncompleteError ? error.partialFindings as RawFinding[] : [], reason: 'Check could not be completed' };
+      }
+    }));
+    for (const { findings, ...result } of results) {
+      rawFindings.push(...findings);
+      checkResults.push(result);
     }
-
-    // 5. Calculate deterministic security score
+    await query('UPDATE scan_jobs SET check_results = $2::jsonb WHERE id = $1', [job.id, JSON.stringify(checkResults)]);
+    signal?.throwIfAborted();
+    const failed = checkResults.filter((r) => r.status === 'FAILED');
     const score = calculateSecurityScore(rawFindings);
 
     // 6. Persist findings with synchronous evidence redaction
     const savedFindings: FindingRecord[] = [];
 
     for (const rf of rawFindings) {
+      signal?.throwIfAborted();
       const redactedEvidence = redactEvidence(rf.evidence);
 
       const fRes = await query<FindingRecord>(
@@ -345,6 +405,8 @@ export async function executeScanJob(scanJobId: string): Promise<{
       savedFindings.push(fRes.rows[0]!);
     }
 
+    if (failed.length) throw new Error(`Scan incomplete: ${failed.map((r) => r.checkId).join(', ')}`);
+    signal?.throwIfAborted();
     // 7. Update scan job status to COMPLETED
     const updatedJobRes = await query<ScanJobRecord>(
       `
@@ -359,7 +421,9 @@ export async function executeScanJob(scanJobId: string): Promise<{
         organization_id as "organizationId",
         target_id as "targetId",
         requester_user_id as "requesterUserId",
-        scan_mode as "scanMode",
+        execution_plan_id as "executionPlanId",
+      check_results as "checkResults",
+      scan_mode as "scanMode",
         status,
         score,
         started_at as "startedAt",
@@ -422,7 +486,7 @@ export async function executeScanJob(scanJobId: string): Promise<{
     return { scanJob: completedJob, findings: savedFindings };
   } catch (err) {
     const errorMsg = (err as Error).message || 'Unknown scanner execution failure';
-    await query("UPDATE scan_jobs SET status = 'FAILED', error_message = $1, completed_at = NOW() WHERE id = $2", [
+    await query("UPDATE scan_jobs SET status = 'FAILED', score = NULL, error_message = $1, completed_at = NOW() WHERE id = $2", [
       errorMsg,
       job.id,
     ]);
@@ -434,7 +498,7 @@ export async function executeScanJob(scanJobId: string): Promise<{
         scanId: job.id,
         alertType: 'SCAN_FAILED',
         severity: 'HIGH',
-        title: `Scan Execution Failed: ${target.hostname}`,
+        title: `Scan Execution Failed: ${target?.hostname || 'unknown'}`,
         message: `Security scan job ${job.id} failed: ${errorMsg}`,
       });
     } catch {
@@ -448,7 +512,7 @@ export async function executeScanJob(scanJobId: string): Promise<{
         data: {
           scanId: job.id,
           targetId: job.targetId,
-          hostname: target.hostname,
+          hostname: target?.hostname || 'unknown',
           errorMessage: errorMsg,
         },
       });
@@ -458,6 +522,17 @@ export async function executeScanJob(scanJobId: string): Promise<{
 
     throw err;
   }
+}
+
+export async function executeScanJob(scanJobId: string) {
+  const record = await query<{ targetId: string; organizationId: string; hostname: string }>(
+    `SELECT s.target_id as "targetId", s.organization_id as "organizationId", t.hostname
+     FROM scan_jobs s JOIN targets t ON t.id = s.target_id WHERE s.id = $1`, [scanJobId]);
+  const job = record.rows[0];
+  if (!job) throw new Error('Scan job not found');
+  return defaultWorkerPool.submitJob({ id: scanJobId, targetId: job.targetId,
+    organizationId: job.organizationId, domain: job.hostname,
+    execute: (signal) => performScanJob(scanJobId, signal) });
 }
 
 export const runScanJob = executeScanJob;
@@ -476,6 +551,8 @@ export async function getScanJobById(
       s.organization_id as "organizationId",
       s.target_id as "targetId",
       s.requester_user_id as "requesterUserId",
+      s.execution_plan_id as "executionPlanId",
+      s.check_results as "checkResults",
       s.scan_mode as "scanMode",
       s.status,
       s.score,
@@ -549,6 +626,8 @@ export async function listScanJobsForOrg(
         s.organization_id as "organizationId",
         s.target_id as "targetId",
         s.requester_user_id as "requesterUserId",
+        s.execution_plan_id as "executionPlanId",
+        s.check_results as "checkResults",
         s.scan_mode as "scanMode",
         s.status,
         s.score,
@@ -570,6 +649,8 @@ export async function listScanJobsForOrg(
         s.organization_id as "organizationId",
         s.target_id as "targetId",
         s.requester_user_id as "requesterUserId",
+        s.execution_plan_id as "executionPlanId",
+        s.check_results as "checkResults",
         s.scan_mode as "scanMode",
         s.status,
         s.score,

@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireAuth(req);
     requirePermission(auth, 'agency:read');
 
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
     const portfolio = await getAgencyPortfolioOverview(orgCtx.organizationId);
 
     return NextResponse.json({

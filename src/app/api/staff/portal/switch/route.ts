@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   requireStaffAuth,
@@ -14,7 +15,7 @@ import { recordAuditEvent } from '@/core/audit/audit-service';
 export async function POST(req: NextRequest) {
   try {
     const staff = await requireStaffAuth(req);
-    const body = await req.json().catch(() => ({}));
+    const body = await readJsonBody(req);
     const destination = body.destination as 'CUSTOMER_PORTAL' | 'STAFF_CONSOLE';
 
     if (destination !== 'CUSTOMER_PORTAL' && destination !== 'STAFF_CONSOLE') {

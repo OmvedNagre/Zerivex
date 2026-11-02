@@ -109,8 +109,11 @@ async function emergencyBootstrap() {
   await closeDbPool();
 }
 
+if (require.main === module) {
 emergencyBootstrap().catch(async (err) => {
   console.error('[ZERIVEX BOOTSTRAP FATAL]', err);
   await closeDbPool();
   process.exit(1);
 });
+
+}

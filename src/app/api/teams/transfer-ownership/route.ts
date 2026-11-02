@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   requireApiOrSessionAuth,
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const { newOwnerUserId } = body as { newOwnerUserId?: string };
 
     if (!newOwnerUserId) {

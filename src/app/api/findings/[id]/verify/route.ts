@@ -12,7 +12,7 @@ export async function POST(
     requirePermission(auth, 'findings:update');
 
     const { id: findingId } = await params;
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
 
     const result = await verifyFindingFix({
       findingId,

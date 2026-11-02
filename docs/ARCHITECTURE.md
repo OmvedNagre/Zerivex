@@ -1,3 +1,5 @@
+> Current implementation and deployment changes: [2 November 2026 remediation](REMEDIATION_2026-11-02.md). Historical readiness and hosting claims below are not deployment evidence.
+
 # Zerivex System Architecture Specification
 
 > **Tagline:** "Security for software built with AI."  

@@ -37,7 +37,7 @@ export const cookiesCheck: ScanCheck = {
       // Check 1: Missing Secure flag on HTTPS
       if (isHttps && !hasSecure) {
         findings.push({
-          ruleId: 'ZX-CK-001',
+          ruleId: 'ZX-CKI-001',
           title: `Cookie "${cookieName}" Missing Secure Flag`,
           severity: 'MEDIUM',
           confidence: 'CONFIRMED',
@@ -59,7 +59,7 @@ export const cookiesCheck: ScanCheck = {
         // Higher severity if name suggests a session/auth token
         const isAuthToken = /sess|auth|token|jwt|id|key/i.test(cookieName);
         findings.push({
-          ruleId: 'ZX-CK-002',
+          ruleId: 'ZX-CKI-002',
           title: `Cookie "${cookieName}" Missing HttpOnly Flag`,
           severity: isAuthToken ? 'MEDIUM' : 'LOW',
           confidence: 'CONFIRMED',
@@ -79,7 +79,7 @@ export const cookiesCheck: ScanCheck = {
       // Check 3: Missing SameSite attribute
       if (!sameSiteDirective) {
         findings.push({
-          ruleId: 'ZX-CK-003',
+          ruleId: 'ZX-CKI-003',
           title: `Cookie "${cookieName}" Missing SameSite Attribute`,
           severity: 'LOW',
           confidence: 'CONFIRMED',

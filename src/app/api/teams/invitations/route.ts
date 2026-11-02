@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   requireApiOrSessionAuth,
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
     const auth = await requireApiOrSessionAuth(req, 'org:invite');
     await requireOrgRolePermission(auth.userId, auth.organizationId, 'org:invite', auth.userRole);
 
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const { email, role } = body as { email?: string; role?: OrganizationRole };
 
     if (!email || !role) {

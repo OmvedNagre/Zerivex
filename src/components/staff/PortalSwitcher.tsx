@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from '@/components/ui/Toast';
+
 import { useState } from 'react';
 import { ShieldCheck, UserRound, Loader2 } from 'lucide-react';
 
@@ -31,7 +33,7 @@ export function PortalSwitcher({ currentPortal, isCollapsed = false }: PortalSwi
           window.location.href = '/staff';
         }
       } else {
-        alert('Failed to switch portal. Session may require re-authentication.');
+        toast.error('Failed to switch portal. Session may require re-authentication.');
         setSwitching(false);
       }
     } catch {

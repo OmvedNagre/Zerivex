@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireStaffAuth } from '@/core/staff/staff-session-service';
 import { can } from '@/core/staff/staff-permissions';
@@ -9,7 +10,7 @@ import { PLAN_RANK, resolvePlanId } from '@/core/billing/types';
 export async function POST(req: NextRequest) {
   try {
     const staff = await requireStaffAuth(req);
-    const body = await req.json().catch(() => ({}));
+    const body = await readJsonBody(req);
     const rawPlanId = body.planId as string | null;
 
     // Validate planId (allow new canonical IDs, legacy aliases, or null to clear)

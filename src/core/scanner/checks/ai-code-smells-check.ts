@@ -17,7 +17,7 @@ export const aiCodeSmellsCheck: ScanCheck = {
     try {
       const errorProbeUrl = `${baseUrl}/api/non-existent-probe-${Date.now()}`;
       const errRes = await safeFetch(errorProbeUrl, {
-        method: 'POST',
+        method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         timeoutMs: 8000,
       });
@@ -69,11 +69,14 @@ export const aiCodeSmellsCheck: ScanCheck = {
           // Probe actual introspection query
           const introRes = await safeFetch(gqlUrl, {
             method: 'POST',
+            body: JSON.stringify({ query: '{ __schema { types { name } } }' }),
             headers: { 'Content-Type': 'application/json' },
             timeoutMs: 8000,
           });
 
-          if (introRes.body.includes('__schema') || introRes.body.includes('Query')) {
+          let schema: { data?: { __schema?: { types?: unknown[] } } } = {};
+          try { schema = JSON.parse(introRes.body); } catch { /* non-JSON is not introspection proof */ }
+          if (introRes.statusCode === 200 && Array.isArray(schema.data?.__schema?.types)) {
             findings.push({
               ruleId: 'ZX-AI-002',
               title: 'Exposed GraphQL Endpoint with Introspection',
@@ -99,7 +102,7 @@ export const aiCodeSmellsCheck: ScanCheck = {
     }
 
     // 3. Exposed Development & Database Seed Routes
-    const devRoutes = ['/api/seed', '/api/reset-db', '/test-db', '/debug'];
+    const devRoutes = ['/debug', '/__debug'];
     for (const devPath of devRoutes) {
       try {
         const devUrl = `${baseUrl}${devPath}`;

@@ -1,3 +1,4 @@
+import { readJsonBody } from '@/core/security/request-body';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, requirePermission, handleAuthError } from '@/core/rbac/authorization-guard';
 import { getUserActiveOrganization } from '@/core/auth/organization-context';
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireAuth(req);
     requirePermission(auth, 'schedules:read');
 
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
     const { searchParams } = new URL(req.url);
     const targetId = searchParams.get('targetId');
 
@@ -36,8 +37,8 @@ export async function POST(req: NextRequest) {
     const auth = await requireAuth(req);
     requirePermission(auth, 'schedules:create');
 
-    const orgCtx = await getUserActiveOrganization(auth.user.id);
-    const body = await req.json();
+    const orgCtx = await getUserActiveOrganization(auth.user.id, auth.organizationId);
+    const body = await readJsonBody(req);
 
     const {
       targetId,

@@ -201,6 +201,8 @@ export async function validateApiKey(
       u.status as "userStatus"
     FROM api_keys k
     JOIN users u ON u.id = k.created_by_user_id
+    JOIN organizations o ON o.id = k.organization_id AND o.suspended_at IS NULL
+    JOIN memberships m ON m.organization_id = k.organization_id AND m.user_id = u.id
     WHERE k.key_hash = $1
       AND k.status = 'ACTIVE'
       AND (k.expires_at IS NULL OR k.expires_at > NOW())
