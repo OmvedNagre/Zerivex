@@ -12,7 +12,7 @@ export function FinalCtaCard() {
         margin: '0 auto',
         position: 'relative',
         zIndex: 2,
-        marginBottom: '-48px',
+        marginBottom: '48px',
       }}
     >
       <div
@@ -20,7 +20,7 @@ export function FinalCtaCard() {
           borderRadius: 'var(--ds-radius-xl)',
           backgroundColor: 'var(--ds-bg-ink)',
           color: 'var(--ds-text-on-ink)',
-          padding: '64px 48px',
+          padding: 'clamp(32px, 5vw, 64px) clamp(20px, 4vw, 48px)',
           boxShadow: 'var(--ds-shadow-3)',
           border: '1px solid rgba(255, 255, 255, 0.12)',
           textAlign: 'center',

@@ -1,96 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
-import {
-  OAuthProvider,
-  exchangeGoogleCode,
-  exchangeGitHubCode,
-  authenticateWithOAuthProfile,
-  VerifiedOAuthProfile,
-} from '@/core/auth/oauth-service';
+import crypto from 'node:crypto';
+import { isOAuthProvider, oauthOrigin, oauthRequestUrl } from '@/core/auth/oauth-config';
+import { consumeOAuth, oauthCookieName } from '@/core/auth/oauth-flow';
+import { exchangeGoogleCode, exchangeGitHubCode, authenticateWithOAuthProfile } from '@/core/auth/oauth-service';
+import { classifyAuthFailure, authFailureDetails } from '@/core/auth/oauth-errors';
 import { SESSION_COOKIE_NAME, SESSION_LIFETIME_MS } from '@/core/auth/session-service';
 import { getEnvConfig } from '@/core/config/env-validator';
-
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ provider: string }> }
-) {
-  const config = getEnvConfig();
-  const { provider: rawProvider } = await params;
-  if (!['google', 'github'].includes(rawProvider)) return NextResponse.json({ error: 'Unsupported authentication provider' }, { status: 400 });
-  const provider = rawProvider as OAuthProvider;
-  const url = req.nextUrl;
-  const searchParams = url.searchParams;
-
-  const code = searchParams.get('code');
-  const state = searchParams.get('state');
-  const errorParam = searchParams.get('error');
-
-  const returnToCookie = req.cookies.get('zerivex_oauth_return_to')?.value;
-  const safeReturnTo = returnToCookie && returnToCookie.startsWith('/') && !returnToCookie.startsWith('//')
-    ? returnToCookie
-    : '/dashboard';
-
-  if (errorParam) {
-    console.warn(`[ZERIVEX AUTH] OAuth provider returned error: ${errorParam}`);
-    return NextResponse.redirect(`${config.NEXT_PUBLIC_APP_URL}/login?error=oauth_denied`);
-  }
-
-  if (!code || !state) {
-    return NextResponse.redirect(`${config.NEXT_PUBLIC_APP_URL}/login?error=missing_code_or_state`);
-  }
-
-  // 1. CSRF State validation
-  const storedState = req.cookies.get('zerivex_oauth_state')?.value;
-  if (!storedState || storedState.length !== state.length) {
-    return NextResponse.redirect(`${config.NEXT_PUBLIC_APP_URL}/login?error=invalid_state`);
-  }
-
-  const stateMatches = crypto.timingSafeEqual(Buffer.from(storedState), Buffer.from(state));
-  if (!stateMatches) {
-    return NextResponse.redirect(`${config.NEXT_PUBLIC_APP_URL}/login?error=invalid_state`);
-  }
-
-  try {
-    let profile: VerifiedOAuthProfile;
-
-    if (provider === 'google') {
-      const codeVerifier = req.cookies.get('zerivex_oauth_verifier')?.value;
-      profile = await exchangeGoogleCode(code, codeVerifier);
-    } else if (provider === 'github') {
-      profile = await exchangeGitHubCode(code);
-    } else {
-      return NextResponse.redirect(`${config.NEXT_PUBLIC_APP_URL}/login?error=unsupported_provider`);
+import { getClientIp } from '@/core/security/rate-limiter';
+export async function GET(req: NextRequest, { params }: {
+    params: Promise<{
+        provider: string;
+    }>;
+}) {
+    const { provider } = await params;
+    if (!isOAuthProvider(provider))
+        return NextResponse.json({ error: 'Unsupported authentication provider' }, { status: 400 });
+    let origin: string;
+    let requestUrl: string;
+    try {
+        requestUrl = oauthRequestUrl(req);
+        origin = oauthOrigin(requestUrl);
     }
-
-    const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || null;
-    const userAgent = req.headers.get('user-agent') || null;
-
-    // 2. Authenticate or Register User, execute Owner Bootstrap, and create session
-    const { rawSessionToken } = await authenticateWithOAuthProfile(profile, {
-      ipAddress,
-      userAgent,
-    });
-
-    const isProd = process.env.NODE_ENV === 'production';
-    const response = NextResponse.redirect(`${config.NEXT_PUBLIC_APP_URL}${safeReturnTo}`);
-
-    // Set persistent session cookie
-    response.cookies.set(SESSION_COOKIE_NAME, rawSessionToken, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: Math.floor(SESSION_LIFETIME_MS / 1000),
-    });
-
-    // Clean up temporary OAuth state cookies
-    response.cookies.delete('zerivex_oauth_state');
-    response.cookies.delete('zerivex_oauth_verifier');
-    response.cookies.delete('zerivex_oauth_return_to');
-
-    return response;
-  } catch (error) {
-    console.error('[ZERIVEX AUTH ERROR] OAuth callback processing failed:', (error as Error).message);
-    return NextResponse.redirect(`${config.NEXT_PUBLIC_APP_URL}/login?error=auth_failed`);
-  }
+    catch {
+        return NextResponse.json({ error: 'Sign-in host is not configured' }, { status: 400 });
+    }
+    const secure = getEnvConfig().NODE_ENV === 'production';
+    function finish(response: NextResponse) {
+        response.cookies.set(oauthCookieName(provider as 'google' | 'github'), '', { httpOnly: true, secure, sameSite: 'lax', path: '/', maxAge: 0 });
+        for (const name of ['zerivex_oauth_state', 'zerivex_oauth_verifier', 'zerivex_oauth_return_to'])
+            response.cookies.set(name, '', { httpOnly: true, secure, sameSite: 'lax', path: '/', maxAge: 0 });
+        response.headers.set('Cache-Control', 'no-store');
+        response.headers.set('Referrer-Policy', 'no-referrer');
+        return response;
+    }
+    function fail(code: string, reference?: string) { const url = new URL('/login', origin); url.searchParams.set('error', code); if (reference)
+        url.searchParams.set('reference', reference); return finish(NextResponse.redirect(url)); }
+    let stage = 'handshake';
+    try {
+        const attempt = await consumeOAuth(provider, req.nextUrl.searchParams.get('state'), req.cookies.get(oauthCookieName(provider))?.value, requestUrl);
+        if (!attempt)
+            return fail('invalid_state');
+        if (req.nextUrl.searchParams.has('error'))
+            return fail('oauth_denied');
+        const code = req.nextUrl.searchParams.get('code');
+        if (!code)
+            return fail('missing_code_or_state');
+        stage = 'provider';
+        const profile = provider === 'google' ? await exchangeGoogleCode(code, attempt.codeVerifier, attempt.redirectUri) : await exchangeGitHubCode(code, attempt.codeVerifier, attempt.redirectUri);
+        stage = 'account';
+        const { rawSessionToken } = await authenticateWithOAuthProfile(profile, { ipAddress: getClientIp(req.headers, process.env.TRUST_PROXY_HEADERS === 'true'), userAgent: req.headers.get('user-agent') });
+        stage = 'session';
+        const response = NextResponse.redirect(new URL(attempt.returnTo, origin));
+        response.cookies.set(SESSION_COOKIE_NAME, rawSessionToken, { httpOnly: true, secure, sameSite: 'lax', path: '/', maxAge: Math.floor(SESSION_LIFETIME_MS / 1000) });
+        return finish(response);
+    }
+    catch (error) {
+        const reference = crypto.randomUUID();
+        const failureCode = classifyAuthFailure(error, stage);
+        console.error('[ZERIVEX AUTH ERROR] OAuth callback processing failed:', JSON.stringify({ reference, provider, stage, failureCode, ...authFailureDetails(error) }));
+        return fail(failureCode, reference);
+    }
 }

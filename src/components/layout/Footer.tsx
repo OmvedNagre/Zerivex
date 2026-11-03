@@ -124,7 +124,6 @@ export function Footer() {
         marginTop: 'auto',
       }}
     >
-      <div style={{padding:"24px 32px"}}><BrandLogo /></div>
       <div
         style={{
           maxWidth: '1200px',
@@ -148,28 +147,9 @@ export function Footer() {
           }}
         >
           {/* Brand info */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: 'var(--ds-radius-md)',
-                backgroundColor: 'var(--ds-action-brand)',
-                color: 'var(--ds-on-brand)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: '15px',
-                letterSpacing: '-0.02em',
-              }}
-            >
-              Z
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '12px' }}>
+            <BrandLogo />
             <div>
-              <span style={{ fontWeight: 800, fontSize: '18px', letterSpacing: '-0.03em', fontFamily: 'var(--font-display)' }}>
-                ZERIVEX
-              </span>
               <span
                 style={{
                   display: 'block',
@@ -225,6 +205,8 @@ export function Footer() {
                 color: 'var(--ds-text-on-ink)',
                 fontSize: '11px',
                 fontFamily: 'var(--font-mono)',
+                maxWidth: '100%',
+                overflowWrap: 'anywhere',
               }}
             >
               <Terminal size={12} style={{ color: 'var(--ds-action-brand)' }} />

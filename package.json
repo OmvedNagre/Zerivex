@@ -23,7 +23,8 @@
     "test:e2e": "tsx scripts/test-browser.ts",
     "mail:connect": "tsx scripts/connect-gmail.ts",
     "owner:provision": "tsx scripts/provision-zerivex-owner.ts",
-    "launch:check": "tsx scripts/launch-check.ts"
+    "launch:check": "tsx scripts/launch-check.ts",
+    "auth:check": "node --import tsx scripts/check-oauth.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

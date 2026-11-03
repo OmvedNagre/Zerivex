@@ -17,6 +17,8 @@ export function LoginForm({ className = '' }: LoginFormProps) {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
   const returnTo = searchParams.get('returnTo');
+  const rawReference = searchParams.get('reference');
+  const reference = rawReference && /^[0-9a-f-]{36}$/i.test(rawReference) ? rawReference : null;
 
   const cardRef = useRef<HTMLDivElement>(null);
   const providersRef = useRef<HTMLDivElement>(null);
@@ -60,6 +62,15 @@ export function LoginForm({ className = '' }: LoginFormProps) {
     oauth_denied: 'Access was denied by the authentication provider.',
     missing_code_or_state: 'Authentication response was incomplete or timed out.',
     auth_failed: 'Authentication failed. Please verify your credentials and retry.',
+    oauth_client_config: 'Sign-in is unavailable because the website OAuth client configuration was rejected. The site administrator needs to correct its client ID and secret.',
+    oauth_code_exchange: 'The sign-in response could not be accepted. Start a new sign-in attempt. If this repeats, contact support.',
+    oauth_redirect_config: 'The website sign-in callback is not registered correctly. Contact the site administrator.',
+    oauth_provider_unavailable: 'The sign-in provider could not be reached. Please try again shortly.',
+    oauth_start_failed: 'Sign-in could not start. The site administrator needs to check authentication setup and database migrations.',
+    oauth_email_unverified: 'Your provider account needs a verified email address before you can join Zerivex.',
+    oauth_profile_failed: 'Your account details could not be verified with the sign-in provider. Please retry or contact support.',
+    oauth_exchange_failed: 'The sign-in provider could not complete authentication. Contact support if this continues.',
+    account_setup_failed: 'Your identity was verified, but Zerivex could not prepare your account or session. Contact support.',
     unsupported_provider: 'Authentication provider is not supported in this environment.',
   };
 
@@ -88,6 +99,7 @@ export function LoginForm({ className = '' }: LoginFormProps) {
               {errorMessageMap[error] || 'An unexpected error occurred during authentication.'}
             </div>
             <div className="zal-error-hint">Please retry or select an alternative sign-in method.</div>
+            {reference && <p style={{fontSize:12,overflowWrap:"anywhere"}}>Support reference: {reference}</p>}
           </div>
         </div>
       )}

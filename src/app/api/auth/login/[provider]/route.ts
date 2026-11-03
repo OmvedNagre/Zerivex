@@ -1,67 +1,44 @@
+import crypto from 'node:crypto';
+import { classifyAuthFailure, authFailureDetails } from '@/core/auth/oauth-errors';
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  OAuthProvider,
-  generateOAuthState,
-  generatePkcePair,
-  getOAuthAuthorizationUrl,
-} from '@/core/auth/oauth-service';
-
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ provider: string }> }
-) {
-  const { provider: rawProvider } = await params;
-  const provider = rawProvider as OAuthProvider;
-
-  if (!['google', 'github'].includes(provider)) {
-    return NextResponse.json({ error: 'Unsupported authentication provider' }, { status: 400 });
-  }
-
-  // Preserve safe returnTo parameter if provided (must start with / and not //)
-  const returnTo = req.nextUrl.searchParams.get('returnTo');
-  const safeReturnTo = returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/dashboard';
-
-  const state = generateOAuthState();
-  let codeChallenge: string | undefined;
-  let codeVerifier: string | undefined;
-
-  if (provider === 'google') {
-    const pkce = generatePkcePair();
-    codeChallenge = pkce.codeChallenge;
-    codeVerifier = pkce.codeVerifier;
-  }
-
-  const authUrl = getOAuthAuthorizationUrl(provider, state, codeChallenge);
-  const response = NextResponse.redirect(authUrl);
-
-  const isProd = process.env.NODE_ENV === 'production';
-
-  // Set state cookie (10 minute expiry)
-  response.cookies.set('zerivex_oauth_state', state, {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 600,
-  });
-
-  if (codeVerifier) {
-    response.cookies.set('zerivex_oauth_verifier', codeVerifier, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 600,
-    });
-  }
-
-  response.cookies.set('zerivex_oauth_return_to', safeReturnTo, {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 600,
-  });
-
-  return response;
+import { isOAuthProvider, oauthOrigin, oauthRequestUrl } from '@/core/auth/oauth-config';
+import { beginOAuth, oauthCookieName, OAUTH_ATTEMPT_TTL } from '@/core/auth/oauth-flow';
+import { getEnvConfig } from '@/core/config/env-validator';
+export async function GET(req: NextRequest, { params }: {
+    params: Promise<{
+        provider: string;
+    }>;
+}) {
+    const { provider } = await params;
+    if (!isOAuthProvider(provider))
+        return NextResponse.json({ error: 'Unsupported authentication provider' }, { status: 400 });
+    let origin: string;
+    let requestUrl: string;
+    try {
+        requestUrl = oauthRequestUrl(req);
+        origin = oauthOrigin(requestUrl);
+    }
+    catch {
+        return NextResponse.json({ error: "Sign-in host is not configured" }, { status: 400 });
+    }
+    try {
+        const attempt = await beginOAuth(provider, requestUrl, req.nextUrl.searchParams.get('returnTo'));
+        const response = NextResponse.redirect(attempt.authorizationUrl);
+        response.headers.set('Cache-Control', 'no-store');
+        response.headers.set('Referrer-Policy', 'no-referrer');
+        response.cookies.set(oauthCookieName(provider), attempt.browserToken, { httpOnly: true, secure: getEnvConfig().NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: OAUTH_ATTEMPT_TTL });
+        return response;
+    }
+    catch (error) {
+        const reference = crypto.randomUUID();
+        const classified = classifyAuthFailure(error, 'handshake');
+        const failureCode = classified === 'auth_failed' ? 'oauth_start_failed' : classified;
+        console.error('[ZERIVEX AUTH ERROR] Unable to start OAuth login', JSON.stringify({ provider, reference, failureCode, ...authFailureDetails(error) }));
+        const url = new URL('/login', origin);
+        url.searchParams.set('error', failureCode);
+        url.searchParams.set('reference', reference);
+        const response = NextResponse.redirect(url);
+        response.headers.set('Cache-Control', 'no-store');
+        return response;
+    }
 }

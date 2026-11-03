@@ -1,3 +1,5 @@
+> Authentication rebuild: use [OAUTH_SETUP.md](OAUTH_SETUP.md) for the latest Google, GitHub and staff callback instructions. Production now recommends `https://www.zerivex.tech` to match the existing Vercel domain redirect.
+
 # Zerivex production setup
 
 Public URL: `https://zerivex.tech`  

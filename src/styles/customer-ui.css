@@ -21,7 +21,7 @@
 .zx-page-container h2 { line-height: 1.35; }
 .zx-page-container p, .zx-page-container td, .zx-page-container code { overflow-wrap: anywhere; }
 .zx-page-container :is(input,select,textarea), .zx-customer-dialog :is(input,select,textarea) { max-width: 100%; min-width: 0; font: inherit; }
-.zx-page-container :is(input:not([type=checkbox]):not([type=radio]),select,textarea), .zx-customer-dialog :is(input:not([type=checkbox]):not([type=radio]),select,textarea) {
+.zx-page-container :is(input:not([type=checkbox]):not([type=radio]):not(.zql-input),select,textarea), .zx-customer-dialog :is(input:not([type=checkbox]):not([type=radio]),select,textarea) {
   background-color: var(--ds-bg-card) !important; color: var(--ds-text-primary) !important;
   border-color: var(--ds-border-default) !important; border-radius: var(--ds-radius-sm); min-height: 40px;
 }
@@ -134,7 +134,7 @@
 .zx-customer-root .zfc-tag-status.status-accepted { color: var(--ds-warning); background: var(--ds-warning-bg); }
 .zx-customer-root .zfc-tag-status.status-retesting { color: var(--ds-text-link); background: var(--ds-info-bg); }
 
-.zx-page-container :is(h1,h2,h3) { color: var(--ds-text-primary); }
+.zx-page-container :is(h1,h2,h3):not(.zql-title) { color: var(--ds-text-primary); }
 @media(prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0s !important; } }
 
 .zlr-permission-note { flex-basis: 100%; max-width: 380px; color: var(--ds-text-secondary); font-size: 13px; line-height: 1.5; }

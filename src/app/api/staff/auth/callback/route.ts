@@ -1,275 +1,61 @@
-import { readJsonBody } from '@/core/security/request-body';
+import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/core/db/database';
 import { getEnvConfig } from '@/core/config/env-validator';
 import { recordAuditEvent } from '@/core/audit/audit-service';
-import {
-  isEmailAllowedForStaff,
-  createStaffSession,
-  STAFF_SESSION_COOKIE_NAME,
-} from '@/core/staff/staff-session-service';
-import { defaultRateLimiter, getClientIp } from '@/core/security/rate-limiter';
-
-/**
- * Server-side exchange/verification of Google tokens for Staff.
- * Strictly Google-only. No dev/mock/GitHub logins allowed under any circumstances.
- */
-async function verifyGoogleTokenOrCode(codeOrToken: string, redirectUri: string) {
-  const config = getEnvConfig();
-
-  // If code is provided, exchange via Google OIDC
-  const bodyParams: Record<string, string> = {
-    client_id: config.GOOGLE_CLIENT_ID ?? '',
-    client_secret: config.GOOGLE_CLIENT_SECRET ?? '',
-    code: codeOrToken,
-    grant_type: 'authorization_code',
-    redirect_uri: redirectUri,
-  };
-
-  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(bodyParams),
-  });
-
-  if (!tokenRes.ok) {
-    // If it's not a code, maybe it's directly an ID token / access token
-    const tokenInfoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(codeOrToken)}`);
-    if (tokenInfoRes.ok) {
-      const data = await tokenInfoRes.json();
-      const age = Math.floor(Date.now() / 1000) - Number(data.iat);
-      if (data.aud !== config.GOOGLE_CLIENT_ID || !['accounts.google.com', 'https://accounts.google.com'].includes(data.iss) ||
-          !Number.isFinite(age) || age < -30 || age > 600) {
-        throw new Error('Google token audience, issuer, or freshness check failed');
-      }
-      return {
-        email: data.email as string,
-        email_verified: data.email_verified === 'true' || data.email_verified === true,
-        hd: (data.hd as string) || null,
-        name: (data.name as string) || null,
-      };
-    }
-    throw new Error('Google token verification failed');
-  }
-
-  const tokenData = await tokenRes.json();
-  const accessToken = tokenData.access_token;
-
-  const userRes = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-
-  if (!userRes.ok) {
-    throw new Error('Failed to retrieve userinfo from Google');
-  }
-
-  const userinfo = await userRes.json();
-  return {
-    email: userinfo.email as string,
-    email_verified: Boolean(userinfo.email_verified),
-    hd: (userinfo.hd as string) || null,
-    name: (userinfo.name as string) || null,
-  };
-}
-
-export async function POST(req: NextRequest) {
-  const ip = getClientIp(req.headers, process.env.TRUST_PROXY_HEADERS === 'true');
-  const userAgent = req.headers.get('user-agent') || null;
-  const config = getEnvConfig();
-
-  // Rate Limiting on staff auth attempts
-  const rateLimitKey = `STAFF_AUTH:${ip}`;
-  const rateCheck = defaultRateLimiter.check(rateLimitKey, 'AUTH');
-  if (!rateCheck.allowed) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Too Many Requests',
-        message: 'Too many authentication attempts. Please retry later.',
-      },
-      { status: 429 }
-    );
-  }
-
-  try {
-    const body = await readJsonBody(req);
-    const code = body.code || body.idToken;
-
-    if (!code) {
-      return NextResponse.json(
-        { success: false, error: "You don't have access" },
-        { status: 400 }
-      );
-    }
-
-    const redirectUri = `${config.NEXT_PUBLIC_APP_URL}/api/staff/auth/callback`;
-    const googleProfile = await verifyGoogleTokenOrCode(code, redirectUri);
-
-    // 1. Enforce verified email
-    if (!googleProfile.email_verified) {
-      await recordAuditEvent({
-        actorType: 'SYSTEM',
-        action: 'STAFF_FAILED_LOGIN',
-        resourceType: 'staff_auth',
-        ipAddress: ip,
-        userAgent,
-        metadata: { failure: 'unverified_email' },
-      });
-      return NextResponse.json(
-        { success: false, error: "You don't have access" },
-        { status: 403 }
-      );
-    }
-
-    // 2. Enforce allowed domain or email list
-    if (!isEmailAllowedForStaff(googleProfile.email, googleProfile.hd)) {
-      await recordAuditEvent({
-        actorType: 'SYSTEM',
-        action: 'STAFF_FAILED_LOGIN',
-        resourceType: 'staff_auth',
-        ipAddress: ip,
-        userAgent,
-        metadata: { failure: 'domain_not_allowed' },
-      });
-      return NextResponse.json(
-        { success: false, error: "You don't have access" },
-        { status: 403 }
-      );
-    }
-
-    // 3. Find user and active platform role
-    const userRes = await query<{ id: string; role: string }>(
-      `
-      SELECT u.id, pr.role
-      FROM users u
-      JOIN platform_roles pr ON u.id = pr.user_id AND pr.revoked_at IS NULL
-      WHERE u.email = $1
-      `,
-      [googleProfile.email.toLowerCase().trim()]
-    );
-
-    const match = userRes.rows[0];
-    if (!match) {
-      await recordAuditEvent({
-        actorType: 'SYSTEM',
-        action: 'STAFF_FAILED_LOGIN',
-        resourceType: 'staff_auth',
-        ipAddress: ip,
-        userAgent,
-        metadata: { failure: 'no_active_platform_role' },
-      });
-      return NextResponse.json(
-        { success: false, error: "You don't have access" },
-        { status: 403 }
-      );
-    }
-
-    // 4. Issue staff session
-    const { rawToken, expiresAt, role } = await createStaffSession({
-      userId: match.id,
-      ipAddress: ip,
-      userAgent,
-    });
-
-    const isProd = process.env.NODE_ENV === 'production';
-    const res = NextResponse.json({
-      success: true,
-      data: { role },
-    });
-
-    res.cookies.set(STAFF_SESSION_COOKIE_NAME, rawToken, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: 'lax',
-      path: '/',
-      expires: expiresAt,
-    });
-
-    return res;
-  } catch (err) {
-    await recordAuditEvent({
-      actorType: 'SYSTEM',
-      action: 'STAFF_FAILED_LOGIN',
-      resourceType: 'staff_auth',
-      ipAddress: ip,
-      userAgent,
-      metadata: { failure: 'exception_thrown' },
-    });
-    return NextResponse.json(
-      { success: false, error: "You don't have access" },
-      { status: 403 }
-    );
-  }
-}
-
+import { isEmailAllowedForStaff, createStaffSession, STAFF_SESSION_COOKIE_NAME } from '@/core/staff/staff-session-service';
+import { getClientIp } from '@/core/security/rate-limiter';
+import { oauthOrigin, oauthRequestUrl } from '@/core/auth/oauth-config';
+import { consumeOAuth, oauthCookieName } from '@/core/auth/oauth-flow';
+import { exchangeGoogleCode } from '@/core/auth/oauth-service';
+import { classifyAuthFailure, authFailureDetails } from '@/core/auth/oauth-errors';
+export async function POST() { return NextResponse.json({ error: 'Use the browser-bound Google staff sign-in flow' }, { status: 405, headers: { Allow: 'GET' } }); }
 export async function GET(req: NextRequest) {
-  const ip = getClientIp(req.headers, process.env.TRUST_PROXY_HEADERS === 'true');
-  const userAgent = req.headers.get('user-agent') || null;
-  const config = getEnvConfig();
-  const searchParams = req.nextUrl.searchParams;
-  const code = searchParams.get('code');
-
-  if (!code) {
-    return NextResponse.redirect(`${config.NEXT_PUBLIC_APP_URL}/staff/login?error=unauthorized`);
-  }
-
-  try {
-    const redirectUri = `${config.NEXT_PUBLIC_APP_URL}/api/staff/auth/callback`;
-    const googleProfile = await verifyGoogleTokenOrCode(code, redirectUri);
-
-    if (!googleProfile.email_verified || !isEmailAllowedForStaff(googleProfile.email, googleProfile.hd)) {
-      await recordAuditEvent({
-        actorType: 'SYSTEM',
-        action: 'STAFF_FAILED_LOGIN',
-        resourceType: 'staff_auth',
-        ipAddress: ip,
-        userAgent,
-        metadata: { failure: 'unauthorized_domain_or_unverified' },
-      });
-      return NextResponse.redirect(`${config.NEXT_PUBLIC_APP_URL}/staff/login?error=unauthorized`);
+    let origin: string;
+    let requestUrl: string;
+    try {
+        requestUrl = oauthRequestUrl(req);
+        origin = oauthOrigin(requestUrl);
     }
-
-    const userRes = await query<{ id: string }>(
-      `
-      SELECT u.id
-      FROM users u
-      JOIN platform_roles pr ON u.id = pr.user_id AND pr.revoked_at IS NULL
-      WHERE u.email = $1
-      `,
-      [googleProfile.email.toLowerCase().trim()]
-    );
-
-    const match = userRes.rows[0];
-    if (!match) {
-      await recordAuditEvent({
-        actorType: 'SYSTEM',
-        action: 'STAFF_FAILED_LOGIN',
-        resourceType: 'staff_auth',
-        ipAddress: ip,
-        userAgent,
-        metadata: { failure: 'no_platform_role' },
-      });
-      return NextResponse.redirect(`${config.NEXT_PUBLIC_APP_URL}/staff/login?error=unauthorized`);
+    catch {
+        return NextResponse.json({ error: 'Sign-in host is not configured' }, { status: 400 });
     }
-
-    const { rawToken, expiresAt } = await createStaffSession({
-      userId: match.id,
-      ipAddress: ip,
-      userAgent,
-    });
-
-    const isProd = process.env.NODE_ENV === 'production';
-    const res = NextResponse.redirect(`${config.NEXT_PUBLIC_APP_URL}/staff`);
-    res.cookies.set(STAFF_SESSION_COOKIE_NAME, rawToken, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: 'lax',
-      path: '/',
-      expires: expiresAt,
-    });
-
-    return res;
-  } catch {
-    return NextResponse.redirect(`${config.NEXT_PUBLIC_APP_URL}/staff/login?error=unauthorized`);
-  }
+    const secure = getEnvConfig().NODE_ENV === 'production';
+    const ip = getClientIp(req.headers, process.env.TRUST_PROXY_HEADERS === 'true');
+    const cookie = oauthCookieName('google', 'staff');
+    function finish(response: NextResponse) { response.cookies.set(cookie, '', { httpOnly: true, secure, sameSite: 'lax', path: '/', maxAge: 0 }); response.headers.set('Cache-Control', 'no-store'); response.headers.set('Referrer-Policy', 'no-referrer'); return response; }
+    function fail(code: string, reference?: string) { const url = new URL('/staff/login', origin); url.searchParams.set('error', code); if (reference)
+        url.searchParams.set('reference', reference); return finish(NextResponse.redirect(url)); }
+    let stage = 'handshake';
+    try {
+        const attempt = await consumeOAuth('google', req.nextUrl.searchParams.get('state'), req.cookies.get(cookie)?.value, requestUrl, 'staff');
+        if (!attempt)
+            return fail('invalid_state');
+        if (req.nextUrl.searchParams.has('error'))
+            return fail('oauth_denied');
+        const code = req.nextUrl.searchParams.get('code');
+        if (!code)
+            return fail('missing_code_or_state');
+        stage = 'provider';
+        const profile = await exchangeGoogleCode(code, attempt.codeVerifier, attempt.redirectUri);
+        stage = 'account';
+        const user = (await query<{
+            id: string;
+        }>(`SELECT u.id FROM users u JOIN platform_roles p ON p.user_id=u.id AND p.revoked_at IS NULL WHERE LOWER(u.email)=$1 AND u.status='ACTIVE'`, [profile.email.toLowerCase()])).rows[0];
+        if (!profile.isEmailVerified || !isEmailAllowedForStaff(profile.email, profile.hostedDomain) || !user) {
+            await recordAuditEvent({ actorType: 'SYSTEM', action: 'STAFF_FAILED_LOGIN', resourceType: 'staff_auth', ipAddress: ip, metadata: { failure: 'staff_access_denied' } });
+            return fail('unauthorized');
+        }
+        const session = await createStaffSession({ userId: user.id, ipAddress: ip, userAgent: req.headers.get('user-agent') });
+        stage = 'session';
+        const response = NextResponse.redirect(new URL('/staff', origin));
+        response.cookies.set(STAFF_SESSION_COOKIE_NAME, session.rawToken, { httpOnly: true, secure, sameSite: 'lax', path: '/', expires: session.expiresAt });
+        return finish(response);
+    }
+    catch (error) {
+        const reference = crypto.randomUUID();
+        const failure = classifyAuthFailure(error, stage);
+        console.error('[ZERIVEX STAFF AUTH ERROR]', JSON.stringify({ reference, stage, failure, ...authFailureDetails(error) }));
+        return fail(failure, reference);
+    }
 }

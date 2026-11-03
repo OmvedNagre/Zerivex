@@ -129,3 +129,51 @@ test('scanner monitoring exposes a live idle heartbeat only to authenticated sta
   expect(body.data.workerHealth.workers.length).toBeGreaterThan(0);
   expect((await page.request.get('/api/health/worker')).status()).toBe(401);
 });
+
+test('Google and GitHub login starts use PKCE, distinct browser cookies and exact callbacks', async ({ page }) => {
+  for (const provider of ['google','github']) {
+    const response=await page.request.get(`/api/auth/login/${provider}?returnTo=%2Finvite%2Ftest-return`,{maxRedirects:0});
+    expect(response.status()).toBe(307);
+    const url=new URL(response.headers().location!);
+    expect(url.searchParams.get('redirect_uri')).toBe(`${process.env.E2E_BASE_URL}/api/auth/callback/${provider}`);
+    expect(url.searchParams.get('code_challenge_method')).toBe('S256');
+    expect(url.searchParams.get('state')).toMatch(/^[0-9a-f]{48}$/);
+    expect(response.headers()['set-cookie']).toContain(`zerivex_oauth_${provider}=`);
+    expect(response.headers()['set-cookie']).toContain('HttpOnly');
+  }
+});
+
+test('staff sign-in starts the isolated Google staff flow', async ({ page }) => {
+  await page.route('https://accounts.google.com/**',route=>route.fulfill({status:200,contentType:'text/html',body:'<h1>Provider request intercepted for testing</h1>'}));
+  await page.goto('/staff/login');
+  const providerRequest=page.waitForRequest(r=>r.url().startsWith('https://accounts.google.com/'));
+  await page.getByRole('button',{name:'Sign in with Google',exact:true}).click();
+  const request=await providerRequest;
+  const url=new URL(request.url());
+  expect(url.searchParams.get('redirect_uri')).toBe(`${process.env.E2E_BASE_URL}/api/staff/auth/callback`);
+  expect(url.searchParams.get('code_challenge_method')).toBe('S256');
+});
+
+test('scan panel contrast and homepage footer spacing', async ({ page }, testInfo) => {
+  await page.goto('/dashboard');
+  const title = page.getByRole('heading', { name: 'Quick Vulnerability Scan' });
+  await expect(title).toHaveCSS('color', 'rgb(233, 234, 240)');
+  const input = page.locator('#quick-scan-url');
+  await expect(input).toHaveCSS('background-color', 'rgb(28, 31, 39)');
+  await expect(input).toHaveCSS('color', 'rgb(233, 234, 240)');
+  await title.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: `/tmp/zerivex-scan-panel-${testInfo.project.name}.png` });
+  await page.goto('/');
+  const cta = page.getByRole('heading', { name: 'Find what shipped with your AI app.' });
+  const section = cta.locator('xpath=ancestor::section');
+  const footer = page.locator('footer');
+  await expect(footer).toBeAttached();
+  const ctaBox = await section.boundingBox();
+  const footerBox = await footer.boundingBox();
+  expect(ctaBox).not.toBeNull(); expect(footerBox).not.toBeNull();
+  expect(footerBox!.y - (ctaBox!.y + ctaBox!.height)).toBeGreaterThanOrEqual(40);
+  await expect(footer.getByRole('img', { name: 'Zerivex', exact: true })).toHaveCount(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await cta.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: `/tmp/zerivex-home-footer-${testInfo.project.name}.png` });
+});

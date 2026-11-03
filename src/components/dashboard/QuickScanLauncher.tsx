@@ -11,7 +11,6 @@ import {
   Lock,
   Globe,
 } from 'lucide-react';
-import { StaggeredText } from '@/components/ui/StaggeredText';
 
 export interface QuickScanLauncherProps {
   onSuccess?: (targetId: string) => void;
@@ -256,7 +255,7 @@ export function QuickScanLauncher({ onSuccess, className = '' }: QuickScanLaunch
           </div>
           <div className="zql-title-wrap">
             <h2 id="quick-scan-title" className="zql-title">
-              <StaggeredText text="Quick Vulnerability Scan" />
+              Quick Vulnerability Scan
             </h2>
             <p className="zql-description">
               Assess a target endpoint from your verified security workspace.

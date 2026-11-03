@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ShieldCheck, AlertTriangle } from 'lucide-react';
 import '@/styles/staff.css';
 
@@ -8,11 +8,15 @@ export default function StaffLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const reason=new URLSearchParams(window.location.search).get('error');
+    if(reason)setError(reason==='unauthorized'?'This Google account does not have active staff access.':reason==='oauth_client_config'?'The website Google client configuration needs administrator attention.':'Staff sign-in could not complete. Start a fresh attempt or contact the owner.');
+  },[]);
   const handleGoogleStaffLogin = () => {
     setLoading(true);
     setError(null);
     // Direct Google OAuth flow strictly configured for staff callback
-    window.location.href = '/api/auth/login/google?returnTo=/staff';
+    window.location.href = '/api/staff/auth/login';
   };
 
   return (
@@ -69,7 +73,7 @@ export default function StaffLoginPage() {
             lineHeight: 1.5,
           }}
         >
-          Privileged platform operator interface. Requires authorized Google Workspace credentials with 2-Step Verification.
+          A verified Google account, an explicit allowlist entry and an active staff role are required.
         </p>
 
         {error && (
@@ -105,7 +109,7 @@ export default function StaffLoginPage() {
             fontSize: '14px',
           }}
         >
-          <span>{loading ? 'Authenticating with Google...' : 'Sign in with Google Workspace'}</span>
+          <span>{loading ? 'Authenticating with Google...' : 'Sign in with Google'}</span>
         </button>
 
         <div
