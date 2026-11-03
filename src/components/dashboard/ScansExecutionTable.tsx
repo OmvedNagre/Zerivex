@@ -72,7 +72,7 @@ export function ScoreBadge({
         aria-label="Security score: Not available (execution failed)"
       >
         <span className="zse-score-dash">—</span>
-        <span className="zse-score-reason" style={{ color: '#f87171' }}>Failed</span>
+        <span className="zse-score-reason" style={{ color: 'var(--danger)' }}>Failed</span>
       </span>
     );
   }

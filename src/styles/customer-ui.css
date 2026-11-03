@@ -138,3 +138,12 @@
 @media(prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0s !important; } }
 
 .zlr-permission-note { flex-basis: 100%; max-width: 380px; color: var(--ds-text-secondary); font-size: 13px; line-height: 1.5; }
+
+/* Scan execution states use paper-theme text colors, including populated rows. */
+.zx-customer-root .zse-mode-passive { color: var(--ds-text-link); background: var(--ds-info-bg); }
+.zx-customer-root .zse-mode-active { color: var(--violet); background: var(--violet-subtle); }
+.zx-customer-root .zse-status-completed { color: var(--ds-success); background: var(--ds-success-bg); }
+.zx-customer-root .zse-status-running { color: var(--ds-text-link); background: var(--ds-info-bg); }
+.zx-customer-root .zse-status-queued { color: var(--ds-warning); background: var(--ds-warning-bg); }
+.zx-customer-root .zse-status-failed { color: var(--ds-danger); background: var(--ds-danger-bg); }
+.zx-customer-root .zse-status-cancelled { color: var(--ds-text-muted); background: var(--ds-bg-subtle); }

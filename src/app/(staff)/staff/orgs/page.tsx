@@ -215,7 +215,7 @@ export default function StaffOrgsPage() {
                               fontSize: '10px',
                               fontWeight: 700,
                               backgroundColor: 'rgba(171, 108, 254, 0.2)',
-                              color: '#AB6CFE',
+                              color: '#d5b5ff',
                               padding: '2px 6px',
                               borderRadius: '4px',
                             }}

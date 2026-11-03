@@ -22,6 +22,8 @@ async function main() {
     await admin.query(`CREATE SCHEMA "${schema}"`); created = true;
     Object.assign(process.env, { DATABASE_URL: directDatabaseUrl(url, schema), NODE_ENV: 'development', NEXT_PUBLIC_APP_URL: 'http://127.0.0.1:3101',
       INITIAL_OWNER_EMAIL: 'browser-owner@example.test', STAFF_ALLOWED_EMAILS: 'browser-owner@example.test', SESSION_SECRET: 'isolated-browser-session-secret-not-production',
+      GOOGLE_CLIENT_ID: 'browser-fixture.apps.googleusercontent.com', GOOGLE_CLIENT_SECRET: 'browser-fixture-google-secret',
+      GITHUB_CLIENT_ID: 'browser-fixture-github-client', GITHUB_CLIENT_SECRET: 'browser-fixture-github-secret',
       STRIPE_SECRET_KEY: '', STRIPE_WEBHOOK_SECRET: '', TRUST_PROXY_HEADERS: 'true', E2E_BASE_URL: 'http://127.0.0.1:3101', E2E_FIXTURE_PATH: fixture });
     const { runMigrations } = await import('../src/core/db/migrate'); await runMigrations();
     const { query, closeDbPool } = await import('../src/core/db/database');

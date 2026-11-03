@@ -340,7 +340,7 @@ export default function DashboardOverviewPage() {
               style={{
                 fontSize: '11px',
                 fontWeight: 700,
-                color: 'var(--ds-action-brand)',
+                color: 'var(--ds-text-link)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.08em',
                 marginBottom: '4px',
