@@ -4,7 +4,7 @@ Security scanning application with separate customer and staff portals.
 
 ## Local development
 
-Use Node.js 22 or newer. Install dependencies with `npm ci`, copy `.env.example` to `.env.local`, and configure PostgreSQL, session secrets, and OAuth providers. Existing local settings should be preserved.
+Use Node.js 22 or newer. Install dependencies with `npm ci`, create a private `.env.local`, and configure PostgreSQL, session secrets, and OAuth providers. Existing local settings should be preserved.
 
 Run `npm run db:migrate`, then `npm run dev`. This starts Next.js and the queue worker together. Open http://localhost:3000. Stop both with Ctrl+C. `npm run dev:web` and `npm run worker` run them separately.
 
