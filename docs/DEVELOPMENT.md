@@ -18,7 +18,7 @@ Each phase adheres to this strict sequence:
 3. **TEST:** Unit tests and edge cases.
 4. **SECURITY TEST:** Negative attack testing (SSRF, IDOR, privilege escalation).
 5. **DOCUMENT:** Update relevant markdown docs.
-6. **UPDATE CONTEXT:** Update `ZERIVEX_CONTEXT.md` and `HANDOFF.md`.
+6. **UPDATE CONTEXT:** Record current implementation and verification details in the relevant maintained documentation.
 7. **COMMIT:** Meaningful git commit(s).
 8. **PHASE REVIEW:** Mark `READY_FOR_REVIEW`, produce Phase Completion Report, and STOP.
 

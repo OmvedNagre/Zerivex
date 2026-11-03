@@ -750,7 +750,7 @@ export function LaunchReadinessCockpit({
         <div className="zlr-runbooks-label">
           <BookOpen size={16} />
           <span>
-            <strong>Launch Runbooks:</strong> STRIDE Threat Model Review • Production Configuration Checklist • Platform Launch Runbook
+            <strong>Launch Runbooks:</strong> STRIDE Threat Model Review • Production Configuration Checklist • Launch Readiness Review
           </span>
         </div>
         <div className="zlr-runbooks-links">
@@ -760,7 +760,7 @@ export function LaunchReadinessCockpit({
           <span className="zlr-runbooks-divider" aria-hidden="true">
             •
           </span>
-          <span className="zlr-runbooks-link">docs/LAUNCH_CHECKLIST.md</span>
+          <span className="zlr-runbooks-link">docs/LAUNCH_READINESS.md</span>
         </div>
       </footer>
     </div>
